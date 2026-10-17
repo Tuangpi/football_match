@@ -40,10 +40,11 @@
 - Result: created client/src/pages/CreateEvent.tsx (court select from GET /courts/owner/me with empty-state link to court creation, title, type select, optional description, datetime-local start/end with end-after-start validation, react-hook-form + zod like other pages). datetime-local values converted via toISOString() to satisfy the API's z.string().datetime(). Route added in App.tsx under ProtectedRoute; page itself gates on OWNER role. Verified: tsc --noEmit clean, vite build clean, live API smoke test (owner login, POST /events with the exact payload the page sends -> 201, event appears in public GET /events; test events deleted afterwards). UI click-through not done (needs browser).
 
 ### T005 - Review creation UI on CourtDetail
-- Status: TODO
+- Status: DONE (2026-10-17)
 - Expected: logged-in players submit rating (1-5) + optional comment; friendly error on duplicate review
 - Check: submit review -> appears in review list with correct rating
 - Dependencies: T001
+- Result: review form added inside the Reviews card on client/src/pages/CourtDetail.tsx (rating select 1-5 with stars, optional comment, react-hook-form + zod with coerced numeric rating). Shown only to logged-in PLAYERs who haven't reviewed; others see a login link or "You've already reviewed this court." note; owners/others see nothing. Duplicate error surfaces the server message as a toast; list refreshes via fetchCourt() after posting. Verified: tsc --noEmit clean, vite build clean, live API smoke test with fresh user revtest@test.com (POST /reviews -> 201, second POST -> 400 "You have already reviewed this court", review visible in GET /courts/:id). UI click-through not done (needs browser).
 
 ### T006 - Friends UI (/friends)
 - Status: TODO

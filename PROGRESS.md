@@ -1,10 +1,13 @@
 # Progress
 
 ## Current State
-- Current task: None (T004 DONE)
-- Most recently completed: T004 Owner event creation page
+- Current task: None (T005 DONE)
+- Most recently completed: T005 Review creation UI on CourtDetail
 - Blockers: none
-- Recommended next: T005 (Review creation UI on CourtDetail)
+- Recommended next: T006 (Friends UI /friends - needs a minimal user-search/id-input method)
+
+## Notes
+- 2026-10-17 - T005 DONE: review form on CourtDetail (client/src/pages/CourtDetail.tsx, Reviews card). PLAYER-only, hidden if already reviewed; server duplicate error shown as toast; court refetched after post. Checks: `npx tsc --noEmit` clean, `npm run build` clean, live smoke test OK (fresh user revtest@test.com: POST /reviews 201, duplicate POST 400 with friendly message, review listed in GET /courts/:id). New test data in DB: user revtest@test.com (password123) + its review ("Great turf, T005 smoke test", rating 4) on Sunset Futsal Court - no review DELETE endpoint exists, left in place. Browser click-through still pending.
 
 ## Notes
 - 2026-10-17 - T004 DONE: /owner/events/create implemented (client/src/pages/CreateEvent.tsx + route in App.tsx). Owner picks one of their courts, title, type, optional description, start/end datetimes; page converts datetime-local to full ISO for the API and redirects to /events after publish; empty state if owner has no courts yet. Checks: `npx tsc --noEmit` clean, `npm run build` clean, live-server smoke test OK (owner login -> POST /events with the page's exact payload shape -> 201 -> event visible in public GET /events; both smoke-test events deleted afterwards, DB left as found; server stopped again after test). Browser click-through still pending.

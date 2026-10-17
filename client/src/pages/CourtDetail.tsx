@@ -5,6 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { Calendar, Clock, Users, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 type Court = {
   id: string;
@@ -33,12 +36,27 @@ type Court = {
   }>;
 };
 
+const reviewSchema = z.object({
+  rating: z.coerce.number().min(1, 'Pick a rating').max(5),
+  comment: z.string().optional(),
+});
+
+type ReviewFormData = z.infer<typeof reviewSchema>;
+
 export function CourtDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const [court, setCourt] = useState<Court | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const {
+    register: registerReview,
+    handleSubmit: handleReviewSubmit,
+    reset: resetReview,
+    formState: { errors: reviewErrors },
+  } = useForm<ReviewFormData>({ resolver: zodResolver(reviewSchema) });
 
   useEffect(() => {
     if (id) fetchCourt();
@@ -58,6 +76,26 @@ export function CourtDetail() {
     }
   }
 
+  const onReviewSubmit = async (data: ReviewFormData) => {
+    if (!court) return;
+    setSubmittingReview(true);
+    try {
+      await api.post('/reviews', {
+        courtId: court.id,
+        rating: data.rating,
+        comment: data.comment || undefined,
+      });
+      toast.success('Review posted!');
+      resetReview();
+      fetchCourt();
+    } catch (err: any) {
+      // e.g. friendly duplicate error: "You have already reviewed this court"
+      toast.error(err.response?.data?.message || 'Failed to post review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const availableSlots = court?.slots.filter((s) => s.isAvailable) || [];
 
   if (loading) {
@@ -68,6 +106,8 @@ export function CourtDetail() {
     );
   }
   if (!court) return <div className="p-8 text-center">Court not found</div>;
+
+  const myReview = user ? court.reviews.find((r) => r.user.id === user.id) : undefined;
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -162,6 +202,52 @@ export function CourtDetail() {
                   </div>
                 ))
               )}
+
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                {!user ? (
+                  <p className="text-sm text-gray-500">
+                    <Link to="/login" className="text-orange-600 hover:underline">Login</Link> to leave a review.
+                  </p>
+                ) : user.role !== 'PLAYER' ? null : myReview ? (
+                  <p className="text-sm text-gray-500">You've already reviewed this court.</p>
+                ) : (
+                  <form onSubmit={handleReviewSubmit(onReviewSubmit)} className="space-y-3">
+                    <h4 className="text-sm font-bold text-gray-900">Write a Review</h4>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                      <select
+                        {...registerReview('rating')}
+                        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+                      >
+                        <option value="">Select rating</option>
+                        {[5, 4, 3, 2, 1].map((n) => (
+                          <option key={n} value={n}>
+                            {'★'.repeat(n)}{'☆'.repeat(5 - n)} ({n})
+                          </option>
+                        ))}
+                      </select>
+                      {reviewErrors.rating && (
+                        <p className="text-red-500 text-sm">{reviewErrors.rating.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Comment (optional)</label>
+                      <textarea
+                        {...registerReview('comment')}
+                        rows={2}
+                        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium disabled:opacity-50 hover:bg-orange-700"
+                    >
+                      {submittingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post Review'}
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         </div>
