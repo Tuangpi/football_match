@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PLAYER
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum SportType {
+  FUTSAL
+  ELEVEN_A_SIDE
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum EventType {
+  TOURNAMENT
+  COMPETITION
+  DISCOUNT
+  PRICE_CHANGE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(PLAYER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  playerProfile     PlayerProfile?
+  teams             Team[]
+  bookings          Booking[]
+  reviews           Review[]
+  sentFriendRequests   Friend[] @relation("FriendRequestSender")
+  receivedFriendRequests Friend[] @relation("FriendRequestReceiver")
+  ownedCourts       Court[]
+  events            Event[]
+  teamMemberships   TeamMember[]
+}
+
+model PlayerProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String?
+  phone     String?
+  position  String?
+  skillLevel String?
+  bio       String?
+  avatarUrl String?
+}
+
+model Friend {
+  id           String      @id @default(cuid())
+  senderId     String
+  receiverId   String
+  status       FriendStatus @default(PENDING)
+  createdAt    DateTime    @default(now())
+
+  sender    User @relation("FriendRequestSender", fields: [senderId], references: [id])
+  receiver  User @relation("FriendRequestReceiver", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model Team {
+  id        String      @id @default(cuid())
+  name      String
+  sportType SportType   @default(FUTSAL)
+  captainId String
+  captain   User        @relation(fields: [captainId], references: [id])
+  members   TeamMember[]
+  bookings  Booking[]
+  createdAt DateTime    @default(now())
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("MEMBER")
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model Court {
+  id             String      @id @default(cuid())
+  ownerId        String
+  owner          User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  address        String
+  city           String
+  sportType      SportType   @default(FUTSAL)
+  dimensions     String?
+  surfaceType    String?
+  basePricePerHour Float
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  slots          CourtSlot[]
+  bookings       Booking[]
+  events         Event[]
+  reviews        Review[]
+}
+
+model CourtSlot {
+  id            String      @id @default(cuid())
+  courtId       String
+  court         Court       @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  date          DateTime
+  startTime     String
+  endTime       String
+  isAvailable   Boolean     @default(true)
+  pricePerHour  Float
+  createdAt     DateTime    @default(now())
+
+  bookings      Booking[]
+
+  @@index([courtId, date, startTime])
+}
+
+model Booking {
+  id          String         @id @default(cuid())
+  courtId     String
+  court       Court          @relation(fields: [courtId], references: [id])
+  courtSlotId String
+  courtSlot   CourtSlot      @relation(fields: [courtSlotId], references: [id])
+  playerId    String
+  player      User           @relation(fields: [playerId], references: [id])
+  teamId      String?
+  team        Team?          @relation(fields: [teamId], references: [id])
+  status      BookingStatus  @default(PENDING)
+  totalPrice  Float
+  bookedAt    DateTime       @default(now())
+  cancelledAt DateTime?
+
+  @@index([courtSlotId])
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  courtId     String
+  userId      String
+  court       Court       @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  type        EventType
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  courtId   String
+  court     Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([courtId, userId])
+}
