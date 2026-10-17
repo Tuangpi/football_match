@@ -8,6 +8,7 @@ import { CourtDetail } from '@/pages/CourtDetail';
 import { MyBookings } from '@/pages/MyBookings';
 import { MyProfile } from '@/pages/MyProfile';
 import { CreateCourt } from '@/pages/CreateCourt';
+import { OwnerCourts } from '@/pages/OwnerCourts';
 import { OwnerBookings } from '@/pages/OwnerBookings';
 import { Events } from '@/pages/Events';
 
@@ -34,6 +35,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <MyProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/courts"
+          element={
+            <ProtectedRoute>
+              <OwnerCourts />
             </ProtectedRoute>
           }
         />

@@ -13,22 +13,24 @@
 ## Active Tasks
 
 ### T001 - Fix server start scripts
-- Status: TODO
+- Status: DONE (2026-10-17)
 - Expected: `npm run dev` in server/ actually serves the API (currently runs src/app.ts which never calls listen(); only index.ts does). Same bug in `npm start` (runs dist/src/app.js).
 - Check: `curl localhost:3000/health` returns ok after `npm run dev`
 - Dependencies: none
+- Result: changed dev to `tsx watch src/index.ts`, start/main to `dist/src/index.js`. Verified `npm run dev` boots and /health returns ok. Full API runtime-verified same day (see PROGRESS.md).
 
 ### T002 - Initial git commit
-- Status: TODO
+- Status: DONE
 - Expected: baseline snapshot committed (repo currently has zero commits)
 - Check: git log shows one commit; working tree clean
 - Dependencies: none
 
 ### T003 - Owner My Courts page (/owner/courts)
-- Status: TODO
+- Status: DONE (2026-10-17)
 - Expected: owner can list their courts, edit, delete/deactivate, and add time slots (date, start/end, price). Fixes dead redirect after CreateCourt (navigates to /owner/courts, which does not exist). Add Navbar link for owners.
 - Check: create court -> lands on /owner/courts; add slot there; slot appears on public court page
 - Dependencies: T001 (needed to verify)
+- Result: created client/src/pages/OwnerCourts.tsx (list + inline edit form, activate/deactivate toggle, delete with confirm, inline add-slot form); route added in App.tsx; Navbar link already existed. Verified: tsc --noEmit clean, vite build clean, API smoke test against live server (owner login, GET /courts/owner/me shape matches, POST /courts/:id/slots with local-noon ISO date accepted, new slot appears in public GET /courts/:id/slots?date=). UI click-through not done (needs browser).
 
 ### T004 - Owner event creation page (/owner/events/create)
 - Status: TODO
