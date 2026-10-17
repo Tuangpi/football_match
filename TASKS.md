@@ -33,10 +33,11 @@
 - Result: created client/src/pages/OwnerCourts.tsx (list + inline edit form, activate/deactivate toggle, delete with confirm, inline add-slot form); route added in App.tsx; Navbar link already existed. Verified: tsc --noEmit clean, vite build clean, API smoke test against live server (owner login, GET /courts/owner/me shape matches, POST /courts/:id/slots with local-noon ISO date accepted, new slot appears in public GET /courts/:id/slots?date=). UI click-through not done (needs browser).
 
 ### T004 - Owner event creation page (/owner/events/create)
-- Status: TODO
+- Status: DONE (2026-10-17)
 - Expected: form (court from owner's courts, title, type, description, start/end dates). Events page currently links here but the route/page does not exist.
 - Check: owner can create an event and see it in the public Events list
 - Dependencies: T001
+- Result: created client/src/pages/CreateEvent.tsx (court select from GET /courts/owner/me with empty-state link to court creation, title, type select, optional description, datetime-local start/end with end-after-start validation, react-hook-form + zod like other pages). datetime-local values converted via toISOString() to satisfy the API's z.string().datetime(). Route added in App.tsx under ProtectedRoute; page itself gates on OWNER role. Verified: tsc --noEmit clean, vite build clean, live API smoke test (owner login, POST /events with the exact payload the page sends -> 201, event appears in public GET /events; test events deleted afterwards). UI click-through not done (needs browser).
 
 ### T005 - Review creation UI on CourtDetail
 - Status: TODO

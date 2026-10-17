@@ -11,6 +11,7 @@ import { CreateCourt } from '@/pages/CreateCourt';
 import { OwnerCourts } from '@/pages/OwnerCourts';
 import { OwnerBookings } from '@/pages/OwnerBookings';
 import { Events } from '@/pages/Events';
+import { CreateEvent } from '@/pages/CreateEvent';
 
 export function App() {
   return (
@@ -59,6 +60,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <OwnerBookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/events/create"
+          element={
+            <ProtectedRoute>
+              <CreateEvent />
             </ProtectedRoute>
           }
         />
