@@ -36,6 +36,8 @@ type Court = {
   }>;
 };
 
+type MyTeam = { id: string; name: string };
+
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, 'Pick a rating').max(5),
   comment: z.string().optional(),
@@ -50,6 +52,8 @@ export function CourtDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [myTeams, setMyTeams] = useState<MyTeam[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
   const {
     register: registerReview,
@@ -61,6 +65,21 @@ export function CourtDetail() {
   useEffect(() => {
     if (id) fetchCourt();
   }, [id]);
+
+  useEffect(() => {
+    // teams the current player belongs to (for optional team booking)
+    if (user && user.role === 'PLAYER') {
+      api
+        .get('/teams')
+        .then((res) => {
+          const mine = res.data.teams.filter((t: any) =>
+            t.members.some((m: any) => m.user.id === user.id)
+          );
+          setMyTeams(mine.map((t: any) => ({ id: t.id, name: t.name })));
+        })
+        .catch(() => setMyTeams([]));
+    }
+  }, [user]);
 
   async function fetchCourt() {
     try {
@@ -136,6 +155,25 @@ export function CourtDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            {user && user.role === 'PLAYER' && myTeams.length > 0 && (
+              <div className="bg-white p-4 rounded-xl border shadow-sm">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Book with team (optional)
+                </label>
+                <select
+                  value={selectedTeamId}
+                  onChange={(e) => setSelectedTeamId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+                >
+                  <option value="">No team (individual)</option>
+                  {myTeams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <h2 className="text-xl font-bold text-gray-900">Available Slots</h2>
             {availableSlots.length === 0 ? (
               <p className="text-gray-500">No available slots at the moment.</p>
@@ -160,7 +198,10 @@ export function CourtDetail() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            api.post('/bookings', { courtSlotId: slot.id }).then(() => {
+                            api.post('/bookings', {
+                              courtSlotId: slot.id,
+                              teamId: selectedTeamId || undefined,
+                            }).then(() => {
                               toast.success('Booking created!');
                               fetchCourt();
                             }).catch((err: any) => toast.error(err.response?.data?.message || 'Booking failed'));

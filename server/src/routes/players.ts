@@ -3,6 +3,7 @@ import {
   getMyProfile,
   updateMyProfile,
   getPublicProfile,
+  searchUsers,
   sendFriendRequest,
   getMyFriends,
   getPendingRequests,
@@ -24,12 +25,15 @@ router.put('/me', validate(z.object({
   skillLevel: z.string().optional(),
   bio: z.string().optional(),
 })), updateMyProfile);
-router.get('/:id', getPublicProfile);
 
-// Friend routes
+// User search + friend routes MUST come before /:id,
+// otherwise GET /friends is captured by /:id and 404s
+router.get('/search', searchUsers);
 router.post('/friends/request', validate(z.object({ receiverId: z.string() })), sendFriendRequest);
 router.get('/friends', getMyFriends);
 router.get('/friends/pending', getPendingRequests);
 router.put('/friends/:id/respond', validate(z.object({ accept: z.boolean() })), respondToFriendRequest);
+
+router.get('/:id', getPublicProfile);
 
 export default router;

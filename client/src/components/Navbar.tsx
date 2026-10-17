@@ -5,6 +5,7 @@ import {
   X,
   Calendar,
   Users,
+  Trophy,
   Building2,
   User,
   LogOut,
@@ -42,6 +43,18 @@ export function Navbar() {
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
                 >
                   <Calendar className="h-4 w-4" /> My Bookings
+                </Link>
+                <Link
+                  to="/friends"
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                >
+                  <Users className="h-4 w-4" /> Friends
+                </Link>
+                <Link
+                  to="/teams"
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                >
+                  <Trophy className="h-4 w-4" /> Teams
                 </Link>
                 <Link
                   to="/profile"

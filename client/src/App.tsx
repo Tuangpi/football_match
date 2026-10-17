@@ -12,6 +12,8 @@ import { OwnerCourts } from '@/pages/OwnerCourts';
 import { OwnerBookings } from '@/pages/OwnerBookings';
 import { Events } from '@/pages/Events';
 import { CreateEvent } from '@/pages/CreateEvent';
+import { Friends } from '@/pages/Friends';
+import { Teams } from '@/pages/Teams';
 
 export function App() {
   return (
@@ -36,6 +38,22 @@ export function App() {
           element={
             <ProtectedRoute>
               <MyProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <ProtectedRoute>
+              <Friends />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teams"
+          element={
+            <ProtectedRoute>
+              <Teams />
             </ProtectedRoute>
           }
         />

@@ -175,6 +175,43 @@ export const getPendingRequests = async (
   }
 };
 
+// Minimal user search - lets players find others by email to send friend requests
+export const searchUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    const q = String(req.query.q || '').trim();
+    if (!q) {
+      res.json({ success: true, users: [] });
+      return;
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        email: { contains: q, mode: 'insensitive' },
+        id: { not: req.user.id },
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        playerProfile: { select: { fullName: true } },
+      },
+      take: 10,
+    });
+
+    res.json({ success: true, users });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const respondToFriendRequest = async (
   req: Request,
   res: Response,
