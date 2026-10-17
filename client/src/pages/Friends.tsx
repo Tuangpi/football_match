@@ -37,10 +37,6 @@ export function Friends() {
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) refresh();
-  }, [user]);
-
   async function refresh() {
     try {
       const [f, p] = await Promise.all([
@@ -55,6 +51,11 @@ export function Friends() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user) refresh();
+  }, [user]);
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();

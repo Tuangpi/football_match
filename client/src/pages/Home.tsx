@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { Search, MapPin, Clock, Users } from 'lucide-react';
+import { Search, MapPin, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Court = {
@@ -20,10 +20,6 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
 
-  useEffect(() => {
-    fetchCourts();
-  }, [city]);
-
   async function fetchCourts() {
     try {
       const params = new URLSearchParams();
@@ -36,6 +32,11 @@ export function Home() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCourts();
+  }, [city]);
 
   const avgRating = (court: Court) => {
     if (!court.reviews?.length) return 'N/A';

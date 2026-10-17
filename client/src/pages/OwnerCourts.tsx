@@ -350,10 +350,6 @@ export function OwnerCourts() {
   const [courts, setCourts] = useState<Court[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCourts();
-  }, []);
-
   async function fetchCourts() {
     try {
       const res = await api.get('/courts/owner/me');
@@ -364,6 +360,11 @@ export function OwnerCourts() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCourts();
+  }, []);
 
   if (!user || user.role !== 'OWNER') {
     return <div className="p-8 text-center">Access denied. Owner role required.</div>;

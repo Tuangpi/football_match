@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AppError } from '../middleware/error';
 import { prisma } from '../utils/prisma';
-import { authenticate, authorize } from '../middleware/auth';
 
 const createBookingSchema = z.object({
   courtSlotId: z.string(),

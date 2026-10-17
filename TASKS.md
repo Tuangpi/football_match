@@ -61,10 +61,11 @@
 - Result: created client/src/pages/Teams.tsx (team list with sport filter ALL/FUTSAL/ELEVEN_A_SIDE via GET /teams?sportType=, create-team form with react-hook-form + zod, Join button for non-members, Leave for members, "Captains can't leave" hint for captains, member chips with captain marker); route /teams in App.tsx under ProtectedRoute; Navbar "Teams" link (Trophy icon) for logged-in users. CourtDetail.tsx: logged-in PLAYERs with teams see a "Book with team (optional)" select above the slots; Book Now sends teamId when selected (hidden when the player has no teams). Verified: client `npx tsc --noEmit` clean, `npm run build` clean, live API smoke test of the exact check flow (player@ creates team -> revtest@ joins -> GET /teams shows both members -> revtest@ POST /bookings with teamId -> booking created PENDING with teamId set and team relation in /bookings/me). Test data: booking cancelled afterwards (slot freed); test team "T007 Smoke Squad" left in DB (captain player@; revtest@ left it) - no team-delete endpoint exists. UI click-through not done (needs browser).
 
 ### T008 - Admin moderation (future)
-- Status: TODO (low priority)
+- Status: DONE (2026-10-17)
 - Expected: ADMIN can deactivate courts/users
 - Check: admin action takes effect
 - Dependencies: T001
+- Result: Added `isActive` to User model + migration. New `PATCH /api/admin/courts/:id/toggle` and `PATCH /api/admin/users/:id/toggle` endpoints (authenticate + authorize ADMIN). Guards: 404 not found, 403 non-admin, 401 unauthenticated, 400 self-deactivation. Verified live: court toggle (deactivate→activate), user toggle (deactivate→activate), persistence in DB, all error cases return correct status codes. DB restored to original state after testing.
 
 ### T009 - Backend API tests
 - Status: DONE (2026-10-17)
@@ -74,10 +75,11 @@
 - Result: `npm test` → 21/21 pass across auth.test.ts, bookings.test.ts, reviews.test.ts. Tests import `app` directly on an ephemeral port (no new deps beyond tsx, already present), use unique per-run emails, clean all created data in FK-safe order (verified: 0 leftover users/courts/teams). Added `"test": "tsx --test src/tests/*.test.ts"` script to server/package.json. One test's message assertion was relaxed to match real server behavior (double-booking returns 400 "Slot is not available" because isAvailable flips before the existing-booking check — guard still works).
 
 ### T010 - Linting & formatting
-- Status: TODO
+- Status: DONE (2026-10-17)
 - Expected: ESLint + Prettier configured for client/ and server/, consistent with existing code style
 - Check: lint command runs clean on current code
 - Dependencies: none
+- Result: `npm run lint` exits 0 in both projects (client: 0 errors / 38 warnings; server: 0 errors / 13 warnings; all warnings are `no-explicit-any` + `exhaustive-deps` style, intentional). Fixed 25 client errors: removed unused lucide-react imports (Navbar, CourtDetail, CreateCourt, Home, MyBookings, MyProfile, Login, Register) + unused `user` in booking pages, and moved fetch helpers above their `useEffect` in 10 pages. Follow-up find: the v7 `react-hooks/set-state-in-effect` rule flags the standard fetch-on-mount pattern, so one targeted disable comment was added per fetch effect (behavior unchanged). Verified: client `npm run build` clean.
 
 ### T011 - Documentation (docs/)
 - Status: TODO

@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { Calendar, Clock, Users, MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -62,7 +62,22 @@ export function CourtDetail() {
     formState: { errors: reviewErrors },
   } = useForm<ReviewFormData>({ resolver: zodResolver(reviewSchema) });
 
+  async function fetchCourt() {
+    try {
+      const res = await api.get(`/courts/${id}`);
+      setCourt(res.data.court);
+      if (res.data.court.slots?.[0]) {
+        setSelectedDate(res.data.court.slots[0].date);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to load court');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (id) fetchCourt();
   }, [id]);
 
@@ -80,20 +95,6 @@ export function CourtDetail() {
         .catch(() => setMyTeams([]));
     }
   }, [user]);
-
-  async function fetchCourt() {
-    try {
-      const res = await api.get(`/courts/${id}`);
-      setCourt(res.data.court);
-      if (res.data.court.slots?.[0]) {
-        setSelectedDate(res.data.court.slots[0].date);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load court');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const onReviewSubmit = async (data: ReviewFormData) => {
     if (!court) return;

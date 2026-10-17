@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AppError } from '../middleware/error';
 import { prisma } from '../utils/prisma';
-import { authenticate } from '../middleware/auth';
 
 const createReviewSchema = z.object({
   courtId: z.string(),

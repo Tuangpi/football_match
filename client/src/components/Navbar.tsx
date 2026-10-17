@@ -1,15 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
-  Menu,
-  X,
   Calendar,
   Users,
   Trophy,
   Building2,
   User,
   LogOut,
-  Plus,
 } from 'lucide-react';
 
 export function Navbar() {

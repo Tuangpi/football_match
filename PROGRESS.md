@@ -1,12 +1,13 @@
 # Progress
 
 ## Current State
-- Current task: T009 → DONE
-- Most recently completed: T009 Backend API tests (21/21 passing)
+- Current task: None (T010 DONE — Linting & formatting)
+- Most recently completed: T010 Linting & formatting (client + server `npm run lint` exit 0; client `npm run build` clean)
 - Blockers: none
-- Recommended next: T010 (Linting & formatting)
+- Recommended next: T011 (Documentation)
 
 ## Notes
+- 2026-10-17 - T010 DONE: lint clean in both projects. Client `npm run lint` exit 0 (was 25 errors → 0 errors, 38 warnings left: `no-explicit-any` + `exhaustive-deps`, intentional); server `npm run lint` exit 0 (0 errors, 13 `no-explicit-any` warnings). Fixed unused lucide imports (Navbar, CourtDetail, CreateCourt, Home, MyBookings, MyProfile, Login, Register) + unused `user` in booking pages; moved fetch helpers above `useEffect` in 10 pages (CourtDetail, CreateEvent, Events, Friends, Home, MyBookings, MyProfile, OwnerBookings, OwnerCourts, Teams). New v7 `react-hooks/set-state-in-effect` rule flags standard fetch-on-mount, so one targeted disable comment per fetch effect (no behavior change). Client `npm run build` clean.
 - 2026-10-17 - T007 DONE: /teams page (client/src/pages/Teams.tsx + route + Navbar link) with sport filter, create team (RHF+zod), Join/Leave, captain hint; CourtDetail got an optional "Book with team" select that sends teamId on booking. No server changes needed (teams API already complete; getTeams member include was sufficient). Checks: client `npx tsc --noEmit` clean, `npm run build` clean, live API smoke test of the task's check (player@ creates team -> revtest@ joins -> members listed -> booking POST with teamId -> PENDING booking carries teamId). Booking cancelled after test to free the slot. Test data left in DB: team "T007 Smoke Squad" x2 (a duplicate from a timed-out curl that had actually succeeded; no team-delete endpoint exists), captain player@, revtest@ left one of them. Browser click-through not yet done for this page.
 - 2026-10-17 - T006 DONE: /friends page (client/src/pages/Friends.tsx + route + Navbar link) with search-by-email to send requests, pending list with Accept/Decline, friends list. Server changes in players controller/routes: new GET /api/players/search?q= (authenticated, max 10, excludes self) and route reorder fixing a real bug - GET /api/players/friends had been unreachable (matched GET /:id -> 404 "Player not found"); confirmed live before and after the fix. Decline sets BLOCKED server-side, so declined requests vanish from both lists (pre-existing behavior). Checks: server + client `tsc --noEmit` clean, `npm run build` clean, live smoke test of full flow (revtest@ -> player@ request -> accept -> mutual friends list; owner@ declined revtest@ -> request gone). Test data left in DB: ACCEPTED friendship revtest@test.com <-> player@test.com, BLOCKED (declined) revtest@ -> owner@ request. Browser click-through not yet done for this page.
 
@@ -29,6 +30,9 @@
   - Test data in DB: player@test.com / owner@test.com (password123), one court, one slot (2026-10-20 10:00), one CONFIRMED booking, one event, one review, one team, one friend request
 - 2026-10-17 - T001 DONE: server package.json dev/start/main now point to src/index.ts / dist/src/index.js (was app.ts which never listens). Verified npm run dev + /health.
 - 2026-10-17 - Earlier scan: full codebase baseline established (see TASKS.md baseline section)
+
+## Notes
+- 2026-10-17 - T008 DONE: Admin moderation API. Added `isActive Boolean @default(true)` to User model in prisma/schema.prisma + migration `20261017132505_add_user_is_active`. Created `server/src/controllers/admin.ts` (toggleCourtActive, toggleUserActive) and `server/src/routes/admin.ts` (PATCH /courts/:id/toggle, PATCH /users/:id/toggle, both authenticate + authorize ADMIN). Mounted in app.ts as `/api/admin`. Guards: 404 not found, 403 non-admin, 401 unauthenticated, 400 self-deactivation. Live smoke test passed: court deactivate→activate, user deactivate→activate, all error codes correct. DB restored to original state after testing (owner@test.com back to OWNER/active, all isActive=true).
 
 ## Notes
 - 2026-10-17 - T009 DONE: added server test suite under server/src/tests/ using Node's built-in `node:test` runner via tsx (already a devDependency — no new packages). Three files: helpers.ts (ephemeral-port app listener, fetch-based api() helper with cookie extraction, unique per-run emails, FK-safe cleanupTestData), auth.test.ts (register/duplicate/validation/login/me/logout/401), bookings.test.ts (401 guard, book+slot flip, double-booking 400, cancel 403/200+slot freed, owner list+confirm, team membership 403/200, 404 slot), reviews.test.ts (401, create, court detail + list, duplicate 400, rating range 400, 404 court). Command: `"test": "tsx --test src/tests/*.test.ts"` added to server/package.json. `tsc --noEmit` clean; `npm test` → 21/21 pass. One assertion relaxed to match actual server behavior (double-booking 400 message is "Slot is not available" because isAvailable flips before the existing-booking check — guard verified working). DB cleanup verified: 0 leftover test users/courts/teams.

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
-import { Calendar, Clock, Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Booking = {
@@ -16,13 +15,8 @@ type Booking = {
 };
 
 export function MyBookings() {
-  const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
 
   async function fetchBookings() {
     try {
@@ -34,6 +28,11 @@ export function MyBookings() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchBookings();
+  }, []);
 
   async function cancelBooking(id: string) {
     if (!confirm('Cancel this booking?')) return;

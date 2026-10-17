@@ -47,11 +47,6 @@ export function Teams() {
     defaultValues: { name: '', sportType: 'FUTSAL' },
   });
 
-  useEffect(() => {
-    if (user) refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, filter]);
-
   async function refresh() {
     try {
       const params = filter === 'ALL' ? {} : { sportType: filter };
@@ -63,6 +58,12 @@ export function Teams() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user) refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, filter]);
 
   const onCreate = async (data: CreateTeamFormData) => {
     try {

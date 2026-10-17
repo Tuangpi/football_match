@@ -2,8 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AppError } from '../middleware/error';
 import { prisma } from '../utils/prisma';
-import { authenticate } from '../middleware/auth';
-import { authorize } from '../middleware/auth';
 
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Team name is required'),

@@ -13,6 +13,7 @@ import courtRoutes from './routes/courts';
 import bookingRoutes from './routes/bookings';
 import eventRoutes from './routes/events';
 import reviewRoutes from './routes/reviews';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/courts', courtRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404
 app.use(notFound);

@@ -46,11 +46,6 @@ export function CreateEvent() {
     defaultValues: { type: 'TOURNAMENT' },
   });
 
-  useEffect(() => {
-    if (!user || user.role !== 'OWNER') return;
-    fetchCourts();
-  }, [user]);
-
   async function fetchCourts() {
     try {
       const res = await api.get('/courts/owner/me');
@@ -61,6 +56,12 @@ export function CreateEvent() {
       setLoadingCourts(false);
     }
   }
+
+  useEffect(() => {
+    if (!user || user.role !== 'OWNER') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCourts();
+  }, [user]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);

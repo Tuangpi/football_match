@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AppError } from '../middleware/error';
 import { prisma } from '../utils/prisma';
-import { authenticate } from '../middleware/auth';
 
 const updateProfileSchema = z.object({
   fullName: z.string().optional(),
