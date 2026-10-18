@@ -12,6 +12,7 @@ Futsal (extensible to 11-a-side) court booking web application.
 ```
 client/   # React frontend
 server/   # Express backend + Prisma schema
+docs/     # Developer docs: [API reference](docs/API.md) · [Data model](docs/DATA_MODEL.md)
 ```
 
 ## Getting Started
@@ -41,3 +42,8 @@ npm run dev
 - **PLAYER** — find friends, join/create teams, book courts
 - **OWNER** — manage courts, slots, bookings, events
 - **ADMIN** — platform moderation (future)
+
+## Docs
+- [API reference](docs/API.md) — all `/api` routes: methods, auth/roles, payloads, errors
+- [Data model overview](docs/DATA_MODEL.md) — enums, models, relations, constraints
+- Docs index: [docs/](docs/README.md)

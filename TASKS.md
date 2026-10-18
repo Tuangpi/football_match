@@ -82,7 +82,8 @@
 - Result: `npm run lint` exits 0 in both projects (client: 0 errors / 38 warnings; server: 0 errors / 13 warnings; all warnings are `no-explicit-any` + `exhaustive-deps` style, intentional). Fixed 25 client errors: removed unused lucide-react imports (Navbar, CourtDetail, CreateCourt, Home, MyBookings, MyProfile, Login, Register) + unused `user` in booking pages, and moved fetch helpers above their `useEffect` in 10 pages. Follow-up find: the v7 `react-hooks/set-state-in-effect` rule flags the standard fetch-on-mount pattern, so one targeted disable comment was added per fetch effect (behavior unchanged). Verified: client `npm run build` clean.
 
 ### T011 - Documentation (docs/)
-- Status: TODO
+- Status: DONE (2026-10-17)
 - Expected: API reference (all /api routes: methods, auth, payloads) and data model overview based on prisma/schema.prisma
 - Check: docs match actual routes; links from README
 - Dependencies: none
+- Result: created docs/README.md (index), docs/API.md (all 40 routes incl. GET /health: methods, auth/roles, payloads, responses, error cases; verified against server/src/routes/* + controllers), docs/DATA_MODEL.md (enums, all 10 models, constraints, lifecycles, relation map from prisma/schema.prisma). README gained Structure entry + Docs section linking all three. Notable findings recorded in docs: PUT /players/me lacks avatarUrl, courts DELETE blocked by booking FKs, decline→BLOCKED permanently blocks re-request, no slot/team-delete/review-update endpoints, deactivated users keep JWT access, endDate/startTime ordering unvalidated.
