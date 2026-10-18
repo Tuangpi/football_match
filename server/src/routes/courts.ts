@@ -8,6 +8,7 @@ import {
   getOwnerCourts,
   createCourtSlot,
   getCourtSlots,
+  deleteCourtSlot,
 } from '../controllers/courts';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -55,5 +56,6 @@ router.post('/', authorize('OWNER', 'ADMIN'), validate(createCourtSchema), creat
 router.put('/:id', authorize('OWNER', 'ADMIN'), validate(updateCourtSchema), updateCourt);
 router.delete('/:id', authorize('OWNER', 'ADMIN'), deleteCourt);
 router.post('/:id/slots', authorize('OWNER', 'ADMIN'), validate(createCourtSlotSchema), createCourtSlot);
+router.delete('/:id/slots/:slotId', authorize('OWNER', 'ADMIN'), deleteCourtSlot);
 
 export default router;

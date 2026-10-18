@@ -1,4 +1,7 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { Toaster } from 'sonner';
+import { useTheme } from '@/context/ThemeContext';
 import { Navbar } from '@/components/Navbar';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Home } from '@/pages/Home';
@@ -16,10 +19,14 @@ import { Friends } from '@/pages/Friends';
 import { Teams } from '@/pages/Teams';
 
 export function App() {
+  const { resolvedTheme } = useTheme();
+  const location = useLocation();
   return (
     <div className="app">
       <Navbar />
-      <Routes>
+      <Toaster theme={resolvedTheme} richColors position="top-center" />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/" element={<Home />} />
@@ -90,7 +97,8 @@ export function App() {
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </AnimatePresence>
     </div>
   );
 }

@@ -7,6 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 
 type Court = {
   id: string;
@@ -100,78 +105,77 @@ export function CreateEvent() {
     return (
       <div className="min-h-screen py-8 px-4">
         <div className="max-w-2xl mx-auto text-center py-12">
-          <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">You need a court before you can create events.</p>
-          <Link
-            to="/owner/courts/create"
-            className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700"
-          >
-            List your first court
-          </Link>
+          <Calendar className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">You need a court before you can create events.</p>
+          <Button asChild size="sm">
+            <Link to="/owner/courts/create">List your first court</Link>
+          </Button>
         </div>
       </div>
     );
   }
 
-  const inputClass = 'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none';
-
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Create Event</h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-xl border shadow-sm space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Court</label>
-            <select {...register('courtId')} className={inputClass}>
-              <option value="">Select a court</option>
-              {courts.map((court) => (
-                <option key={court.id} value={court.id}>
-                  {court.name} ({court.city})
-                </option>
-              ))}
-            </select>
-            {errors.courtId && <p className="text-red-500 text-sm">{errors.courtId.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input {...register('title')} placeholder="e.g. Weekend Futsal Tournament" className={inputClass} />
-            {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <select {...register('type')} className={inputClass}>
-              <option value="TOURNAMENT">Tournament</option>
-              <option value="COMPETITION">Competition</option>
-              <option value="DISCOUNT">Discount</option>
-              <option value="PRICE_CHANGE">Price change</option>
-            </select>
-            {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
-            <textarea {...register('description')} rows={3} className={inputClass} />
-            {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-              <input {...register('startDate')} type="datetime-local" className={inputClass} />
-              {errors.startDate && <p className="text-red-500 text-sm">{errors.startDate.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-              <input {...register('endDate')} type="datetime-local" className={inputClass} />
-              {errors.endDate && <p className="text-red-500 text-sm">{errors.endDate.message}</p>}
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-orange-600 text-white rounded-md font-medium disabled:opacity-50 hover:bg-orange-700"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : ''} Publish Event
-          </button>
-        </form>
+        <h1 className="text-2xl font-bold text-foreground mb-6">Create Event</h1>
+        <Card>
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div>
+                <Label className="mb-1 block">Court</Label>
+                <select {...register('courtId')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <option value="">Select a court</option>
+                  {courts.map((court) => (
+                    <option key={court.id} value={court.id}>
+                      {court.name} ({court.city})
+                    </option>
+                  ))}
+                </select>
+                {errors.courtId && <p className="text-destructive text-sm">{errors.courtId.message}</p>}
+              </div>
+              <div>
+                <Label className="mb-1 block">Title</Label>
+                <Input {...register('title')} placeholder="e.g. Weekend Futsal Tournament" />
+                {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
+              </div>
+              <div>
+                <Label className="mb-1 block">Type</Label>
+                <select {...register('type')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <option value="TOURNAMENT">Tournament</option>
+                  <option value="COMPETITION">Competition</option>
+                  <option value="DISCOUNT">Discount</option>
+                  <option value="PRICE_CHANGE">Price change</option>
+                </select>
+                {errors.type && <p className="text-destructive text-sm">{errors.type.message}</p>}
+              </div>
+              <div>
+                <Label className="mb-1 block">Description (optional)</Label>
+                <Textarea {...register('description')} rows={3} />
+                {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-1 block">Start Date &amp; Time</Label>
+                  <Input {...register('startDate')} type="datetime-local" />
+                  {errors.startDate && <p className="text-destructive text-sm">{errors.startDate.message}</p>}
+                </div>
+                <div>
+                  <Label className="mb-1 block">End Date &amp; Time</Label>
+                  <Input {...register('endDate')} type="datetime-local" />
+                  {errors.endDate && <p className="text-destructive text-sm">{errors.endDate.message}</p>}
+                </div>
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : ''} Publish Event
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

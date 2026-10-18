@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, User } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import { Loader2, Sun, Moon, Monitor, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar } from '@/components/ui/avatar';
 
 const schema = z.object({
   fullName: z.string().optional(),
@@ -13,12 +20,18 @@ const schema = z.object({
   position: z.string().optional(),
   skillLevel: z.string().optional(),
   bio: z.string().optional(),
+  avatarUrl: z
+    .string()
+    .url('Must be a valid URL')
+    .or(z.literal(''))
+    .optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export function MyProfile() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +61,8 @@ export function MyProfile() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await api.put('/players/me', data);
+      // empty string clears the avatar (API expects null or a valid URL)
+      await api.put('/players/me', { ...data, avatarUrl: data.avatarUrl || null });
       toast.success('Profile updated');
       fetchProfile();
     } catch (err: any) {
@@ -60,51 +74,100 @@ export function MyProfile() {
 
   return (
     <div className="min-h-screen py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
-          <div className="flex items-center gap-4 mb-6">
-            <User className="h-10 w-10 text-orange-600 bg-orange-100 rounded-full p-1" />
-            <div>
-              <h2 className="font-bold text-lg">{profile?.user?.email || '—'}</h2>
-              <p className="text-sm text-gray-500">{user?.role}</p>
-            </div>
-          </div>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input {...register('fullName')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-                {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName.message}</p>}
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="relative">
+                <Avatar
+                  src={profile?.avatarUrl}
+                  name={profile?.fullName || profile?.user?.email}
+                  size="lg"
+                />
+                <span className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1 text-primary-foreground">
+                  <Camera className="h-3 w-3" />
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input {...register('phone')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-                {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
+                <h2 className="font-bold text-lg">{profile?.user?.email || '—'}</h2>
+                <p className="text-sm text-muted-foreground">{user?.role}</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                <input {...register('position')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-                {errors.position && <p className="text-red-500 text-sm">{errors.position.message}</p>}
+                <Label htmlFor="avatarUrl" className="mb-1 block">Avatar URL</Label>
+                <Input
+                  id="avatarUrl"
+                  placeholder="https://… (leave empty to use initials)"
+                  {...register('avatarUrl')}
+                />
+                {errors.avatarUrl && <p className="text-destructive text-sm">{errors.avatarUrl.message}</p>}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fullName" className="mb-1 block">Full Name</Label>
+                  <Input id="fullName" {...register('fullName')} />
+                  {errors.fullName && <p className="text-destructive text-sm">{errors.fullName.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="phone" className="mb-1 block">Phone</Label>
+                  <Input id="phone" {...register('phone')} />
+                  {errors.phone && <p className="text-destructive text-sm">{errors.phone.message}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="position" className="mb-1 block">Position</Label>
+                  <Input id="position" {...register('position')} />
+                  {errors.position && <p className="text-destructive text-sm">{errors.position.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="skillLevel" className="mb-1 block">Skill Level</Label>
+                  <Input id="skillLevel" {...register('skillLevel')} />
+                  {errors.skillLevel && <p className="text-destructive text-sm">{errors.skillLevel.message}</p>}
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Skill Level</label>
-                <input {...register('skillLevel')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-                {errors.skillLevel && <p className="text-red-500 text-sm">{errors.skillLevel.message}</p>}
+                <Label htmlFor="bio" className="mb-1 block">Bio</Label>
+                <Textarea id="bio" {...register('bio')} rows={3} />
+                {errors.bio && <p className="text-destructive text-sm">{errors.bio.message}</p>}
               </div>
+              <Button type="submit" className="w-full">
+                Save Changes
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Appearance</CardTitle>
+            <CardDescription>Choose how FootballMatch looks. Saved on this device.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { value: 'light', label: 'Light', Icon: Sun },
+                  { value: 'dark', label: 'Dark', Icon: Moon },
+                  { value: 'system', label: 'System', Icon: Monitor },
+                ] as const
+              ).map(({ value, label, Icon }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={theme === value ? 'default' : 'outline'}
+                  onClick={() => setTheme(value)}
+                  className="flex-col h-auto py-3"
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </Button>
+              ))}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-              <textarea {...register('bio')} rows={3} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-              {errors.bio && <p className="text-red-500 text-sm">{errors.bio.message}</p>}
-            </div>
-            <button type="submit" className="w-full py-3 bg-orange-600 text-white rounded-md font-medium hover:bg-orange-700">
-              Save Changes
-            </button>
-          </form>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

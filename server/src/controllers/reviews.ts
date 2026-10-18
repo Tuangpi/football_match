@@ -63,3 +63,72 @@ export const createReview = async (
     next(err);
   }
 };
+
+const updateReviewSchema = z.object({
+  rating: z.number().min(1).max(5).optional(),
+  comment: z.string().nullable().optional(),
+});
+
+export const updateReview = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    const { id } = req.params;
+    const data = updateReviewSchema.parse(req.body);
+
+    if (data.rating === undefined && data.comment === undefined) {
+      return next(new AppError('Provide rating and/or comment to update', 400));
+    }
+
+    const review = await prisma.review.findUnique({ where: { id } });
+    if (!review) {
+      return next(new AppError('Review not found', 404));
+    }
+    if (review.userId !== req.user.id) {
+      return next(new AppError('Not authorized to update this review', 403));
+    }
+
+    const updated = await prisma.review.update({
+      where: { id },
+      data,
+      include: { user: { select: { id: true, email: true } } },
+    });
+
+    res.json({ success: true, review: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteReview = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    const { id } = req.params;
+
+    const review = await prisma.review.findUnique({ where: { id } });
+    if (!review) {
+      return next(new AppError('Review not found', 404));
+    }
+    if (review.userId !== req.user.id && req.user.role !== 'ADMIN') {
+      return next(new AppError('Not authorized to delete this review', 403));
+    }
+
+    await prisma.review.delete({ where: { id } });
+    res.json({ success: true, message: 'Review deleted' });
+  } catch (err) {
+    next(err);
+  }
+};

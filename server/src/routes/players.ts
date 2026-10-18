@@ -24,6 +24,7 @@ router.put('/me', validate(z.object({
   position: z.string().optional(),
   skillLevel: z.string().optional(),
   bio: z.string().optional(),
+  avatarUrl: z.string().url('Must be a valid URL').nullable().optional(),
 })), updateMyProfile);
 
 // User search + friend routes MUST come before /:id,

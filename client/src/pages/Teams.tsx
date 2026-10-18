@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { Loader2, Trophy, UserPlus, LogOut } from 'lucide-react';
+import { Loader2, Trophy, UserPlus, LogOut, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/EmptyState';
 
 type TeamMember = {
   id: string;
@@ -102,6 +108,21 @@ export function Teams() {
     }
   }
 
+  async function removeTeam(teamId: string, name: string) {
+    if (!window.confirm(`Delete "${name}"? Members and history will be removed. This cannot be undone.`))
+      return;
+    setBusyId(teamId);
+    try {
+      await api.delete(`/teams/${teamId}`);
+      toast.success('Team deleted');
+      refresh();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete team');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
 
   if (!user) return <div className="p-8 text-center">Access denied. Login required.</div>;
 
@@ -113,126 +134,154 @@ export function Teams() {
     );
   }
 
-  const inputClass = 'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none text-sm';
-
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Teams</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">Teams</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-              <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-orange-600" /> Create a Team
-              </h3>
-              <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Team name</label>
-                  <input {...register('name')} placeholder="e.g. Sunset Strikers" className={inputClass} />
-                  {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sport</label>
-                  <select {...register('sportType')} className={inputClass}>
-                    <option value="FUTSAL">Futsal (5 vs 5)</option>
-                    <option value="ELEVEN_A_SIDE">11-a-side</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium disabled:opacity-50 hover:bg-orange-700"
-                >
-                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Team'}
-                </button>
-              </form>
-              <p className="text-xs text-gray-500 mt-3">You become the captain and are added as a member automatically.</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border shadow-sm self-start">
-              <h3 className="font-bold text-lg mb-3">Filter</h3>
-              <div className="flex gap-2">
-                {(['ALL', 'FUTSAL', 'ELEVEN_A_SIDE'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                      filter === f ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-primary" /> Create a Team
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
+                  <div>
+                    <Label className="mb-1 block">Team name</Label>
+                    <Input {...register('name')} placeholder="e.g. Sunset Strikers" />
+                    {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
+                  </div>
+                  <div>
+                    <Label className="mb-1 block">Sport</Label>
+                    <select {...register('sportType')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                      <option value="FUTSAL">Futsal (5 vs 5)</option>
+                      <option value="ELEVEN_A_SIDE">11-a-side</option>
+                    </select>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    size="sm"
                   >
-                    {f === 'ALL' ? 'All' : f === 'FUTSAL' ? 'Futsal' : '11-a-side'}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Team'}
+                  </Button>
+                </form>
+                <p className="text-xs text-muted-foreground mt-3">You become the captain and are added as a member automatically.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="self-start">
+              <CardHeader>
+                <CardTitle className="text-lg">Filter</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  {(['ALL', 'FUTSAL', 'ELEVEN_A_SIDE'] as const).map((f) => (
+                    <Button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      variant={filter === f ? 'default' : 'secondary'}
+                      size="sm"
+                    >
+                      {f === 'ALL' ? 'All' : f === 'FUTSAL' ? 'Futsal' : '11-a-side'}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="lg:col-span-2 space-y-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-orange-600" /> All Teams ({teams.length})
+              <Trophy className="h-5 w-5 text-primary" /> All Teams ({teams.length})
             </h3>
             {teams.length === 0 ? (
-              <p className="text-gray-500 text-sm">No teams yet. Create the first one!</p>
+              <EmptyState
+                icon={Trophy}
+                title="No teams yet"
+                description="Create the first one — you'll become its captain."
+              />
             ) : (
               teams.map((t) => {
                 const isMember = t.members.some((m) => m.user.id === user.id);
                 const isCaptain = t.captainId === user.id;
                 return (
-                  <div key={t.id} className="bg-white p-6 rounded-xl border shadow-sm">
-                    <div className="flex justify-between items-start gap-4 flex-wrap">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-bold text-gray-900">{t.name}</p>
-                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-                            {t.sportType === 'ELEVEN_A_SIDE' ? '11-a-side' : 'Futsal'}
-                          </span>
-                          {isMember && (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                              {isCaptain ? 'Captain' : 'Member'}
-                            </span>
-                          )}
+                  <Card key={t.id}>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start gap-4 flex-wrap">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-foreground">{t.name}</p>
+                            <Badge variant="secondary">
+                              {t.sportType === 'ELEVEN_A_SIDE' ? '11-a-side' : 'Futsal'}
+                            </Badge>
+                            {isMember && (
+                              <Badge>
+                                {isCaptain ? 'Captain' : 'Member'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Captain: {t.captain.email} · {t._count?.members ?? t.members.length} member(s)
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Captain: {t.captain.email} · {t._count?.members ?? t.members.length} member(s)
-                        </p>
-                      </div>
-                      {isMember ? (
-                        isCaptain ? (
-                          <span className="text-xs text-gray-400">Captains can't leave</span>
+                        {isMember ? (
+                          isCaptain ? (
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground/70">Captains can&apos;t leave</span>
+                              <Button
+                                onClick={() => removeTeam(t.id, t.name)}
+                                disabled={busyId === t.id}
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                {busyId === t.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}{' '}
+                                Delete
+                              </Button>
+                            </span>
+                          ) : (
+                            <Button
+                              onClick={() => leave(t.id)}
+                              disabled={busyId === t.id}
+                              variant="secondary"
+                              size="sm"
+                            >
+                              {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />} Leave
+                            </Button>
+                          )
                         ) : (
-                          <button
-                            onClick={() => leave(t.id)}
+                          <Button
+                            onClick={() => join(t.id)}
                             disabled={busyId === t.id}
-                            className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium disabled:opacity-50 hover:bg-gray-200 flex items-center gap-1"
+                            size="sm"
                           >
-                            {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />} Leave
-                          </button>
-                        )
-                      ) : (
-                        <button
-                          onClick={() => join(t.id)}
-                          disabled={busyId === t.id}
-                          className="px-3 py-1.5 bg-orange-600 text-white rounded-md text-xs font-medium disabled:opacity-50 hover:bg-orange-700 flex items-center gap-1"
-                        >
-                          {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} Join
-                        </button>
-                      )}
-                    </div>
-                    {t.members.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs text-gray-500 mb-1">Members:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {t.members.map((m) => (
-                            <span key={m.id} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                              {m.user.email}
-                              {m.role === 'CAPTAIN' ? ' (c)' : ''}
-                            </span>
-                          ))}
-                        </div>
+                            {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} Join
+                          </Button>
+                        )}
                       </div>
-                    )}
-                  </div>
+                      {t.members.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border/60">
+                          <p className="text-xs text-muted-foreground mb-1">Members:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {t.members.map((m) => (
+                              <Badge key={m.id} variant="secondary">
+                                {m.user.email}
+                                {m.role === 'CAPTAIN' ? ' (c)' : ''}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 );
               })
             )}

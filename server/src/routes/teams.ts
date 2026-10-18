@@ -5,6 +5,7 @@ import {
   getTeam,
   joinTeam,
   leaveTeam,
+  deleteTeam,
 } from '../controllers/teams';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -24,5 +25,6 @@ router.get('/', getTeams);
 router.get('/:id', getTeam);
 router.post('/:id/join', joinTeam);
 router.delete('/:id/leave', leaveTeam);
+router.delete('/:id', deleteTeam);
 
 export default router;

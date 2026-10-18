@@ -162,3 +162,37 @@ export const leaveTeam = async (
     next(err);
   }
 };
+
+export const deleteTeam = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    const { id } = req.params;
+
+    const team = await prisma.team.findUnique({ where: { id } });
+    if (!team) {
+      return next(new AppError('Team not found', 404));
+    }
+
+    if (team.captainId !== req.user.id && req.user.role !== 'ADMIN') {
+      return next(new AppError('Only the captain can delete this team', 403));
+    }
+
+    // Booking.team is optional with no cascade: detach bookings first,
+    // then delete the team (TeamMember rows cascade with it).
+    await prisma.$transaction([
+      prisma.booking.updateMany({ where: { teamId: id }, data: { teamId: null } }),
+      prisma.team.delete({ where: { id } }),
+    ]);
+
+    res.json({ success: true, message: 'Team deleted' });
+  } catch (err) {
+    next(err);
+  }
+};

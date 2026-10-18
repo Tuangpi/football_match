@@ -241,6 +241,53 @@ export const createCourtSlot = async (
   }
 };
 
+// Delete a slot owned by the caller's court.
+// Booking.courtSlot FK has no cascade, so active bookings block deletion;
+// cancelled bookings are removed with the slot in one transaction.
+export const deleteCourtSlot = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    const { id, slotId } = req.params;
+
+    const court = await prisma.court.findUnique({ where: { id } });
+    if (!court) {
+      return next(new AppError('Court not found', 404));
+    }
+    if (court.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
+      return next(new AppError('Not authorized to delete slots on this court', 403));
+    }
+
+    const slot = await prisma.courtSlot.findUnique({
+      where: { id: slotId },
+      include: { bookings: { select: { id: true, status: true } } },
+    });
+    if (!slot || slot.courtId !== id) {
+      return next(new AppError('Slot not found', 404));
+    }
+
+    const active = slot.bookings.filter((b) => b.status !== 'CANCELLED');
+    if (active.length > 0) {
+      return next(new AppError('Cannot delete a slot with active bookings', 400));
+    }
+
+    await prisma.$transaction([
+      prisma.booking.deleteMany({ where: { courtSlotId: slotId } }),
+      prisma.courtSlot.delete({ where: { id: slotId } }),
+    ]);
+
+    res.json({ success: true, message: 'Slot deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getCourtSlots = async (
   req: Request,
   res: Response,

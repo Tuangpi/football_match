@@ -21,7 +21,7 @@ Notes: `isActive` is only flipped by admin toggles; nothing in auth currently bl
 ### PlayerProfile
 
 `id · userId (unique, FK → User, onDelete: Cascade) · fullName? · phone? · position? · skillLevel? · bio? · avatarUrl?`
-Notes: one row per user max. The `PUT /api/players/me` upsert only accepts fullName/phone/position/skillLevel/bio — `avatarUrl` exists in the DB but has no API write path. Public reads go through `GET /api/players/:id` keyed by **user id**. Deleting the user deletes the profile.
+Notes: one row per user max. The `PUT /api/players/me` upsert accepts fullName/phone/position/skillLevel/bio plus `avatarUrl` (valid URL string or `null` — write path added 2026-10-18; it previously existed in the DB only). Public reads go through `GET /api/players/:id` keyed by **user id**. Deleting the user deletes the profile.
 
 ### Friend
 

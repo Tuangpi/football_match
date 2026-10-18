@@ -3,6 +3,10 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Loader2, Search, UserPlus, Check, X, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/EmptyState';
 
 type UserLite = {
   id: string;
@@ -109,103 +113,118 @@ export function Friends() {
     );
   }
 
-  const inputClass = 'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none text-sm';
-
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Friends</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">Friends</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-              <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-orange-600" /> Add Friends
-              </h3>
-              <form onSubmit={onSearch} className="flex gap-2 mb-4">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by email..."
-                  className={inputClass}
-                />
-                <button
-                  type="submit"
-                  disabled={searching}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium disabled:opacity-50 hover:bg-orange-700 flex items-center gap-2"
-                >
-                  {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  Search
-                </button>
-              </form>
-              {results.map((u) => (
-                <div key={u.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{displayName(u)}</p>
-                    <p className="text-xs text-gray-500">{u.email}</p>
-                  </div>
-                  <button
-                    onClick={() => sendRequest(u.id)}
-                    disabled={busyId === u.id}
-                    className="px-3 py-1.5 bg-orange-600 text-white rounded-md text-xs font-medium disabled:opacity-50 hover:bg-orange-700"
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-primary" /> Add Friends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={onSearch} className="flex gap-2 mb-4">
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search by email..."
+                  />
+                  <Button
+                    type="submit"
+                    disabled={searching}
+                    size="sm"
                   >
-                    {busyId === u.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Add'}
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-              <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                <Users className="h-5 w-5 text-orange-600" /> My Friends ({friends.length})
-              </h3>
-              {friends.length === 0 ? (
-                <p className="text-gray-500 text-sm">No friends yet. Search above to add some!</p>
-              ) : (
-                friends.map((f) => {
-                  const other = f.sender.id === user.id ? f.receiver : f.sender;
-                  return (
-                    <div key={f.id} className="py-2 border-b border-gray-100 last:border-0">
-                      <p className="text-sm font-medium">{displayName(other)}</p>
-                      <p className="text-xs text-gray-500">{other.email}</p>
+                    {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    Search
+                  </Button>
+                </form>
+                {results.map((u) => (
+                  <div key={u.id} className="flex justify-between items-center py-2 border-b border-border/60 last:border-0">
+                    <div>
+                      <p className="text-sm font-medium">{displayName(u)}</p>
+                      <p className="text-xs text-muted-foreground">{u.email}</p>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <Button
+                      onClick={() => sendRequest(u.id)}
+                      disabled={busyId === u.id}
+                      size="sm"
+                    >
+                      {busyId === u.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Add'}
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" /> My Friends ({friends.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {friends.length === 0 ? (
+                  <EmptyState
+                    icon={Users}
+                    title="No friends yet"
+                    description="Search for players by email above to add some!"
+                    className="py-8"
+                  />
+                ) : (
+                  friends.map((f) => {
+                    const other = f.sender.id === user.id ? f.receiver : f.sender;
+                    return (
+                      <div key={f.id} className="py-2 border-b border-border/60 last:border-0">
+                        <p className="text-sm font-medium">{displayName(other)}</p>
+                        <p className="text-xs text-muted-foreground">{other.email}</p>
+                      </div>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border shadow-sm self-start">
-            <h3 className="font-bold text-lg mb-3">Pending Requests ({pending.length})</h3>
-            {pending.length === 0 ? (
-              <p className="text-gray-500 text-sm">No pending requests.</p>
-            ) : (
-              pending.map((r) => (
-                <div key={r.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{displayName(r.sender)}</p>
-                    <p className="text-xs text-gray-500">{r.sender.email}</p>
+          <Card className="self-start">
+            <CardHeader>
+              <CardTitle className="text-lg">Pending Requests ({pending.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pending.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No pending requests.</p>
+              ) : (
+                pending.map((r) => (
+                  <div key={r.id} className="flex justify-between items-center py-2 border-b border-border/60 last:border-0">
+                    <div>
+                      <p className="text-sm font-medium">{displayName(r.sender)}</p>
+                      <p className="text-xs text-muted-foreground">{r.sender.email}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => respond(r.id, true)}
+                        disabled={busyId === r.id}
+                        size="sm"
+                      >
+                        <Check className="h-3.5 w-3.5" /> Accept
+                      </Button>
+                      <Button
+                        onClick={() => respond(r.id, false)}
+                        disabled={busyId === r.id}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        <X className="h-3.5 w-3.5" /> Decline
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => respond(r.id, true)}
-                      disabled={busyId === r.id}
-                      className="px-3 py-1.5 bg-green-600 text-white rounded-md text-xs font-medium disabled:opacity-50 hover:bg-green-700 flex items-center gap-1"
-                    >
-                      <Check className="h-3.5 w-3.5" /> Accept
-                    </button>
-                    <button
-                      onClick={() => respond(r.id, false)}
-                      disabled={busyId === r.id}
-                      className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-xs font-medium disabled:opacity-50 hover:bg-gray-300 flex items-center gap-1"
-                    >
-                      <X className="h-3.5 w-3.5" /> Decline
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

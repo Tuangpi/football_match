@@ -3,7 +3,84 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-gray-50 text-gray-900;
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    /* Emerald primary: light #059669 (emerald-600) */
+    --primary: 160.1 84.1% 39.4%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 151.8 81% 95.9%;
+    --accent-foreground: 160.1 84.1% 30%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 160.1 84.1% 39.4%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    /* Emerald primary: dark #10b981 (emerald-500) */
+    --primary: 160.1 84.1% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 160.1 84.1% 45%;
   }
 }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  /* Gradient heading for heroes / feature highlights */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-emerald-400 to-teal-300 bg-clip-text text-transparent;
+  }
+
+  /* Glassmorphism card (works in light + dark) */
+  .glass {
+    @apply border border-white/40 bg-white/60 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5;
+  }
+
+  /* Soft tinted panel accent */
+  .panel-accent {
+    @apply bg-gradient-to-br from-accent/70 to-primary/10;
+  }
+
+  /* Smoother default elevation for cards */
+  .shadow-soft {
+    @apply shadow-[0_2px_16px_-4px_hsl(160_84%_39%_/_0.10)];
+  }
+}
+

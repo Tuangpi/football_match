@@ -3,7 +3,7 @@
 Base URL: `http://localhost:3000`. All API routes are prefixed with `/api`.
 Frontend calls `/api/*` (Vite dev server proxies `/api` → `http://localhost:3000`).
 
-Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last verified 2026-10-17.
+Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last verified 2026-10-18 (Tier 1 endpoints added: review PATCH/DELETE, slot DELETE, team DELETE, avatarUrl write path — see entries marked “Added 2026-10-18”).
 
 ## Conventions
 
@@ -56,8 +56,7 @@ Own player profile (may be `null` when never saved). → `200 { success:true, pr
 
 ### `PUT /api/players/me` 🔒
 
-Upsert own profile. Body (all optional strings): `{ fullName?, phone?, position?, skillLevel?, bio? }`.
-(Schema has no `avatarUrl` — sending one yields `400 Validation error`.) → `200 { success:true, profile }`.
+Upsert own profile. Body: `{ fullName?, phone?, position?, skillLevel?, bio?, avatarUrl? }` — strings except `avatarUrl`, which must be a valid URL string or `null` (clears it). Added 2026-10-18; before that the schema rejected `avatarUrl`. → `200 { success:true, profile }`.
 
 ### `GET /api/players/search?q=<email-fragment>` 🔒
 
@@ -114,9 +113,14 @@ Success: `200 { success:true, member }` (`role: MEMBER`).
 
 ### `DELETE /api/teams/:id/leave` 🔒
 
-No body. Errors: `404 Team not found`, `400 Captain cannot leave the team. Transfer captaincy first.`
-(There is no transfer/delete endpoint — a captain's team cannot currently be removed.)
+No body. Errors: `404 Team not found`, `400 Captain cannot leave the team. Transfer captaincy first.` (captains should use `DELETE /api/teams/:id` instead).
 Success: `200 { success:true, message:"Left the team" }`.
+
+### `DELETE /api/teams/:id` 🔒
+
+**Added 2026-10-18.** Captain-or-admin only. Deletes the team; `TeamMember` rows cascade, and any bookings referencing the team are **detached** (`teamId` set to `null`) in the same transaction — bookings themselves survive.
+Errors: `404 Team not found`, `403 Only the captain can delete this team`.
+Success: `200 { success:true, message:"Team deleted" }`.
 
 ## Courts (`/api/courts`)
 
@@ -157,9 +161,16 @@ Success: `200 { success:true, message:"Court deleted" }`.
 ### `POST /api/courts/:id/slots` 👑
 
 Body: `{ date: string(datetime, required), startTime: string(required, e.g. "19:00"), endTime: string(required), pricePerHour?: number(positive, defaults to court's basePricePerHour) }`.
-No format/ordering validation on `startTime`/`endTime`, no overlap guard, no slot-delete endpoint.
+No format/ordering validation on `startTime`/`endTime`, no overlap guard.
 Errors: `404 Court not found`, `403 Not authorized to add slots to this court`.
 Success: `201 { success:true, slot }`.
+
+### `DELETE /api/courts/:id/slots/:slotId` 👑
+
+**Added 2026-10-18.** Court-owner-or-admin only. The slot must belong to `:id`.
+Bookings block deletion while active (`PENDING`/`CONFIRMED`); once all bookings on the slot are `CANCELLED`, they are removed with the slot in one transaction (the FK has no cascade).
+Errors: `404 Court not found`, `403 Not authorized to delete slots on this court`, `404 Slot not found` (or slot on another court), `400 Cannot delete a slot with active bookings`.
+Success: `200 { success:true, message:"Slot deleted" }`.
 
 ## Bookings (`/api/bookings`) — all 🔒
 
@@ -221,9 +232,21 @@ All reviews for a court, newest first (reviewer id/email + playerProfile). No co
 
 ### `POST /api/reviews` 🔒
 
-Body: `{ courtId: string, rating: number(1–5), comment? }`. One review per user per court (`@@unique(courtId,userId)`). No update/delete endpoint — duplicates can only be resolved in the DB.
+Body: `{ courtId: string, rating: number(1–5), comment? }`. One review per user per court (`@@unique(courtId,userId)`).
 Errors: `404 Court not found`, `400 You have already reviewed this court`, `400 Validation error` (rating out of range).
 Success: `201 { success:true, review }` (+user id/email).
+
+### `PATCH /api/reviews/:id` 🔒
+
+**Added 2026-10-18.** Author-only update of own review. Body: at least one of `{ rating?: number(1–5), comment?: string|null }` (`null` clears the comment).
+Errors: `404 Review not found`, `403 Not authorized to update this review`, `400 Provide rating and/or comment to update`, `400 Validation error`.
+Success: `200 { success:true, review }` (+user id/email).
+
+### `DELETE /api/reviews/:id` 🔒
+
+**Added 2026-10-18.** Author-or-admin only. Deleting frees the user to post a new review for that court (the `@@unique(courtId,userId)` row is removed).
+Errors: `404 Review not found`, `403 Not authorized to delete this review`.
+Success: `200 { success:true, message:"Review deleted" }`.
 
 ## Admin (`/api/admin`) — all 🛡 ADMIN
 

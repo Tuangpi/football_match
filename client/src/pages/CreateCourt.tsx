@@ -7,6 +7,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -51,51 +55,55 @@ export function CreateCourt() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">List Your Court</h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-xl border shadow-sm space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Court Name</label>
-              <input {...register('name')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sport Type</label>
-              <select {...register('sportType')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none">
-                <option value="FUTSAL">Futsal (5v5)</option>
-                <option value="ELEVEN_A_SIDE">11-a-side</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <input {...register('address')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-            {errors.address && <p className="text-red-500 text-sm">{errors.address.message}</p>}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-              <input {...register('city')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-              {errors.city && <p className="text-red-500 text-sm">{errors.city.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price per Hour ($)</label>
-              <input {...register('basePricePerHour')} type="number" className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-              {errors.basePricePerHour && <p className="text-red-500 text-sm">{errors.basePricePerHour.message}</p>}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions (e.g. 40m x 20m)</label>
-            <input {...register('dimensions')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Surface Type</label>
-            <input {...register('surfaceType')} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none" />
-          </div>
-          <button type="submit" disabled={loading} className="w-full py-3 bg-orange-600 text-white rounded-md font-medium disabled:opacity-50 hover:bg-orange-700">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : ''} Create Court
-          </button>
-        </form>
+        <h1 className="text-2xl font-bold text-foreground mb-6">List Your Court</h1>
+        <Card>
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-1 block">Court Name</Label>
+                  <Input {...register('name')} />
+                  {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <Label className="mb-1 block">Sport Type</Label>
+                  <select {...register('sportType')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <option value="FUTSAL">Futsal (5v5)</option>
+                    <option value="ELEVEN_A_SIDE">11-a-side</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <Label className="mb-1 block">Address</Label>
+                <Input {...register('address')} />
+                {errors.address && <p className="text-destructive text-sm">{errors.address.message}</p>}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-1 block">City</Label>
+                  <Input {...register('city')} />
+                  {errors.city && <p className="text-destructive text-sm">{errors.city.message}</p>}
+                </div>
+                <div>
+                  <Label className="mb-1 block">Price per Hour ($)</Label>
+                  <Input {...register('basePricePerHour')} type="number" />
+                  {errors.basePricePerHour && <p className="text-destructive text-sm">{errors.basePricePerHour.message}</p>}
+                </div>
+              </div>
+              <div>
+                <Label className="mb-1 block">Dimensions (e.g. 40m x 20m)</Label>
+                <Input {...register('dimensions')} />
+              </div>
+              <div>
+                <Label className="mb-1 block">Surface Type</Label>
+                <Input {...register('surfaceType')} />
+              </div>
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : ''} Create Court
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

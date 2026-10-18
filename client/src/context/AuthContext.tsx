@@ -5,6 +5,7 @@ type User = {
   id: string;
   email: string;
   role: string;
+  playerProfile?: { fullName?: string | null; avatarUrl?: string | null } | null;
 };
 
 type AuthContextType = {
