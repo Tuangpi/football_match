@@ -202,20 +202,32 @@ Success: `200 { success:true, booking }`.
 
 ## Events (`/api/events`)
 
-### `GET /api/events?courtId=&type=` 🔓
+### `GET /api/events?courtId=&type=&city=&when=` 🔓
 
-Optional filters `courtId`, `type` (TOURNAMENT|COMPETITION|DISCOUNT|PRICE_CHANGE). Ordered by `startDate` asc, includes court id/name/city. → `200 { success:true, events }`.
+Optional filters:
+- `courtId` — exact court id.
+- `type` — `TOURNAMENT|COMPETITION|DISCOUNT|PRICE_CHANGE`.
+- `city` — case-insensitive substring match on the court city.
+- `when` — `upcoming` (`endDate >= now`, `startDate` asc) or `past` (`endDate < now`, `startDate` desc).
+
+Without `when`, all events are returned ordered by `startDate` asc. Includes court id/name/city. → `200 { success:true, events }`.
+
+### `GET /api/events/:id` 🔓
+
+Public event detail. Includes the court `id`, `name`, `city`, `address`, `sportType`, and `basePricePerHour`.
+Errors: `404 Event not found`.
+Success: `200 { success:true, event }`.
 
 ### `POST /api/events` 👑
 
 Body: `{ courtId: string, title: string(min 1), type: "TOURNAMENT"|"COMPETITION"|"DISCOUNT"|"PRICE_CHANGE", description?, startDate: string(datetime), endDate: string(datetime) }`.
-No `endDate > startDate` check server-side — the UI validates it instead.
+Validation: `endDate` must be after `startDate` (`400` with field `endDate`).
 Errors: `404 Court not found`, `403 Not authorized to create events for this court` (must own the court unless admin).
 Success: `201 { success:true, event }` (+court id/name).
 
 ### `PUT /api/events/:id` 👑
 
-Partial update `{ title?, type?, description?, startDate?, endDate? }` (same datetime caveat as create).
+Partial update `{ title?, type?, description?, startDate?, endDate? }`. When both dates are sent, `endDate` must be after `startDate` (`400`).
 Errors: `404 Event not found`, `403 Not authorized to update this event`.
 Success: `200 { success:true, event }`.
 

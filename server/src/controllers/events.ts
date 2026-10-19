@@ -3,22 +3,35 @@ import { z } from 'zod';
 import { AppError } from '../middleware/error';
 import { prisma } from '../utils/prisma';
 
-const createEventSchema = z.object({
-  courtId: z.string(),
-  title: z.string().min(1),
-  type: z.enum(['TOURNAMENT', 'COMPETITION', 'DISCOUNT', 'PRICE_CHANGE']),
-  description: z.string().optional(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-});
+const createEventSchema = z
+  .object({
+    courtId: z.string(),
+    title: z.string().min(1),
+    type: z.enum(['TOURNAMENT', 'COMPETITION', 'DISCOUNT', 'PRICE_CHANGE']),
+    description: z.string().optional(),
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
+  })
+  .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  });
 
-const updateEventSchema = z.object({
-  title: z.string().min(1).optional(),
-  type: z.enum(['TOURNAMENT', 'COMPETITION', 'DISCOUNT', 'PRICE_CHANGE']).optional(),
-  description: z.string().optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-});
+const updateEventSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    type: z.enum(['TOURNAMENT', 'COMPETITION', 'DISCOUNT', 'PRICE_CHANGE']).optional(),
+    description: z.string().optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+  })
+  .refine(
+    (data) =>
+      !data.startDate ||
+      !data.endDate ||
+      new Date(data.endDate) > new Date(data.startDate),
+    { message: 'endDate must be after startDate', path: ['endDate'] }
+  );
 
 // Public
 export const getEvents = async (
@@ -27,21 +40,65 @@ export const getEvents = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { courtId, type } = req.query;
+    const { courtId, type, city, when } = req.query;
 
     const where: any = {};
     if (courtId) where.courtId = String(courtId);
     if (type) where.type = type;
+    if (city) where.court = { city: { contains: String(city), mode: 'insensitive' } };
+
+    // "Upcoming" keeps events that have not ended yet; "past" is the opposite.
+    let orderBy: { startDate: 'asc' | 'desc' } = { startDate: 'asc' };
+    const now = new Date();
+    if (when === 'upcoming') {
+      where.endDate = { gte: now };
+    } else if (when === 'past') {
+      where.endDate = { lt: now };
+      orderBy = { startDate: 'desc' };
+    }
 
     const events = await prisma.event.findMany({
       where,
       include: {
         court: { select: { id: true, name: true, city: true } },
       },
-      orderBy: { startDate: 'asc' },
+      orderBy,
     });
 
     res.json({ success: true, events });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Public
+export const getEvent = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id: req.params.id },
+      include: {
+        court: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            address: true,
+            sportType: true,
+            basePricePerHour: true,
+          },
+        },
+      },
+    });
+
+    if (!event) {
+      return next(new AppError('Event not found', 404));
+    }
+
+    res.json({ success: true, event });
   } catch (err) {
     next(err);
   }

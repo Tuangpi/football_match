@@ -51,19 +51,22 @@ export function CreateEvent() {
     defaultValues: { type: 'TOURNAMENT' },
   });
 
+  const isAdmin = user?.role === 'ADMIN';
+
   async function fetchCourts() {
     try {
-      const res = await api.get('/courts/owner/me');
+      // Admins can publish for any active court; owners only for their own.
+      const res = await api.get(isAdmin ? '/courts' : '/courts/owner/me');
       setCourts(res.data.courts);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load your courts');
+      toast.error(err.response?.data?.message || 'Failed to load courts');
     } finally {
       setLoadingCourts(false);
     }
   }
 
   useEffect(() => {
-    if (!user || user.role !== 'OWNER') return;
+    if (!user || (user.role !== 'OWNER' && user.role !== 'ADMIN')) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCourts();
   }, [user]);
@@ -89,8 +92,8 @@ export function CreateEvent() {
     }
   };
 
-  if (!user || user.role !== 'OWNER') {
-    return <div className="p-8 text-center">Access denied. Owner role required.</div>;
+  if (!user || (user.role !== 'OWNER' && user.role !== 'ADMIN')) {
+    return <div className="p-8 text-center">Access denied. Owner or admin role required.</div>;
   }
 
   if (loadingCourts) {
@@ -106,10 +109,16 @@ export function CreateEvent() {
       <div className="min-h-screen py-8 px-4">
         <div className="max-w-2xl mx-auto text-center py-12">
           <Calendar className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">You need a court before you can create events.</p>
-          <Button asChild size="sm">
-            <Link to="/owner/courts/create">List your first court</Link>
-          </Button>
+          <p className="text-muted-foreground mb-4">
+            {isAdmin
+              ? 'There are no active courts to publish an event for.'
+              : 'You need a court before you can create events.'}
+          </p>
+          {!isAdmin && (
+            <Button asChild size="sm">
+              <Link to="/owner/courts/create">List your first court</Link>
+            </Button>
+          )}
         </div>
       </div>
     );

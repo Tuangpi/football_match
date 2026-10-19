@@ -77,8 +77,10 @@ export function Navbar() {
 
   const displayName = user?.playerProfile?.fullName || user?.email.split('@')[0] || '';
   const isOwnerArea = location.pathname.startsWith('/owner');
-  // Players reach their bookings from the account popup, so keep it out of the main nav.
-  const showMyBookings = !!user && user.role !== 'PLAYER';
+  // OWNER accounts manage courts; player activity (bookings, teams, friends)
+  // is only available to PLAYER and ADMIN accounts.
+  const isOwner = user?.role === 'OWNER';
+  const showPlayerLinks = !!user && !isOwner;
 
   return (
     <header
@@ -109,14 +111,12 @@ export function Navbar() {
               Events
             </NavLink>
 
-            {user && (
+            {showPlayerLinks && (
               <>
                 <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                {showMyBookings && (
-                  <NavLink to="/bookings" className={navLinkClass}>
-                    My Bookings
-                  </NavLink>
-                )}
+                <NavLink to="/bookings" className={navLinkClass}>
+                  My Bookings
+                </NavLink>
                 <NavLink to="/teams" className={navLinkClass}>
                   Teams
                 </NavLink>
@@ -209,11 +209,13 @@ export function Navbar() {
                       <UserRound className="mr-2 h-4 w-4" /> Profile
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/bookings">
-                      <CalendarCheck className="mr-2 h-4 w-4" /> My bookings
-                    </Link>
-                  </DropdownMenuItem>
+                  {!isOwner && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/bookings">
+                        <CalendarCheck className="mr-2 h-4 w-4" /> My bookings
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {user.role === 'ADMIN' && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin">
@@ -332,17 +334,19 @@ export function Navbar() {
                     My activity
                   </p>
                   <div className="space-y-1">
-                    {showMyBookings && (
-                      <NavLink to="/bookings" className={mobileLinkClass} onClick={closeMenu}>
-                        <Calendar className="h-4 w-4" /> My Bookings
-                      </NavLink>
+                    {showPlayerLinks && (
+                      <>
+                        <NavLink to="/bookings" className={mobileLinkClass} onClick={closeMenu}>
+                          <Calendar className="h-4 w-4" /> My Bookings
+                        </NavLink>
+                        <NavLink to="/teams" className={mobileLinkClass} onClick={closeMenu}>
+                          <Trophy className="h-4 w-4" /> Teams
+                        </NavLink>
+                        <NavLink to="/friends" className={mobileLinkClass} onClick={closeMenu}>
+                          <Users className="h-4 w-4" /> Friends
+                        </NavLink>
+                      </>
                     )}
-                    <NavLink to="/teams" className={mobileLinkClass} onClick={closeMenu}>
-                      <Trophy className="h-4 w-4" /> Teams
-                    </NavLink>
-                    <NavLink to="/friends" className={mobileLinkClass} onClick={closeMenu}>
-                      <Users className="h-4 w-4" /> Friends
-                    </NavLink>
                     <NavLink to="/profile" className={mobileLinkClass} onClick={closeMenu}>
                       <UserRound className="h-4 w-4" /> Profile
                     </NavLink>

@@ -11,33 +11,12 @@ import {
   UsersRound,
   ShieldCheck,
   ArrowRight,
-  Calendar,
-  Trophy,
-  Percent,
-  Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { CourtCard, type CourtSummary } from '@/components/CourtCard';
-
-type HomeEvent = {
-  id: string;
-  title: string;
-  type: string;
-  description: string | null;
-  startDate: string;
-  endDate: string;
-  court: { id: string; name: string; city: string };
-};
-
-const eventIcon: Record<string, typeof Trophy> = {
-  TOURNAMENT: Trophy,
-  COMPETITION: Calendar,
-  DISCOUNT: Percent,
-  PRICE_CHANGE: Building2,
-};
+import { EventCard, type EventSummary } from '@/components/EventCard';
 
 const STEPS = [
   {
@@ -84,7 +63,7 @@ export function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [courts, setCourts] = useState<CourtSummary[]>([]);
-  const [events, setEvents] = useState<HomeEvent[]>([]);
+  const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
   const [sport, setSport] = useState('');
@@ -119,14 +98,9 @@ export function Home() {
   useEffect(() => {
     async function fetchUpcomingEvents() {
       try {
-        const res = await api.get('/events');
-        const all: HomeEvent[] = res.data.events ?? [];
-        const now = new Date();
-        const upcoming = all
-          .filter((e) => new Date(e.endDate ?? e.startDate) >= now)
-          .sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
-          .slice(0, 3);
-        setEvents(upcoming);
+        const res = await api.get('/events?when=upcoming');
+        const upcoming: EventSummary[] = res.data.events ?? [];
+        setEvents(upcoming.slice(0, 3));
       } catch {
         // Non-blocking: courts are the main content; events strip just hides.
       }
@@ -251,40 +225,12 @@ export function Home() {
               </Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {events.map((e, i) => {
-              const Icon = eventIcon[e.type] || Calendar;
-              return (
-                <FadeIn key={e.id} delay={i * 0.07}>
-                  <Link to="/events" className="group block h-full">
-                    <Card className="h-full transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
-                      <CardContent className="p-5">
-                        <div className="mb-3 flex items-center gap-3">
-                          <div className="rounded-lg bg-accent p-2 text-accent-foreground">
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          <Badge variant="secondary">{e.type}</Badge>
-                        </div>
-                        <h3 className="font-bold">{e.title}</h3>
-                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                          {e.description || 'No description'}
-                        </p>
-                        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>{new Date(e.startDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Building2 className="h-3 w-3" />
-                          <span>
-                            {e.court.name}, {e.court.city}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </FadeIn>
-              );
-            })}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {events.map((e, i) => (
+              <FadeIn key={e.id} delay={i * 0.07}>
+                <EventCard event={e} />
+              </FadeIn>
+            ))}
           </div>
         </div>
       )}

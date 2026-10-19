@@ -1,0 +1,200 @@
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  api,
+  registerUser,
+  cleanupTestData,
+  startServer,
+  stopServer,
+  type TestUser,
+} from './helpers';
+
+let owner: TestUser;
+let otherOwner: TestUser;
+let player: TestUser;
+let courtId: string;
+let otherCourtId: string;
+let upcomingId: string;
+let pastId: string;
+
+const hoursFromNow = (hours: number) =>
+  new Date(Date.now() + hours * 3_600_000).toISOString();
+
+async function createCourt(cookie: string | null, name: string, city: string) {
+  const res = await api('POST', '/api/courts', {
+    cookie,
+    body: { name, address: `1 ${name} St`, city, basePricePerHour: 40 },
+  });
+  assert.equal(res.status, 201);
+  return res.body.court.id as string;
+}
+
+async function createEvent(cookie: string | null, body: Record<string, unknown>) {
+  return api('POST', '/api/events', { cookie, body });
+}
+
+before(async () => {
+  await startServer();
+  owner = await registerUser('OWNER', 'ev-owner');
+  otherOwner = await registerUser('OWNER', 'ev-other-owner');
+  player = await registerUser('PLAYER', 'ev-player');
+
+  courtId = await createCourt(owner.cookie, 'Event Arena', 'Eventville');
+  otherCourtId = await createCourt(otherOwner.cookie, 'Other Arena', 'Elsewhere');
+
+  const upcoming = await createEvent(owner.cookie, {
+    courtId,
+    title: 'Weekend Cup',
+    type: 'TOURNAMENT',
+    description: 'A weekend tournament',
+    startDate: hoursFromNow(48),
+    endDate: hoursFromNow(52),
+  });
+  assert.equal(upcoming.status, 201);
+  upcomingId = upcoming.body.event.id;
+
+  const past = await createEvent(owner.cookie, {
+    courtId,
+    title: 'Past Promo',
+    type: 'DISCOUNT',
+    startDate: hoursFromNow(-240),
+    endDate: hoursFromNow(-236),
+  });
+  assert.equal(past.status, 201);
+  pastId = past.body.event.id;
+
+  const other = await createEvent(otherOwner.cookie, {
+    courtId: otherCourtId,
+    title: 'Elsewhere League',
+    type: 'COMPETITION',
+    startDate: hoursFromNow(72),
+    endDate: hoursFromNow(76),
+  });
+  assert.equal(other.status, 201);
+});
+
+after(async () => {
+  await cleanupTestData();
+  await stopServer();
+});
+
+test('events list: public, includes court, ordered by startDate', async () => {
+  const res = await api('GET', '/api/events');
+  assert.equal(res.status, 200);
+  assert.ok(Array.isArray(res.body.events));
+
+  const titles = res.body.events.map((e: any) => e.title);
+  assert.ok(titles.includes('Weekend Cup'));
+  assert.ok(titles.includes('Past Promo'));
+
+  const mine = res.body.events.filter((e: any) =>
+    ['Weekend Cup', 'Past Promo', 'Elsewhere League'].includes(e.title)
+  );
+  assert.equal(mine.length, 3);
+  for (let i = 1; i < mine.length; i++) {
+    assert.ok(
+      +new Date(mine[i - 1].startDate) <= +new Date(mine[i].startDate),
+      'expected ascending startDate order'
+    );
+  }
+  const cup = mine.find((e: any) => e.title === 'Weekend Cup');
+  assert.deepEqual(cup.court, { id: courtId, name: 'Event Arena', city: 'Eventville' });
+});
+
+test('events list: type, city and when filters', async () => {
+  const byType = await api('GET', '/api/events?type=TOURNAMENT');
+  assert.equal(byType.status, 200);
+  assert.ok(byType.body.events.length >= 1);
+  assert.ok(byType.body.events.every((e: any) => e.type === 'TOURNAMENT'));
+
+  const byCity = await api('GET', '/api/events?city=eventVILLE');
+  assert.equal(byCity.status, 200);
+  assert.ok(byCity.body.events.length >= 2);
+  assert.ok(byCity.body.events.every((e: any) => e.court.city === 'Eventville'));
+
+  // Scope by city so unrelated seed events cannot affect these assertions.
+  const upcoming = await api('GET', '/api/events?when=upcoming&city=Eventville');
+  assert.equal(upcoming.status, 200);
+  const upcomingTitles = upcoming.body.events.map((e: any) => e.title);
+  assert.ok(upcomingTitles.includes('Weekend Cup'));
+  assert.ok(!upcomingTitles.includes('Past Promo'));
+
+  const past = await api('GET', '/api/events?when=past&city=Eventville');
+  assert.equal(past.status, 200);
+  const pastTitles = past.body.events.map((e: any) => e.title);
+  assert.ok(pastTitles.includes('Past Promo'));
+  assert.ok(!pastTitles.includes('Weekend Cup'));
+  assert.equal(past.body.events[0].title, 'Past Promo', 'past is newest first');
+});
+
+test('event detail: 200 with court info, 404 when missing', async () => {
+  const res = await api('GET', `/api/events/${upcomingId}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.event.title, 'Weekend Cup');
+  assert.equal(res.body.event.court.address, '1 Event Arena St');
+  assert.equal(res.body.event.court.sportType, 'FUTSAL');
+  assert.equal(res.body.event.court.basePricePerHour, 40);
+
+  const missing = await api('GET', '/api/events/does-not-exist');
+  assert.equal(missing.status, 404);
+  assert.equal(missing.body.message, 'Event not found');
+});
+
+test('create event: rejects endDate before startDate', async () => {
+  const res = await createEvent(owner.cookie, {
+    courtId,
+    title: 'Bad range',
+    type: 'TOURNAMENT',
+    startDate: hoursFromNow(10),
+    endDate: hoursFromNow(5),
+  });
+  assert.equal(res.status, 400);
+  assert.equal(res.body.message, 'Validation error');
+  assert.equal(res.body.errors[0].field, 'endDate');
+});
+
+test('update event: owner can edit, player and other owner are forbidden', async () => {
+  const asPlayer = await api('PUT', `/api/events/${upcomingId}`, {
+    cookie: player.cookie,
+    body: { title: 'Hijacked' },
+  });
+  assert.equal(asPlayer.status, 403);
+
+  const asOtherOwner = await api('PUT', `/api/events/${upcomingId}`, {
+    cookie: otherOwner.cookie,
+    body: { title: 'Hijacked' },
+  });
+  assert.equal(asOtherOwner.status, 403);
+
+  const badRange = await api('PUT', `/api/events/${upcomingId}`, {
+    cookie: owner.cookie,
+    body: { startDate: hoursFromNow(10), endDate: hoursFromNow(5) },
+  });
+  assert.equal(badRange.status, 400);
+
+  const ok = await api('PUT', `/api/events/${upcomingId}`, {
+    cookie: owner.cookie,
+    body: { title: 'Weekend Cup (updated)' },
+  });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.event.title, 'Weekend Cup (updated)');
+});
+
+test('delete event: 401 anonymous, 403 others, owner deletes', async () => {
+  const anon = await api('DELETE', `/api/events/${pastId}`);
+  assert.equal(anon.status, 401);
+
+  const asPlayer = await api('DELETE', `/api/events/${pastId}`, { cookie: player.cookie });
+  assert.equal(asPlayer.status, 403);
+
+  const asOtherOwner = await api('DELETE', `/api/events/${pastId}`, {
+    cookie: otherOwner.cookie,
+  });
+  assert.equal(asOtherOwner.status, 403);
+
+  const ok = await api('DELETE', `/api/events/${pastId}`, { cookie: owner.cookie });
+  assert.equal(ok.status, 200);
+
+  const gone = await api('GET', `/api/events/${pastId}`);
+  assert.equal(gone.status, 404);
+});

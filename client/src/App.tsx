@@ -17,6 +17,7 @@ import { CreateCourt } from '@/pages/CreateCourt';
 import { OwnerCourts } from '@/pages/OwnerCourts';
 import { OwnerBookings } from '@/pages/OwnerBookings';
 import { Events } from '@/pages/Events';
+import { EventDetail } from '@/pages/EventDetail';
 import { CreateEvent } from '@/pages/CreateEvent';
 import { Friends } from '@/pages/Friends';
 import { Teams } from '@/pages/Teams';
@@ -34,7 +35,9 @@ export function App() {
   const isAuthRoute = pathname === '/login' || pathname === '/register';
   const showFooter =
     !isAuthRoute &&
-    (PUBLIC_FOOTER_PATHS.includes(pathname) || pathname.startsWith('/courts/'));
+    (PUBLIC_FOOTER_PATHS.includes(pathname) ||
+      pathname.startsWith('/courts/') ||
+      pathname.startsWith('/events/'));
 
   return (
     <div className="app">
@@ -55,10 +58,11 @@ export function App() {
         <Route path="/courts" element={<Courts />} />
         <Route path="/courts/:id" element={<CourtDetail />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/events/:id" element={<EventDetail />} />
         <Route
           path="/bookings"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['PLAYER', 'ADMIN']}>
               <MyBookings />
             </ProtectedRoute>
           }
@@ -74,7 +78,7 @@ export function App() {
         <Route
           path="/friends"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['PLAYER', 'ADMIN']}>
               <Friends />
             </ProtectedRoute>
           }
@@ -82,7 +86,7 @@ export function App() {
         <Route
           path="/teams"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['PLAYER', 'ADMIN']}>
               <Teams />
             </ProtectedRoute>
           }

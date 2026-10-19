@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { defaultRouteForRole } from '@/lib/utils';
 
 export function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, loading } = useAuth();
@@ -9,8 +10,7 @@ export function ProtectedRoute({ children, roles }: { children: React.ReactNode;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
   if (roles && !roles.includes(user.role)) {
-    const fallback = user.role === 'OWNER' ? '/owner/courts' : '/';
-    return <Navigate to={fallback} replace />;
+    return <Navigate to={defaultRouteForRole(user.role)} replace />;
   }
 
   return <>{children}</>;
