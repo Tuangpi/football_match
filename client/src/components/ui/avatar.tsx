@@ -1,3 +1,4 @@
+import { t } from '../../lib/language';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +41,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         {showImage ? (
           <img
             src={src}
-            alt={alt || name || 'Avatar'}
+            alt={alt || name || t("Avatar")}
             className="h-full w-full object-cover"
             onError={() => setErrored(true)}
           />

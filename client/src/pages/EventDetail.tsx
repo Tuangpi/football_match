@@ -1,3 +1,5 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '@/lib/api';
@@ -39,6 +41,7 @@ type EventDetailData = {
 };
 
 export function EventDetail() {
+  useLanguage();
   const { id } = useParams();
   const [event, setEvent] = useState<EventDetailData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,7 @@ export function EventDetail() {
       if (err.response?.status === 404) {
         setNotFound(true);
       } else {
-        toast.error(err.response?.data?.message || 'Failed to load event');
+        toast.error(t(err.response?.data?.message || t("Failed to load event")));
         setNotFound(true);
       }
     } finally {
@@ -85,11 +88,11 @@ export function EventDetail() {
       <div className="mx-auto max-w-5xl px-4 py-16">
         <EmptyState
           icon={CalendarX}
-          title="Event not found"
-          description="This event may have been removed, or the link is incorrect."
+          title={t("Event not found")}
+          description={t("This event may have been removed, or the link is incorrect.")}
           action={
             <Button variant="outline" asChild>
-              <Link to="/events">Back to all events</Link>
+              <Link to="/events">{t("Back to all events")}</Link>
             </Button>
           }
         />
@@ -102,7 +105,7 @@ export function EventDetail() {
   const status = eventStatus(event.startDate, event.endDate);
   const duration = eventDurationHours(event.startDate, event.endDate);
   const durationLabel = Number.isInteger(duration) ? `${duration}` : duration.toFixed(1);
-  const sportLabel = event.court.sportType === 'ELEVEN_A_SIDE' ? '11-a-side' : 'Futsal';
+  const sportLabel = event.court.sportType === 'ELEVEN_A_SIDE' ? t("11-a-side") : t("Futsal");
 
   return (
     <div className="min-h-screen">
@@ -122,14 +125,13 @@ export function EventDetail() {
               to="/events"
               className="inline-flex items-center gap-1 text-sm text-white/80 transition-colors hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" /> All events
-            </Link>
+              <ArrowLeft className="h-4 w-4" /> {t("All events")} </Link>
           </FadeIn>
           <FadeIn delay={0.05}>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
                 <Icon className="h-3.5 w-3.5" aria-hidden />
-                {meta.label}
+                {t(meta.label)}
               </span>
               <span
                 className={cn(
@@ -137,7 +139,7 @@ export function EventDetail() {
                   EVENT_STATUS_CLASSES[status.tone]
                 )}
               >
-                {status.label}
+                {t(status.label)}
               </span>
             </div>
           </FadeIn>
@@ -167,11 +169,11 @@ export function EventDetail() {
           <div className="space-y-6 lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>About this event</CardTitle>
+                <CardTitle>{t("About this event")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                  {event.description || 'No description provided.'}
+                  {event.description || t("No description provided.")}
                 </p>
               </CardContent>
             </Card>
@@ -179,9 +181,7 @@ export function EventDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Schedule
-                </CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" /> {t("Schedule")} </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-3">
@@ -189,9 +189,9 @@ export function EventDetail() {
                     <Calendar className="h-4 w-4" aria-hidden />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Starts</p>
+                    <p className="text-sm font-medium">{t("Starts")}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatEventDate(event.startDate)} at {formatEventTime(event.startDate)}
+                      {formatEventDate(event.startDate)} {t("at")} {formatEventTime(event.startDate)}
                     </p>
                   </div>
                 </div>
@@ -200,16 +200,15 @@ export function EventDetail() {
                     <Clock className="h-4 w-4" aria-hidden />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Ends</p>
+                    <p className="text-sm font-medium">{t("Ends")}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatEventDate(event.endDate)} at {formatEventTime(event.endDate)}
+                      {formatEventDate(event.endDate)} {t("at")} {formatEventTime(event.endDate)}
                     </p>
                   </div>
                 </div>
-                <div className="border-t border-border pt-4 text-sm text-muted-foreground">
-                  Runs for{' '}
+                <div className="border-t border-border pt-4 text-sm text-muted-foreground"> {t("Runs for")}{' '}
                   <span className="font-medium text-foreground">
-                    {durationLabel} hour{duration === 1 ? '' : 's'}
+                    {durationLabel} {t("hour")}{duration === 1 ? '' : 's'}
                   </span>
                 </div>
               </CardContent>
@@ -219,7 +218,7 @@ export function EventDetail() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Venue</CardTitle>
+                <CardTitle>{t("Venue")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div>
@@ -230,12 +229,10 @@ export function EventDetail() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{sportLabel}</Badge>
                   <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Tag className="h-3.5 w-3.5" aria-hidden /> {formatPrice(event.court.basePricePerHour)}/hr
-                  </span>
+                    <Tag className="h-3.5 w-3.5" aria-hidden /> {formatPrice(event.court.basePricePerHour)}{t("/hr")} </span>
                 </div>
                 <Button asChild className="w-full">
-                  <Link to={`/courts/${event.court.id}`}>
-                    View court &amp; book <ArrowRight className="h-4 w-4" />
+                  <Link to={`/courts/${event.court.id}`}> {t("View court & book")} <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </CardContent>
@@ -243,11 +240,8 @@ export function EventDetail() {
 
             <Card>
               <CardContent className="space-y-2 p-5 text-sm text-muted-foreground">
-                <p className="font-semibold text-foreground">Hosted by the court</p>
-                <p>
-                  Event details are published by the court owner. Contact the venue for late
-                  changes or extra information.
-                </p>
+                <p className="font-semibold text-foreground">{t("Hosted by the court")}</p>
+                <p> {t("Event details are published by the court owner. Contact the venue for late changes or extra information.")} </p>
               </CardContent>
             </Card>
           </div>
@@ -256,8 +250,7 @@ export function EventDetail() {
         <div className="mt-10">
           <Button variant="outline" asChild>
             <Link to="/events">
-              <ArrowLeft className="h-4 w-4" /> Back to all events
-            </Link>
+              <ArrowLeft className="h-4 w-4" /> {t("Back to all events")} </Link>
           </Button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -30,6 +32,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function MyProfile() {
+  useLanguage();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<any>(null);
@@ -48,7 +51,7 @@ export function MyProfile() {
       setProfile(res.data.profile);
       reset(res.data.profile);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load profile');
+      toast.error(t(err.response?.data?.message || t("Failed to load profile")));
     } finally {
       setLoading(false);
     }
@@ -63,10 +66,10 @@ export function MyProfile() {
     try {
       // empty string clears the avatar (API expects null or a valid URL)
       await api.put('/players/me', { ...data, avatarUrl: data.avatarUrl || null });
-      toast.success('Profile updated');
+      toast.success(t("Profile updated"));
       fetchProfile();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Update failed');
+      toast.error(t(err.response?.data?.message || t("Update failed")));
     }
   };
 
@@ -75,7 +78,7 @@ export function MyProfile() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("My Profile")}</h1>
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-6">
@@ -91,59 +94,57 @@ export function MyProfile() {
               </div>
               <div>
                 <h2 className="font-bold text-lg">{profile?.user?.email || '—'}</h2>
-                <p className="text-sm text-muted-foreground">{user?.role}</p>
+                <p className="text-sm text-muted-foreground">{t(user?.role)}</p>
               </div>
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="avatarUrl" className="mb-1 block">Avatar URL</Label>
+                <Label htmlFor="avatarUrl" className="mb-1 block">{t("Avatar URL")}</Label>
                 <Input
                   id="avatarUrl"
-                  placeholder="https://… (leave empty to use initials)"
+                  placeholder={t("https://… (leave empty to use initials)")}
                   {...register('avatarUrl')}
                 />
-                {errors.avatarUrl && <p className="text-destructive text-sm">{errors.avatarUrl.message}</p>}
+                {errors.avatarUrl && <p className="text-destructive text-sm">{t(errors.avatarUrl.message)}</p>}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="fullName" className="mb-1 block">Full Name</Label>
+                  <Label htmlFor="fullName" className="mb-1 block">{t("Full Name")}</Label>
                   <Input id="fullName" {...register('fullName')} />
-                  {errors.fullName && <p className="text-destructive text-sm">{errors.fullName.message}</p>}
+                  {errors.fullName && <p className="text-destructive text-sm">{t(errors.fullName.message)}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="phone" className="mb-1 block">Phone</Label>
+                  <Label htmlFor="phone" className="mb-1 block">{t("Phone")}</Label>
                   <Input id="phone" {...register('phone')} />
-                  {errors.phone && <p className="text-destructive text-sm">{errors.phone.message}</p>}
+                  {errors.phone && <p className="text-destructive text-sm">{t(errors.phone.message)}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="position" className="mb-1 block">Position</Label>
+                  <Label htmlFor="position" className="mb-1 block">{t("Position")}</Label>
                   <Input id="position" {...register('position')} />
-                  {errors.position && <p className="text-destructive text-sm">{errors.position.message}</p>}
+                  {errors.position && <p className="text-destructive text-sm">{t(errors.position.message)}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="skillLevel" className="mb-1 block">Skill Level</Label>
+                  <Label htmlFor="skillLevel" className="mb-1 block">{t("Skill Level")}</Label>
                   <Input id="skillLevel" {...register('skillLevel')} />
-                  {errors.skillLevel && <p className="text-destructive text-sm">{errors.skillLevel.message}</p>}
+                  {errors.skillLevel && <p className="text-destructive text-sm">{t(errors.skillLevel.message)}</p>}
                 </div>
               </div>
               <div>
-                <Label htmlFor="bio" className="mb-1 block">Bio</Label>
+                <Label htmlFor="bio" className="mb-1 block">{t("Bio")}</Label>
                 <Textarea id="bio" {...register('bio')} rows={3} />
-                {errors.bio && <p className="text-destructive text-sm">{errors.bio.message}</p>}
+                {errors.bio && <p className="text-destructive text-sm">{t(errors.bio.message)}</p>}
               </div>
-              <Button type="submit" className="w-full">
-                Save Changes
-              </Button>
+              <Button type="submit" className="w-full"> {t("Save Changes")} </Button>
             </form>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Appearance</CardTitle>
-            <CardDescription>Choose how FootballMatch looks. Saved on this device.</CardDescription>
+            <CardTitle className="text-lg">{t("Appearance")}</CardTitle>
+            <CardDescription>{t("Choose how FootballMatch looks. Saved on this device.")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-2">
@@ -162,7 +163,7 @@ export function MyProfile() {
                   className="flex-col h-auto py-3"
                 >
                   <Icon className="h-5 w-5" />
-                  {label}
+                  {t(label)}
                 </Button>
               ))}
             </div>

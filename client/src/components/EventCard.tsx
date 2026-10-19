@@ -1,3 +1,6 @@
+import { getLocale } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -69,7 +72,7 @@ export function getEventMeta(type: string): EventMeta {
 }
 
 export function formatEventDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
+  return new Date(value).toLocaleDateString(getLocale(), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -78,7 +81,7 @@ export function formatEventDate(value: string): string {
 }
 
 export function formatEventTime(value: string): string {
-  return new Date(value).toLocaleTimeString(undefined, {
+  return new Date(value).toLocaleTimeString(getLocale(), {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -120,6 +123,7 @@ export const EVENT_STATUS_CLASSES: Record<EventStatus['tone'], string> = {
 
 /** Public event card used on the home page and the events list. */
 export function EventCard({ event }: { event: EventSummary }) {
+  useLanguage();
   const meta = getEventMeta(event.type);
   const Icon = meta.icon;
   const status = eventStatus(event.startDate, event.endDate);
@@ -138,7 +142,7 @@ export function EventCard({ event }: { event: EventSummary }) {
                 <Icon className="h-4 w-4" aria-hidden />
               </span>
               <span className="text-xs font-semibold uppercase tracking-wide text-white/90">
-                {meta.label}
+                {t(meta.label)}
               </span>
             </div>
             <span
@@ -151,7 +155,7 @@ export function EventCard({ event }: { event: EventSummary }) {
                     : 'bg-black/30 text-white'
               )}
             >
-              {status.label}
+              {t(status.label)}
             </span>
           </div>
           <h3 className="absolute inset-x-4 bottom-3 line-clamp-2 text-lg font-bold leading-tight drop-shadow">
@@ -160,7 +164,7 @@ export function EventCard({ event }: { event: EventSummary }) {
         </div>
         <CardContent className="p-5">
           <p className="mb-3 line-clamp-2 min-h-[2.5rem] text-sm text-muted-foreground">
-            {event.description || 'No description provided.'}
+            {event.description || t("No description provided.")}
           </p>
           <div className="flex items-start gap-2 text-sm text-muted-foreground">
             <Calendar className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -173,10 +177,8 @@ export function EventCard({ event }: { event: EventSummary }) {
             </span>
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
-            <Badge variant="secondary">{meta.label}</Badge>
-            <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              View details
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            <Badge variant="secondary">{t(meta.label)}</Badge>
+            <span className="inline-flex items-center gap-1 font-medium text-foreground"> {t("View details")} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </div>
         </CardContent>

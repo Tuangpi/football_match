@@ -1,3 +1,5 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Star, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +24,7 @@ export function averageRating(court: CourtSummary): number | null {
 
 /** Public court card used on the home page and the courts list. */
 export function CourtCard({ court }: { court: CourtSummary }) {
+  useLanguage();
   const rating = averageRating(court);
 
   return (
@@ -36,7 +39,7 @@ export function CourtCard({ court }: { court: CourtSummary }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <Badge className="absolute left-3 top-3 border-transparent bg-black/60 text-white backdrop-blur">
-            {court.sportType === 'ELEVEN_A_SIDE' ? '11-a-side' : 'Futsal'}
+            {court.sportType === 'ELEVEN_A_SIDE' ? t("11-a-side") : t("Futsal")}
           </Badge>
           <div className="absolute bottom-3 left-3 text-white">
             <span className="text-lg font-bold drop-shadow">{court.name}</span>
@@ -50,7 +53,7 @@ export function CourtCard({ court }: { court: CourtSummary }) {
           <div className="flex items-center justify-between text-sm">
             <span className="font-semibold text-foreground">
               {formatPrice(court.basePricePerHour)}
-              <span className="font-normal text-muted-foreground">/hr</span>
+              <span className="font-normal text-muted-foreground">{t("/hr")}</span>
             </span>
             {rating ? (
               <span className="inline-flex items-center gap-1 text-sm font-medium">
@@ -58,12 +61,12 @@ export function CourtCard({ court }: { court: CourtSummary }) {
                 {rating.toFixed(1)}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground">No reviews</span>
+              <span className="text-xs text-muted-foreground">{t("No reviews")}</span>
             )}
           </div>
           <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />
-            <span>{court.sportType === 'ELEVEN_A_SIDE' ? '11' : '5'} players per side</span>
+            <span>{court.sportType === 'ELEVEN_A_SIDE' ? '11' : '5'} {t("players per side")}</span>
             <ArrowRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         </CardContent>

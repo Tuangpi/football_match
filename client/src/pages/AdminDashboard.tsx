@@ -1,3 +1,6 @@
+import { message, getLocale } from '../lib/language';
+import { t as translate } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { formatPrice } from '@/lib/currency';
@@ -54,6 +57,7 @@ type Stats = {
 type Tab = 'overview' | 'users' | 'courts';
 
 export function AdminDashboard() {
+  useLanguage();
   const [tab, setTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -74,7 +78,7 @@ export function AdminDashboard() {
       setUsers(u.data.users);
       setCourts(c.data.courts);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load admin data');
+      toast.error(translate(err.response?.data?.message || translate("Failed to load admin data")));
     } finally {
       setLoading(false);
     }
@@ -88,16 +92,16 @@ export function AdminDashboard() {
   async function toggleUser(u: AdminUser) {
     if (toggling) return;
     const action = u.isActive ? 'deactivate' : 'activate';
-    if (!window.confirm(`Really ${action} ${u.email}?`)) return;
+    if (!window.confirm(message("Really {action} {name}?", { action: translate(action), name: u.email }))) return;
     setToggling(u.id);
     try {
       const res = await api.patch(`/admin/users/${u.id}/toggle`);
-      toast.success(res.data.message || `User ${action}d`);
+      toast.success(translate(res.data.message || `User ${action}d`));
       setUsers((prev) =>
         prev.map((x) => (x.id === u.id ? { ...x, isActive: res.data.user.isActive } : x))
       );
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update user');
+      toast.error(translate(err.response?.data?.message || translate("Failed to update user")));
     } finally {
       setToggling(null);
     }
@@ -106,11 +110,11 @@ export function AdminDashboard() {
   async function toggleCourt(c: AdminCourt) {
     if (toggling) return;
     const action = c.isActive ? 'deactivate' : 'activate';
-    if (!window.confirm(`Really ${action} "${c.name}"?`)) return;
+    if (!window.confirm(message("Really {action} {name}?", { action: translate(action), name: c.name }))) return;
     setToggling(c.id);
     try {
       const res = await api.patch(`/admin/courts/${c.id}/toggle`);
-      toast.success(res.data.message || `Court ${action}d`);
+      toast.success(translate(res.data.message || `Court ${action}d`));
       setCourts((prev) =>
         prev.map((x) => (x.id === c.id ? { ...x, isActive: res.data.court.isActive } : x))
       );
@@ -118,7 +122,7 @@ export function AdminDashboard() {
         prev ? { ...prev, activeCourts: prev.activeCourts + (res.data.court.isActive ? 1 : -1) } : prev
       );
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update court');
+      toast.error(translate(err.response?.data?.message || translate("Failed to update court")));
     } finally {
       setToggling(null);
     }
@@ -140,7 +144,7 @@ export function AdminDashboard() {
   const statCards = stats
     ? [
         { icon: Users, label: 'Users', value: String(stats.users) },
-        { icon: Building2, label: 'Courts', value: `${stats.activeCourts}/${stats.courts} active` },
+        { icon: Building2, label: 'Courts', value: message("{active}/{total} active", { active: stats.activeCourts, total: stats.courts }) },
         { icon: CalendarCheck, label: 'Bookings', value: String(stats.bookings) },
         { icon: Trophy, label: 'Events', value: String(stats.events) },
       ]
@@ -166,6 +170,7 @@ export function AdminDashboard() {
 }
 
 function AdminSkeleton() {
+  useLanguage();
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-8">
       <Skeleton className="h-9 w-56" />
@@ -194,6 +199,7 @@ type ViewProps = {
 };
 
 function AdminView(p: ViewProps) {
+  useLanguage();
   const { tab, setTab } = p;
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -201,16 +207,13 @@ function AdminView(p: ViewProps) {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-bold">
-              <ShieldAlert className="h-6 w-6 text-primary" /> Admin dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Moderate users and courts. Deactivation takes effect immediately.
-            </p>
+              <ShieldAlert className="h-6 w-6 text-primary" /> {translate("Admin dashboard")} </h1>
+            <p className="text-sm text-muted-foreground"> {translate("Moderate users and courts. Deactivation takes effect immediately.")} </p>
           </div>
           <div className="flex gap-2">
             {(['overview', 'users', 'courts'] as Tab[]).map((t) => (
               <Button key={t} variant={tab === t ? 'default' : 'outline'} size="sm" onClick={() => setTab(t)}>
-                {t === 'overview' ? 'Overview' : t === 'users' ? 'Users' : 'Courts'}
+                {t === 'overview' ? translate("Overview") : t === 'users' ? translate("Users") : translate("Courts")}
               </Button>
             ))}
           </div>
@@ -225,7 +228,7 @@ function AdminView(p: ViewProps) {
           <Input
             value={p.filter}
             onChange={(e) => p.setFilter(e.target.value)}
-            placeholder={tab === 'users' ? 'Filter by email or role' : 'Filter by court, city, owner'}
+            placeholder={tab === 'users' ? translate("Filter by email or role") : translate("Filter by court, city, owner")}
             className="pl-9"
           />
         </div>
@@ -238,12 +241,13 @@ function AdminView(p: ViewProps) {
 }
 
 function UserList(p: ViewProps) {
+  useLanguage();
   if (p.filteredUsers.length === 0) {
     return (
       <EmptyState
         icon={Users}
-        title="No users found"
-        description={p.filter ? 'No users match your filter.' : 'No users registered yet.'}
+        title={translate("No users found")}
+        description={p.filter ? translate("No users match your filter.") : translate("No users registered yet.")}
       />
     );
   }
@@ -256,17 +260,17 @@ function UserList(p: ViewProps) {
               <div className="min-w-0">
                 <p className="truncate font-medium">{u.email}</p>
                 <p className="text-xs text-muted-foreground">
-                  {u._count.ownedCourts} courts, {u._count.bookings} bookings, joined{' '}
-                  {new Date(u.createdAt).toLocaleDateString()}
+                  {u._count.ownedCourts} {translate("courts,")} {u._count.bookings} {translate("bookings, joined")}{' '}
+                  {new Date(u.createdAt).toLocaleDateString(getLocale())}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{u.role}</Badge>
+                <Badge variant="secondary">{translate(u.role)}</Badge>
                 <Badge variant={u.isActive ? 'default' : 'destructive'}>
                   {u.isActive ? 'ACTIVE' : 'INACTIVE'}
                 </Badge>
                 <Button variant="outline" size="sm" disabled={p.toggling === u.id} onClick={() => p.toggleUser(u)}>
-                  {u.isActive ? 'Deactivate' : 'Activate'}
+                  {u.isActive ? translate("Deactivate") : translate("Activate")}
                 </Button>
               </div>
             </CardContent>
@@ -278,12 +282,13 @@ function UserList(p: ViewProps) {
 }
 
 function CourtList(p: ViewProps) {
+  useLanguage();
   if (p.filteredCourts.length === 0) {
     return (
       <EmptyState
         icon={Building2}
-        title="No courts found"
-        description={p.filter ? 'No courts match your filter.' : 'No courts listed yet.'}
+        title={translate("No courts found")}
+        description={p.filter ? translate("No courts match your filter.") : translate("No courts listed yet.")}
       />
     );
   }
@@ -298,17 +303,14 @@ function CourtList(p: ViewProps) {
                   <span>{c.name}</span>{' '}
                   <span className="font-normal text-muted-foreground">· {c.city}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Owner: {c.owner.email} · {c._count.bookings} bookings · {c._count.reviews}{' '}
-                  reviews · {formatPrice(c.basePricePerHour)}/hr
-                </p>
+                <p className="text-xs text-muted-foreground"> {translate("Owner:")} {c.owner.email} · {c._count.bookings} {translate("bookings ·")} {c._count.reviews}{' '} {translate("reviews ·")} {formatPrice(c.basePricePerHour)}{translate("/hr")} </p>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={c.isActive ? 'default' : 'secondary'}>
                   {c.isActive ? 'ACTIVE' : 'INACTIVE'}
                 </Badge>
                 <Button variant="outline" size="sm" disabled={p.toggling === c.id} onClick={() => p.toggleCourt(c)}>
-                  {c.isActive ? 'Deactivate' : 'Activate'}
+                  {c.isActive ? translate("Deactivate") : translate("Activate")}
                 </Button>
               </div>
             </CardContent>
@@ -326,6 +328,7 @@ function Overview({
   stats: Stats;
   statCards: Array<{ icon: typeof Users; label: string; value: string }>;
 }) {
+  useLanguage();
   return (
     <>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -338,7 +341,7 @@ function Overview({
                 </div>
                 <div>
                   <p className="text-xl font-bold">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="text-xs text-muted-foreground">{translate(s.label)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -351,20 +354,18 @@ function Overview({
           <CardContent className="flex items-center gap-3 p-4 text-sm">
             <Clock className="h-4 w-4 text-amber-500" />
             <span>
-              <strong>{stats.pendingBookings}</strong> booking{stats.pendingBookings === 1 ? '' : 's'}{' '}
-              awaiting owner confirmation.
-            </span>
+              <strong>{stats.pendingBookings}</strong> {translate("booking")}{stats.pendingBookings === 1 ? '' : 's'}{' '} {translate("awaiting owner confirmation.")} </span>
           </CardContent>
         </Card>
       )}
 
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle className="text-base">Recent bookings</CardTitle>
+          <CardTitle className="text-base">{translate("Recent bookings")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {stats.recentBookings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No bookings yet.</p>
+            <p className="text-sm text-muted-foreground">{translate("No bookings yet.")}</p>
           ) : (
             stats.recentBookings.map((b) => (
               <div
@@ -376,10 +377,10 @@ function Overview({
                     {b.court.name} · {b.court.city}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {b.player.email} · {new Date(b.bookedAt).toLocaleDateString()} · {formatPrice(b.totalPrice)}
+                    {b.player.email} · {new Date(b.bookedAt).toLocaleDateString(getLocale())} · {formatPrice(b.totalPrice)}
                   </p>
                 </div>
-                <Badge variant={b.status === 'CANCELLED' ? 'secondary' : 'default'}>{b.status}</Badge>
+                <Badge variant={b.status === 'CANCELLED' ? 'secondary' : 'default'}>{translate(b.status)}</Badge>
               </div>
             ))
           )}

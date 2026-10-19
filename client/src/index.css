@@ -60,6 +60,14 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+  html[lang='my'] body {
+    font-family: 'Noto Sans Myanmar', 'Myanmar Text', 'Myanmar Sangam MN', 'Padauk', sans-serif;
+    line-height: 1.75;
+  }
+  html[lang='my'] :is(h1, h2, h3, button, label) {
+    line-height: 1.65;
+    letter-spacing: normal;
+  }
 }
 
 @layer components {

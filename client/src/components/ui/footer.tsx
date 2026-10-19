@@ -1,3 +1,5 @@
+import { t } from '../../lib/language';
+import { useLanguage } from '../../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { MapPin, Mail, Facebook, Twitter, Instagram, Github } from 'lucide-react';
@@ -37,6 +39,7 @@ const COLS = [
 ];
 
 export function Footer() {
+  useLanguage();
   const { user } = useAuth();
 
   return (
@@ -46,7 +49,7 @@ export function Footer() {
           {COLS.map((col) => (
             <div key={col.title}>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {col.title}
+                {t(col.title)}
               </h3>
               <ul className="mt-4 space-y-2">
                 {col.links.map((l) => (
@@ -55,7 +58,7 @@ export function Footer() {
                       to={l.to}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {l.label}
+                      {t(l.label)}
                     </Link>
                   </li>
                 ))}
@@ -67,24 +70,19 @@ export function Footer() {
         <div className="mt-10 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} FootballMatch. Built for futsal players and owners.
-            </p>
+              &copy; {new Date().getFullYear()} {t("FootballMatch. Built for futsal players and owners.")} </p>
             <div className="flex items-center gap-4 text-sm">
               <Link
                 to="/about"
                 className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                About
-              </Link>
+              > {t("About")} </Link>
               <Link
                 to="/contact"
                 className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Contact
-              </Link>
+              > {t("Contact")} </Link>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-4">
             <a
               href="#"
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -114,14 +112,14 @@ export function Footer() {
               <Github className="h-5 w-5" />
             </a>
             {user ? (
-              <div className="flex items-center gap-2 pl-4 border-l border-border">
+              <div className="flex min-w-0 max-w-full items-center gap-2 border-l border-border pl-4">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
+                <span className="break-all text-sm text-muted-foreground">
                   {user.email}
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 pl-4 border-l border-border">
+              <div className="flex min-w-0 max-w-full items-center gap-2 border-l border-border pl-4">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <Link
                   to="/contact"

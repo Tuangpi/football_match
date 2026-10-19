@@ -12,6 +12,13 @@
 
 ## Active Tasks
 
+### T028 - English / Myanmar language switcher
+- Status: DONE (2026-10-19)
+- Expected: Switch application-owned UI text between English and Myanmar on public, authentication, player, owner and admin screens; preserve forms and user content, remember the choice and keep MMK/Yangon booking rules.
+- Check: Translation coverage and preference/interpolation tests, existing client tests, typecheck, lint/build, and desktop/mobile browser smoke checks where available.
+- Dependencies: Existing React client and navigation.
+- Result: Shared reactive language store/provider, browser-persisted ENG/မြန်မာ switcher in navbar and auth layout, Myanmar UI dictionary, parameterized dynamic messages, localized validation/status/date/price labels, and Myanmar font fallbacks. API enum values, user content, MMK and Yangon booking arithmetic preserved. Mobile navbar/footer overflow fixed. Verified 13/13 client tests, typecheck/build, lint 0 errors/34 existing warnings, diff whitespace, and mocked-API Chrome switch/persistence/form/validation plus public pages at 1440/390/320px and PLAYER/OWNER/ADMIN smoke checks with zero runtime exceptions. Desktop/mobile screenshots reviewed. Existing bundle-size warning remains; native-speaker translation review recommended; browser-native date controls follow browser/OS locale and unknown server messages fall back to English. No dependencies/API/schema changes.
+
 ### T027 - Dashboard-only admin role
 - Status: DONE (2026-10-19)
 - Expected: ADMIN can access only the admin dashboard and its APIs; player/owner pages, public court/event browsing while signed in, and non-admin actions are denied. Existing dashboard features remain intact.

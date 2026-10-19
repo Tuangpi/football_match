@@ -1,9 +1,12 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/components/Brand';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,6 +51,7 @@ const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function Navbar() {
+  useLanguage();
   const { user, logout, loading } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,63 +90,50 @@ export function Navbar() {
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4">
+        <div className="flex min-h-16 items-center justify-between gap-2 py-2">
           <Link
             to={isAdmin ? '/admin' : '/'}
-            aria-label={isAdmin ? 'FootballMatch admin dashboard' : 'FootballMatch home'}
-            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={isAdmin ? t("FootballMatch admin dashboard") : t("FootballMatch home")}
+            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&>span>span:last-child]:hidden sm:[&>span>span:last-child]:inline"
           >
             <Brand />
           </Link>
 
           {/* Desktop navigation */}
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+          <nav className="hidden items-center gap-1 lg:flex" aria-label={t("Main")}>
             {!isAdmin && (
               <>
-                <NavLink to="/" end className={navLinkClass}>
-                  Home
-                </NavLink>
-                <NavLink to="/courts" className={navLinkClass}>
-                  Courts
-                </NavLink>
-                <NavLink to="/events" className={navLinkClass}>
-                  Events
-                </NavLink>
+                <NavLink to="/" end className={navLinkClass}> {t("Home")} </NavLink>
+                <NavLink to="/courts" className={navLinkClass}> {t("Courts")} </NavLink>
+                <NavLink to="/events" className={navLinkClass}> {t("Events")} </NavLink>
               </>
             )}
 
             {showPlayerLinks && (
               <>
                 <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                <NavLink to="/teams" className={navLinkClass}>
-                  Teams
-                </NavLink>
+                <NavLink to="/teams" className={navLinkClass}> {t("Teams")} </NavLink>
                 {user?.role === 'PLAYER' && (
-                  <NavLink to="/friends" className={navLinkClass}>
-                    Friends
-                  </NavLink>
+                  <NavLink to="/friends" className={navLinkClass}> {t("Friends")} </NavLink>
                 )}
               </>
             )}
 
             {user?.role === 'ADMIN' && (
-              <NavLink to="/admin" className={navLinkClass}>
-                Dashboard
-              </NavLink>
+              <NavLink to="/admin" className={navLinkClass}> {t("Dashboard")} </NavLink>
             )}
 
             {user?.role === 'OWNER' && (
               <>
                 <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                <NavLink to="/owner/bookings" className={navLinkClass}>
-                  Booking Management
-                </NavLink>
+                <NavLink to="/owner/bookings" className={navLinkClass}> {t("Booking Management")} </NavLink>
               </>
             )}
           </nav>
 
           {/* Account / actions */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <LanguageSwitcher />
             <ThemeToggle />
 
             {loading ? (
@@ -155,7 +146,7 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    aria-label="Open account menu"
+                    aria-label={t("Open account menu")}
                     className="flex items-center gap-2 rounded-full border border-border/60 bg-background/60 py-1 pl-1 pr-2 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Avatar
@@ -175,43 +166,38 @@ export function Navbar() {
                     <p className="truncate text-sm font-semibold">{displayName}</p>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">{user.email}</p>
                     <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                      {user.role}
+                      {t(user.role)}
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {!isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/profile">
-                        <UserRound className="mr-2 h-4 w-4" /> Profile
-                      </Link>
+                        <UserRound className="mr-2 h-4 w-4" /> {t("Profile")} </Link>
                     </DropdownMenuItem>
                   )}
                   {showPlayerLinks && (
                     <DropdownMenuItem asChild>
                       <Link to="/bookings">
-                        <CalendarCheck className="mr-2 h-4 w-4" /> My bookings
-                      </Link>
+                        <CalendarCheck className="mr-2 h-4 w-4" /> {t("My bookings")} </Link>
                     </DropdownMenuItem>
                   )}
                   {user.role === 'ADMIN' && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin">
-                        <LayoutDashboard className="mr-2 h-4 w-4" /> Admin dashboard
-                      </Link>
+                        <LayoutDashboard className="mr-2 h-4 w-4" /> {t("Admin dashboard")} </Link>
                     </DropdownMenuItem>
                   )}
                   {user.role === 'OWNER' && (
                     <DropdownMenuItem asChild>
                       <Link to="/owner/courts">
-                        <Building2 className="mr-2 h-4 w-4" /> My courts
-                      </Link>
+                        <Building2 className="mr-2 h-4 w-4" /> {t("My courts")} </Link>
                     </DropdownMenuItem>
                   )}
                   {user.role === 'OWNER' && (
                     <DropdownMenuItem asChild>
                       <Link to="/owner/courts/create">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add a court
-                      </Link>
+                        <PlusCircle className="mr-2 h-4 w-4" /> {t("Add a court")} </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -219,22 +205,21 @@ export function Navbar() {
                     onSelect={handleLogout}
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                   >
-                    <LogOut className="mr-2 h-4 w-4" /> Log out
-                  </DropdownMenuItem>
+                    <LogOut className="mr-2 h-4 w-4" /> {t("Log out")} </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="hidden items-center gap-1.5 sm:flex">
                 <Button
                   asChild
                   variant="ghost"
                   size="sm"
                   className="hidden rounded-full sm:inline-flex"
                 >
-                  <Link to="/login">Sign in</Link>
+                  <Link to="/login">{t("Sign in")}</Link>
                 </Button>
                 <Button asChild size="sm" className="rounded-full px-4">
-                  <Link to="/register">Get started</Link>
+                  <Link to="/register">{t("Get started")}</Link>
                 </Button>
               </div>
             )}
@@ -242,7 +227,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={menuOpen ? t("Close menu") : t("Open menu")}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
               className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
@@ -277,103 +262,82 @@ export function Navbar() {
                     </span>
                   </span>
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                    {user.role}
+                    {t(user.role)}
                   </span>
                 </Link>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   <Button asChild variant="outline" size="sm" className="rounded-full">
-                    <Link to="/login" onClick={closeMenu}>
-                      Sign in
-                    </Link>
+                    <Link to="/login" onClick={closeMenu}> {t("Sign in")} </Link>
                   </Button>
                   <Button asChild size="sm" className="rounded-full">
-                    <Link to="/register" onClick={closeMenu}>
-                      Get started
-                    </Link>
+                    <Link to="/register" onClick={closeMenu}> {t("Get started")} </Link>
                   </Button>
                 </div>
               )}
 
               {!isAdmin && (
                 <div>
-                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Explore
-                  </p>
+                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"> {t("Explore")} </p>
                   <div className="space-y-1">
                     <NavLink to="/" end className={mobileLinkClass} onClick={closeMenu}>
-                      <Home className="h-4 w-4" /> Home
-                    </NavLink>
+                      <Home className="h-4 w-4" /> {t("Home")} </NavLink>
                     <NavLink to="/courts" className={mobileLinkClass} onClick={closeMenu}>
-                      <MapPin className="h-4 w-4" /> Courts
-                    </NavLink>
+                      <MapPin className="h-4 w-4" /> {t("Courts")} </NavLink>
                     <NavLink to="/events" className={mobileLinkClass} onClick={closeMenu}>
-                      <CalendarCheck className="h-4 w-4" /> Events
-                    </NavLink>
+                      <CalendarCheck className="h-4 w-4" /> {t("Events")} </NavLink>
                   </div>
                 </div>
               )}
 
               {user && !isAdmin && (
                 <div>
-                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    My activity
-                  </p>
+                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"> {t("My activity")} </p>
                   <div className="space-y-1">
                     {showPlayerLinks && (
                       <>
                         <NavLink to="/teams" className={mobileLinkClass} onClick={closeMenu}>
-                          <Trophy className="h-4 w-4" /> Teams
-                        </NavLink>
+                          <Trophy className="h-4 w-4" /> {t("Teams")} </NavLink>
                         {user.role === 'PLAYER' && (
                           <NavLink to="/friends" className={mobileLinkClass} onClick={closeMenu}>
-                            <Users className="h-4 w-4" /> Friends
-                          </NavLink>
+                            <Users className="h-4 w-4" /> {t("Friends")} </NavLink>
                         )}
                       </>
                     )}
                     <NavLink to="/profile" className={mobileLinkClass} onClick={closeMenu}>
-                      <UserRound className="h-4 w-4" /> Profile
-                    </NavLink>
+                      <UserRound className="h-4 w-4" /> {t("Profile")} </NavLink>
                   </div>
                 </div>
               )}
 
               {user && (user.role === 'OWNER' || user.role === 'ADMIN') && (
                 <div>
-                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Manage
-                  </p>
+                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"> {t("Manage")} </p>
                   <div className="space-y-1">
                     {user.role === 'ADMIN' && (
                       <NavLink to="/admin" className={mobileLinkClass} onClick={closeMenu}>
-                        <LayoutDashboard className="h-4 w-4" /> Admin dashboard
-                      </NavLink>
+                        <LayoutDashboard className="h-4 w-4" /> {t("Admin dashboard")} </NavLink>
                     )}
                     {isOwner && (
                       <NavLink to="/owner/events" className={mobileLinkClass} onClick={closeMenu}>
-                        <CalendarCheck className="h-4 w-4" /> Event Management
-                      </NavLink>
+                        <CalendarCheck className="h-4 w-4" /> {t("Event Management")} </NavLink>
                     )}
                     {user.role === 'OWNER' && (
                       <>
                         <NavLink to="/owner/courts" className={mobileLinkClass} onClick={closeMenu}>
-                          <Building2 className="h-4 w-4" /> My Courts
-                        </NavLink>
+                          <Building2 className="h-4 w-4" /> {t("My Courts")} </NavLink>
                         <NavLink
                           to="/owner/bookings"
                           className={mobileLinkClass}
                           onClick={closeMenu}
                         >
-                          <ClipboardList className="h-4 w-4" /> Booking Management
-                        </NavLink>
+                          <ClipboardList className="h-4 w-4" /> {t("Booking Management")} </NavLink>
                         <NavLink
                           to="/owner/courts/create"
                           className={mobileLinkClass}
                           onClick={closeMenu}
                         >
-                          <PlusCircle className="h-4 w-4" /> Add a court
-                        </NavLink>
+                          <PlusCircle className="h-4 w-4" /> {t("Add a court")} </NavLink>
                       </>
                     )}
                   </div>
@@ -387,8 +351,7 @@ export function Navbar() {
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
                   >
-                    <LogOut className="h-4 w-4" /> Log out
-                  </button>
+                    <LogOut className="h-4 w-4" /> {t("Log out")} </button>
                 </div>
               )}
             </div>
