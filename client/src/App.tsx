@@ -79,7 +79,7 @@ export function App() {
         <Route
           path="/friends"
           element={
-            <ProtectedRoute roles={['PLAYER', 'ADMIN']}>
+            <ProtectedRoute roles={['PLAYER']}>
               <Friends />
             </ProtectedRoute>
           }

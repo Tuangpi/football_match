@@ -12,6 +12,20 @@
 
 ## Active Tasks
 
+### T025 - Restrict friendships to players
+- Status: DONE (2026-10-19)
+- Expected: Only PLAYER accounts can discover active players, send requests, view friendships, and respond. Non-player legacy relationships remain stored but hidden and cannot be accepted. Friends navigation and route are player-only.
+- Check: API role/recipient/discovery/legacy and player request-response tests; server tests/build, client typecheck/lint/build, review existing user edits are preserved.
+- Dependencies: Existing friends API and UI.
+- Result: PLAYER-only middleware on search/friend routes; active PLAYER recipient validation and discovery; legacy non-player relationships hidden and responses denied without deletion; player-only client route and desktop/mobile links. Added seven API tests. Verified 66/66 server tests, server build and changed-server lint (no warnings), client typecheck/build, client lint (0 errors/34 existing warnings), and diff whitespace review. Existing Friends/auth/navigation user edits preserved. Browser click-through not run; production build retains existing chunk-size warning.
+
+### T026 - Owner booking week and month views
+- Status: DONE (2026-10-19)
+- Expected: Add Monday–Sunday week and month calendars alongside Day/List, with period navigation, court/status filters, blocked time, booking details/actions, Yangon dates, month-to-day drill-down, and mobile agendas.
+- Check: Calendar boundary/filter/action checks; relevant tests, client typecheck/lint/build and UI smoke checks where available.
+- Dependencies: T024.
+- Result: Added Week daily agenda columns and Month grid (three summaries/day plus overflow to Day), vertical mobile agendas, period-aware previous/next, today/date controls and Yangon labels. Court/status filters persist across switches; existing details/confirm/cancel/history and blocked periods remain available. Added timezone-independent calendar helpers and five focused date tests. Verified 5/5 date tests, client tsc/build, focused lint (no warnings), full lint (0 errors/34 existing warnings), diff whitespace and Chrome mocked-API flows at desktop/mobile with LA browser timezone (filters, dates/overflow drill-down, blocks, confirm/cancel, cancellation history, empty/error/retry, no horizontal mobile overflow, zero runtime exceptions). Screenshots reviewed. Existing bundle-size warning only; no dependencies, schema/API changes, commits or deployment.
+
 ### T023 - Separate owner event management from public events
 - Status: DONE (2026-10-19)
 - Expected: owners list only events on their courts in `/owner/events`, edit and delete with confirmation; public browsing remains separate; admins retain access.

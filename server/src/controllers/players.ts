@@ -101,6 +101,9 @@ export const sendFriendRequest = async (
     if (!receiver) {
       return next(new AppError('User not found', 404));
     }
+    if (receiver.role !== 'PLAYER' || !receiver.isActive) {
+      return next(new AppError('Friend requests can only be sent to active players', 403));
+    }
 
     const existing = await prisma.friend.findFirst({
       where: {
@@ -139,6 +142,8 @@ export const getMyFriends = async (
       where: {
         OR: [{ senderId: req.user.id }, { receiverId: req.user.id }],
         status: 'ACCEPTED',
+        sender: { role: 'PLAYER' },
+        receiver: { role: 'PLAYER' },
       },
       include: {
         sender: { select: { id: true, email: true, playerProfile: true } },
@@ -163,7 +168,7 @@ export const getPendingRequests = async (
     }
 
     const requests = await prisma.friend.findMany({
-      where: { receiverId: req.user.id, status: 'PENDING' },
+      where: { receiverId: req.user.id, status: 'PENDING', sender: { role: 'PLAYER' } },
       include: {
         sender: { select: { id: true, email: true, playerProfile: true } },
       },
@@ -196,6 +201,8 @@ export const searchUsers = async (
       where: {
         email: { contains: q, mode: 'insensitive' },
         id: { not: req.user.id },
+        role: 'PLAYER',
+        isActive: true,
       },
       select: {
         id: true,
@@ -225,13 +232,19 @@ export const respondToFriendRequest = async (
     const { id } = req.params;
     const { accept } = z.object({ accept: z.boolean() }).parse(req.body);
 
-    const request = await prisma.friend.findUnique({ where: { id } });
+    const request = await prisma.friend.findUnique({
+      where: { id },
+      include: { sender: { select: { role: true } } },
+    });
     if (!request) {
       return next(new AppError('Friend request not found', 404));
     }
 
     if (request.receiverId !== req.user.id) {
       return next(new AppError('Not authorized to respond to this request', 403));
+    }
+    if (request.sender.role !== 'PLAYER') {
+      return next(new AppError('Friend requests are only available between players', 403));
     }
 
     const updated = await prisma.friend.update({

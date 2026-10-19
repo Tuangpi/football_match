@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/components/Brand';
@@ -50,7 +50,6 @@ const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Navbar() {
   const { user, logout, loading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -70,14 +69,12 @@ export function Navbar() {
   const handleLogout = async () => {
     setMenuOpen(false);
     await logout();
-    navigate('/');
   };
 
   const closeMenu = () => setMenuOpen(false);
 
   const displayName = user?.playerProfile?.fullName || user?.email.split('@')[0] || '';
-  // OWNER accounts manage courts; player activity (bookings, teams, friends)
-  // is only available to PLAYER and ADMIN accounts.
+  // Owners manage courts. Bookings/teams also allow admins; friends are player-only.
   const isOwner = user?.role === 'OWNER';
   const showPlayerLinks = !!user && !isOwner;
 
@@ -113,15 +110,19 @@ export function Navbar() {
             {showPlayerLinks && (
               <>
                 <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                <NavLink to="/bookings" className={navLinkClass}>
-                  My Bookings
-                </NavLink>
+                {user?.role === 'ADMIN' && (
+                  <NavLink to="/bookings" className={navLinkClass}>
+                    My Bookings
+                  </NavLink>
+                )}
                 <NavLink to="/teams" className={navLinkClass}>
                   Teams
                 </NavLink>
-                <NavLink to="/friends" className={navLinkClass}>
-                  Friends
-                </NavLink>
+                {user?.role === 'PLAYER' && (
+                  <NavLink to="/friends" className={navLinkClass}>
+                    Friends
+                  </NavLink>
+                )}
               </>
             )}
 
@@ -210,11 +211,6 @@ export function Navbar() {
                       <Link to="/owner/courts/create">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add a court
                       </Link>
-                    </DropdownMenuItem>
-                  )}
-                  {(user.role === 'OWNER' || user.role === 'ADMIN') && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/owner/events"><CalendarCheck className="mr-2 h-4 w-4" /> Event Management</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -323,15 +319,19 @@ export function Navbar() {
                   <div className="space-y-1">
                     {showPlayerLinks && (
                       <>
-                        <NavLink to="/bookings" className={mobileLinkClass} onClick={closeMenu}>
-                          <Calendar className="h-4 w-4" /> My Bookings
-                        </NavLink>
+                        {user.role === 'ADMIN' && (
+                          <NavLink to="/bookings" className={mobileLinkClass} onClick={closeMenu}>
+                            <Calendar className="h-4 w-4" /> My Bookings
+                          </NavLink>
+                        )}
                         <NavLink to="/teams" className={mobileLinkClass} onClick={closeMenu}>
                           <Trophy className="h-4 w-4" /> Teams
                         </NavLink>
-                        <NavLink to="/friends" className={mobileLinkClass} onClick={closeMenu}>
-                          <Users className="h-4 w-4" /> Friends
-                        </NavLink>
+                        {user.role === 'PLAYER' && (
+                          <NavLink to="/friends" className={mobileLinkClass} onClick={closeMenu}>
+                            <Users className="h-4 w-4" /> Friends
+                          </NavLink>
+                        )}
                       </>
                     )}
                     <NavLink to="/profile" className={mobileLinkClass} onClick={closeMenu}>

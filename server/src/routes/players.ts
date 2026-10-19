@@ -9,7 +9,7 @@ import {
   getPendingRequests,
   respondToFriendRequest,
 } from '../controllers/players';
-import { authenticate } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
@@ -29,11 +29,11 @@ router.put('/me', validate(z.object({
 
 // User search + friend routes MUST come before /:id,
 // otherwise GET /friends is captured by /:id and 404s
-router.get('/search', searchUsers);
-router.post('/friends/request', validate(z.object({ receiverId: z.string() })), sendFriendRequest);
-router.get('/friends', getMyFriends);
-router.get('/friends/pending', getPendingRequests);
-router.put('/friends/:id/respond', validate(z.object({ accept: z.boolean() })), respondToFriendRequest);
+router.get('/search', authorize('PLAYER'), searchUsers);
+router.post('/friends/request', authorize('PLAYER'), validate(z.object({ receiverId: z.string() })), sendFriendRequest);
+router.get('/friends', authorize('PLAYER'), getMyFriends);
+router.get('/friends/pending', authorize('PLAYER'), getPendingRequests);
+router.put('/friends/:id/respond', authorize('PLAYER'), validate(z.object({ accept: z.boolean() })), respondToFriendRequest);
 
 router.get('/:id', getPublicProfile);
 

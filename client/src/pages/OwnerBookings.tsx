@@ -9,6 +9,13 @@ import {
   type TimeRange,
 } from "@/lib/bookingTime";
 import { formatPrice } from "@/lib/currency";
+import {
+  calendarDays,
+  calendarLabel,
+  onCalendarDay,
+  shiftPeriod,
+  type CalendarView,
+} from "@/lib/bookingCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,18 +36,19 @@ type Booking = TimeRange & {
   team: { id: string; name: string } | null;
 };
 type Court = { id: string; name: string };
+type Block = TimeRange & { courtId: string; reason: string };
 export function OwnerBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [courts, setCourts] = useState<Court[]>([]);
   const [date, setDate] = useState(courtDate());
   const [courtId, setCourtId] = useState("");
   const [status, setStatus] = useState("");
-  const [view, setView] = useState("day");
+  const [view, setView] = useState<CalendarView | "list">("day");
   const [selected, setSelected] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [blocked, setBlocked] = useState<(TimeRange & { courtId: string; reason: string })[]>([]);
+  const [blocked, setBlocked] = useState<Block[]>([]);
   async function load() {
     setLoading(true);
     try {
@@ -94,19 +102,53 @@ export function OwnerBookings() {
     (b) => overlaps(b, dayRange) && (status || b.status !== "CANCELLED"),
   );
   const pending = bookings.filter((b) => b.status === "PENDING").length;
-  function shift(days: number) {
-    setDate(courtDate(new Date(new Date(atHour(date, 0)).getTime() + days * 86_400_000)));
+  const days = calendarDays(date, view === "list" ? "day" : view);
+  const calendarBookings = filtered.filter((b) => status || b.status !== "CANCELLED");
+  const calendarBlocks = blocked.filter((b) => !courtId || b.courtId === courtId);
+  const schedule = days.map((day) => ({
+    day,
+    bookings: calendarBookings.filter((b) => onCalendarDay(b, day)),
+    blocks: calendarBlocks.filter((b) => onCalendarDay(b, day)),
+  }));
+  const agenda = schedule.filter(
+    (s) =>
+      view !== "month" ||
+      (s.day.slice(0, 7) === date.slice(0, 7) && (s.bookings.length || s.blocks.length)),
+  );
+  const periodLabel =
+    view === "month"
+      ? calendarLabel(date, { month: "long", year: "numeric" })
+      : view === "week"
+        ? `${calendarLabel(days[0], { month: "short", day: "numeric", year: "numeric" })} – ${calendarLabel(days[6], { month: "short", day: "numeric", year: "numeric" })}`
+        : calendarLabel(date, { weekday: "long", month: "short", day: "numeric", year: "numeric" });
+  function shift(direction: number) {
+    if (view !== "list") setDate(shiftPeriod(date, view, direction));
   }
-  const bookingButton = (b: Booking) => (
+  function openDay(day: string) {
+    setDate(day);
+    setView("day");
+  }
+  const bookingButton = (b: Booking, compact = false) => (
     <button
       key={b.id}
       onClick={() => setSelected(b)}
       className={`w-full rounded border p-2 text-left text-xs ${b.status === "CONFIRMED" ? "border-green-500 bg-green-500/10" : b.status === "CANCELLED" ? "border-muted text-muted-foreground line-through" : "border-amber-500 bg-amber-500/10"}`}
     >
       <strong>{b.status}</strong>
-      <span className="block">{formatBooking(b)}</span>
-      <span className="block truncate">{b.player.email}</span>
+      <span className="block font-medium">{b.court.name}</span>
+      <span className="block">
+        {compact
+          ? `${new Date(b.startsAt).toLocaleTimeString(undefined, { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" })} – ${new Date(b.endsAt).toLocaleTimeString(undefined, { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" })}`
+          : formatBooking(b)}
+      </span>
+      {!compact && <span className="block truncate">{b.player.email}</span>}
     </button>
+  );
+  const blockSummary = (b: Block, compact = false) => (
+    <p className="rounded border bg-muted p-2 text-xs break-words">
+      Blocked · {courts.find((c) => c.id === b.courtId)?.name} ·{" "}
+      {compact ? b.reason : `${formatBooking(b)} · ${b.reason}`}
+    </p>
   );
   return (
     <div className="min-h-screen px-4 py-8">
@@ -117,15 +159,16 @@ export function OwnerBookings() {
           Courts.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant={view === "day" ? "default" : "outline"}
-            onClick={() => {
-              setView("day");
-              setStatus("");
-            }}
-          >
-            Day
-          </Button>
+          {(["day", "week", "month"] as const).map((mode) => (
+            <Button
+              key={mode}
+              variant={view === mode ? "default" : "outline"}
+              aria-pressed={view === mode}
+              onClick={() => setView(mode)}
+            >
+              {mode[0].toUpperCase() + mode.slice(1)}
+            </Button>
+          ))}
           <Button variant={view === "list" ? "default" : "outline"} onClick={() => setView("list")}>
             List / history
           </Button>
@@ -163,9 +206,9 @@ export function OwnerBookings() {
             ))}
           </select>
         </div>
-        {view === "day" && (
+        {view !== "list" && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" aria-label="Previous day" onClick={() => shift(-1)}>
+            <Button variant="outline" aria-label={`Previous ${view}`} onClick={() => shift(-1)}>
               ←
             </Button>
             <Button variant="outline" onClick={() => setDate(courtDate())}>
@@ -180,9 +223,12 @@ export function OwnerBookings() {
                 if (e.target.value) setDate(e.target.value);
               }}
             />
-            <Button variant="outline" aria-label="Next day" onClick={() => shift(1)}>
+            <Button variant="outline" aria-label={`Next ${view}`} onClick={() => shift(1)}>
               →
             </Button>
+            <h2 className="font-semibold" aria-live="polite">
+              {periodLabel}
+            </h2>
           </div>
         )}
         {loading ? (
@@ -201,6 +247,108 @@ export function OwnerBookings() {
               </div>
             ))}
           </div>
+        ) : view === "week" || view === "month" ? (
+          <>
+            {!shownCourts.length ? (
+              <p>No courts to display.</p>
+            ) : (
+              <>
+                <div className="space-y-4 md:hidden" aria-label={`${view} agenda`}>
+                  {agenda.map(({ day, bookings: dayBookings, blocks: dayBlocks }) => (
+                    <section key={day} className="space-y-2 rounded-xl border p-3">
+                      <Button
+                        variant="ghost"
+                        onClick={() => openDay(day)}
+                        aria-label={`Open day ${day}`}
+                      >
+                        {calendarLabel(day, { weekday: "long", month: "short", day: "numeric" })}
+                      </Button>
+                      {dayBookings.map((b) => bookingButton(b))}
+                      {dayBlocks.map((b, i) => (
+                        <div key={i}>{blockSummary(b)}</div>
+                      ))}
+                      {!dayBookings.length && !dayBlocks.length && (
+                        <p className="text-sm text-muted-foreground">
+                          No bookings or blocked time.
+                        </p>
+                      )}
+                    </section>
+                  ))}
+                  {!agenda.length && <p>No bookings or blocked time this month.</p>}
+                </div>
+                <div
+                  className="hidden overflow-x-auto rounded-xl border md:block"
+                  aria-label={`${view} calendar`}
+                >
+                  <div className="grid min-w-[980px] grid-cols-7">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                      <div
+                        key={day}
+                        className="border-b bg-muted/50 p-3 text-center text-sm font-semibold"
+                      >
+                        {day}
+                      </div>
+                    ))}
+                    {schedule.map(({ day, bookings: bookingsForDay, blocks: blocksForDay }) => {
+                      const entries = [
+                        ...bookingsForDay.map((booking) => ({
+                          startsAt: booking.startsAt,
+                          booking,
+                          block: null,
+                        })),
+                        ...blocksForDay.map((block) => ({
+                          startsAt: block.startsAt,
+                          booking: null,
+                          block,
+                        })),
+                      ].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+                      const visible = view === "month" ? entries.slice(0, 3) : entries;
+                      return (
+                        <section
+                          key={day}
+                          className={`min-w-0 space-y-2 border-b border-r p-2 ${view === "month" ? "min-h-44" : "min-h-64"} ${view === "month" && day.slice(0, 7) !== date.slice(0, 7) ? "bg-muted/40" : ""}`}
+                        >
+                          <button
+                            onClick={() => openDay(day)}
+                            aria-label={`Open day ${day}`}
+                            aria-current={day === courtDate() ? "date" : undefined}
+                            className={`rounded px-2 py-1 text-sm font-semibold hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${day === courtDate() ? "bg-primary text-primary-foreground" : ""}`}
+                          >
+                            {calendarLabel(day, { month: "short", day: "numeric" })}
+                          </button>
+                          <p className="text-xs text-muted-foreground">
+                            {bookingsForDay.length} bookings · {blocksForDay.length} blocks
+                          </p>
+                          {visible.map((entry, i) =>
+                            entry.booking ? (
+                              bookingButton(entry.booking, view === "month")
+                            ) : (
+                              <div key={`block-${i}`}>
+                                {entry.block && blockSummary(entry.block, view === "month")}
+                              </div>
+                            ),
+                          )}
+                          {entries.length > visible.length && (
+                            <button
+                              className="rounded p-1 text-xs font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                              onClick={() => openDay(day)}
+                            >
+                              +{entries.length - visible.length} more
+                            </button>
+                          )}
+                          {!entries.length && (
+                            <p className="text-xs text-muted-foreground">
+                              No bookings or blocked time.
+                            </p>
+                          )}
+                        </section>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </>
         ) : (
           <>
             <div className="space-y-3 md:hidden">

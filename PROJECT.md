@@ -6,6 +6,7 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 ## Scope / Requirements
 - Roles: PLAYER, OWNER, ADMIN (ADMIN = platform moderation, future)
 - PLAYER: search courts, book/cancel whole-hour time ranges, manage profile, friends, teams, leave reviews
+- Friend discovery and all friendship actions are PLAYER-only (no OWNER/ADMIN exception). Discovery/new recipients require active players; legacy non-player relationships stay stored but hidden and cannot be accepted.
 - OWNER: list courts, configure weekly opening hours and blocked periods, confirm/cancel bookings, publish events (tournaments, discounts, price changes)
 - Out of scope (for now): payments, notifications, messaging
 - All court/slot prices and booking totals use Myanmar kyat (MMK); numeric API amounts are in MMK.
@@ -30,6 +31,7 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 
 - Booking times use Asia/Yangon; new requests start/end on whole hours, minimum 1 hour, within a single operating day (midnight closing supported). Default hours are 08:00–23:00 daily, configurable per weekday. Pending and confirmed bookings block availability. Price is hourly rate × duration.
 - Per-court row locks serialize booking/block creation; archived slot records are not used for new availability. Legacy dates are interpreted using their stored UTC calendar date and Yangon wall-clock time; existing totals and minute-based times are preserved.
+- Owner booking management supports Day, Monday–Sunday Week, Month, and List/history. Week uses daily agenda columns, Month shows compact summaries with date/overflow drill-down to Day; mobile uses vertical agendas. Court/status filters persist across views and dates remain in Asia/Yangon.
 
 ## Constraints & Assumptions
 - PostgreSQL required; configure via server/.env (see server/.env.example)

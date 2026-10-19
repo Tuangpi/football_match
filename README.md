@@ -43,6 +43,13 @@ npm run dev
 - **OWNER** — manage courts, opening hours, calendar bookings, events
 - **ADMIN** — platform moderation (future)
 
+## Calendar tests
+With both application dependencies installed, run the focused frontend date tests using the existing server TypeScript runner (no additional dependency):
+```bash
+cd client
+../server/node_modules/.bin/tsx --test tests/bookingCalendar.test.ts
+```
+
 ## Docs
 - [API reference](docs/API.md) — all `/api` routes: methods, auth/roles, payloads, errors
 - [Data model overview](docs/DATA_MODEL.md) — enums, models, relations, constraints

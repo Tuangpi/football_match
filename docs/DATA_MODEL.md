@@ -29,6 +29,7 @@ Notes: one row per user max. The `PUT /api/players/me` upsert accepts fullName/p
 Relations: `sender → User`, `receiver → User`. Constraint: `@@unique(senderId, receiverId)` — one directed row per pair.
 Lifecycle: request → PENDING; respond accept → ACCEPTED, decline → BLOCKED. The API checks both directions for duplicates, so a BLOCKED (declined) row permanently blocks re-requests in either direction. `GET /friends` returns ACCEPTED rows where the caller is sender or receiver; `GET /friends/pending` returns PENDING rows where the caller is the receiver. No delete endpoint.
 No FK cascade is declared — deleting a user with friend rows fails at the DB level.
+Friendship API access is PLAYER-only. New recipients must be active PLAYER accounts; discovery excludes inactive/non-player users. Lists hide legacy relationships involving non-player accounts and responses reject them without deleting history. No schema migration is required.
 
 ### Team
 

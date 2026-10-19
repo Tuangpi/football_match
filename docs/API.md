@@ -51,6 +51,8 @@ Errors: `401` (no/invalid token), `404 User not found`.
 
 ## Players & friends (`/api/players`) — all 🔒
 
+Discovery (`/search`) and all `/friends` endpoints require role `PLAYER`; OWNER and ADMIN receive `403`. Profile endpoints retain their existing authenticated access.
+
 ### `GET /api/players/me` 🔒
 
 Own player profile (may be `null` when never saved). → `200 { success:true, profile }`.
@@ -61,28 +63,30 @@ Upsert own profile. Body: `{ fullName?, phone?, position?, skillLevel?, bio?, av
 
 ### `GET /api/players/search?q=<email-fragment>` 🔒
 
-Find users by email (case-insensitive, excludes self, max 10). Empty `q` → `{ success:true, users:[] }`.
+Find active PLAYER accounts by email (case-insensitive, excludes self, max 10). Empty `q` → `{ success:true, users:[] }`.
 Success: `200 { success:true, users:[{id,email,role,playerProfile:{fullName}}] }`.
 
 ### `POST /api/players/friends/request` 🔒
 
 Body: `{ receiverId: string }`.
 Errors: `400 Cannot send friend request to yourself`, `404 User not found` (receiver id), `400 Friend request already exists` (a row exists in either direction, any status).
+Non-player or inactive recipients return `403 Friend requests can only be sent to active players`.
 Success: `201 { success:true, friend }` (`status: PENDING`).
 
 ### `GET /api/players/friends` 🔒
 
-Accepted friendships in either direction (sender or receiver) with both users + their profiles.
+Accepted friendships in either direction (sender or receiver) with both users + their profiles. Both accounts must currently have role PLAYER; legacy non-player relationships are hidden, not deleted.
 → `200 { success:true, friends }`.
 
 ### `GET /api/players/friends/pending` 🔒
 
-Incoming pending requests where the caller is the receiver. → `200 { success:true, requests }`.
+Incoming pending requests from PLAYER accounts where the caller is the receiver. → `200 { success:true, requests }`.
 
 ### `PUT /api/players/friends/:id/respond` 🔒
 
 Body: `{ accept: boolean }`. Accept → `ACCEPTED`; decline → `BLOCKED` (declined requests disappear from both lists — no re-request possible while the row exists).
 Errors: `404 Friend request not found`, `403 Not authorized to respond to this request` (only the receiver).
+Legacy requests from non-player accounts return `403 Friend requests are only available between players` and remain unchanged.
 Success: `200 { success:true, friend }` (includes sender + receiver).
 
 ### `GET /api/players/:id` 🔒
@@ -330,6 +334,7 @@ Success: `200 { success:true, user:{id,email,role,isActive}, message:"User activ
 | Events: create / edit / delete | ❌ | own courts ✅ | any ✅ |
 | Reviews: list | ✅ | ✅ | ✅ |
 | Reviews: create | ✅ (any logged-in role technically) | ✅ | ✅ |
-| Teams / friends / profile | ✅ (any logged-in role) | ✅ | ✅ |
+| Teams / profile | ✅ (any logged-in role) | ✅ | ✅ |
+| Player discovery / friends | ✅ | ❌ | ❌ |
 | Admin lists / stats / toggles | ❌ | ❌ | ✅ |
 
