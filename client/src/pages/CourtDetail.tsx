@@ -245,7 +245,7 @@ export function CourtDetail() {
         </div>
         <p className="text-lg font-semibold">Court not found</p>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/">Back to courts</Link>
+          <Link to="/courts">Back to courts</Link>
         </Button>
       </div>
     );
@@ -255,7 +255,7 @@ export function CourtDetail() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        <Link to="/" className="text-sm text-muted-foreground mb-4 inline-block hover:text-foreground transition">← Back to courts</Link>
+        <Link to="/courts" className="text-sm text-muted-foreground mb-4 inline-block hover:text-foreground transition">← Back to courts</Link>
 
         {/* Hero header */}
         <FadeIn>

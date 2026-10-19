@@ -7,7 +7,7 @@ const COLS = [
     title: 'Browse',
     links: [
       { label: 'Home', to: '/' },
-      { label: 'Find a court', to: '/' },
+      { label: 'Find a court', to: '/courts' },
       { label: 'Events', to: '/events' },
     ],
   },
@@ -65,9 +65,25 @@ export function Footer() {
         </div>
 
         <div className="mt-10 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} FootballMatch. Built for futsal players and owners.
-          </p>
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} FootballMatch. Built for futsal players and owners.
+            </p>
+            <div className="flex items-center gap-4 text-sm">
+              <Link
+                to="/about"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Contact
+              </Link>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <a
               href="#"
@@ -107,12 +123,12 @@ export function Footer() {
             ) : (
               <div className="flex items-center gap-2 pl-4 border-l border-border">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href="#contact"
+                <Link
+                  to="/contact"
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
                   contact@footballmatch.app
-                </a>
+                </Link>
               </div>
             )}
           </div>

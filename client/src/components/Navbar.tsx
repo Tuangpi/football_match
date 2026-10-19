@@ -23,6 +23,7 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
+  MapPin,
   Menu,
   PlusCircle,
   Trophy,
@@ -69,13 +70,15 @@ export function Navbar() {
   const handleLogout = async () => {
     setMenuOpen(false);
     await logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const closeMenu = () => setMenuOpen(false);
 
   const displayName = user?.playerProfile?.fullName || user?.email.split('@')[0] || '';
   const isOwnerArea = location.pathname.startsWith('/owner');
+  // Players reach their bookings from the account popup, so keep it out of the main nav.
+  const showMyBookings = !!user && user.role !== 'PLAYER';
 
   return (
     <header
@@ -99,6 +102,9 @@ export function Navbar() {
             <NavLink to="/" end className={navLinkClass}>
               Home
             </NavLink>
+            <NavLink to="/courts" className={navLinkClass}>
+              Courts
+            </NavLink>
             <NavLink to="/events" className={navLinkClass}>
               Events
             </NavLink>
@@ -106,9 +112,11 @@ export function Navbar() {
             {user && (
               <>
                 <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                <NavLink to="/bookings" className={navLinkClass}>
-                  My Bookings
-                </NavLink>
+                {showMyBookings && (
+                  <NavLink to="/bookings" className={navLinkClass}>
+                    My Bookings
+                  </NavLink>
+                )}
                 <NavLink to="/teams" className={navLinkClass}>
                   Teams
                 </NavLink>
@@ -309,6 +317,9 @@ export function Navbar() {
                   <NavLink to="/" end className={mobileLinkClass} onClick={closeMenu}>
                     <Home className="h-4 w-4" /> Home
                   </NavLink>
+                  <NavLink to="/courts" className={mobileLinkClass} onClick={closeMenu}>
+                    <MapPin className="h-4 w-4" /> Courts
+                  </NavLink>
                   <NavLink to="/events" className={mobileLinkClass} onClick={closeMenu}>
                     <CalendarCheck className="h-4 w-4" /> Events
                   </NavLink>
@@ -321,9 +332,11 @@ export function Navbar() {
                     My activity
                   </p>
                   <div className="space-y-1">
-                    <NavLink to="/bookings" className={mobileLinkClass} onClick={closeMenu}>
-                      <Calendar className="h-4 w-4" /> My Bookings
-                    </NavLink>
+                    {showMyBookings && (
+                      <NavLink to="/bookings" className={mobileLinkClass} onClick={closeMenu}>
+                        <Calendar className="h-4 w-4" /> My Bookings
+                      </NavLink>
+                    )}
                     <NavLink to="/teams" className={mobileLinkClass} onClick={closeMenu}>
                       <Trophy className="h-4 w-4" /> Teams
                     </NavLink>

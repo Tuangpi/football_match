@@ -5,8 +5,11 @@ import { useTheme } from '@/context/ThemeContext';
 import { Navbar } from '@/components/Navbar';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Home } from '@/pages/Home';
+import { About } from '@/pages/About';
+import { Contact } from '@/pages/Contact';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
+import { Courts } from '@/pages/Courts';
 import { CourtDetail } from '@/pages/CourtDetail';
 import { MyBookings } from '@/pages/MyBookings';
 import { MyProfile } from '@/pages/MyProfile';
@@ -20,20 +23,36 @@ import { Teams } from '@/pages/Teams';
 import { AdminDashboard } from '@/pages/AdminDashboard';
 import { Footer } from '@/components/ui/footer';
 
+// Public pages that show the footer. Signed-in app pages (bookings, profile, teams,
+// friends, owner, admin) render without it, and so do /login and /register.
+const PUBLIC_FOOTER_PATHS = ['/', '/about', '/contact', '/events', '/courts'];
+
 export function App() {
   const { resolvedTheme } = useTheme();
   const location = useLocation();
-  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
+  const pathname = location.pathname.replace(/\/+$/, '') || '/';
+  const isAuthRoute = pathname === '/login' || pathname === '/register';
+  const showFooter =
+    !isAuthRoute &&
+    (PUBLIC_FOOTER_PATHS.includes(pathname) || pathname.startsWith('/courts/'));
 
   return (
     <div className="app">
       {!isAuthRoute && <Navbar />}
-      <Toaster theme={resolvedTheme} richColors position="top-center" />
+      <Toaster
+        theme={resolvedTheme}
+        richColors
+        position="top-right"
+        offset={isAuthRoute ? 16 : 80}
+      />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/courts" element={<Courts />} />
         <Route path="/courts/:id" element={<CourtDetail />} />
         <Route path="/events" element={<Events />} />
         <Route
@@ -111,7 +130,7 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
-      {!isAuthRoute && <Footer />}
+      {showFooter && <Footer />}
     </div>
   );
 }
