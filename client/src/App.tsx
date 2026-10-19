@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Home } from '@/pages/Home';
@@ -31,8 +32,14 @@ const PUBLIC_FOOTER_PATHS = ['/', '/about', '/contact', '/events', '/courts'];
 
 export function App() {
   const { resolvedTheme } = useTheme();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const pathname = location.pathname.replace(/\/+$/, '') || '/';
+  // Wait for the session before mounting pages that may fetch public data.
+  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (user?.role === 'ADMIN' && pathname !== '/admin') {
+    return <Navigate to="/admin" replace />;
+  }
   const isAuthRoute = pathname === '/login' || pathname === '/register';
   const showFooter =
     !isAuthRoute &&
@@ -63,7 +70,7 @@ export function App() {
         <Route
           path="/bookings"
           element={
-            <ProtectedRoute roles={['PLAYER', 'ADMIN']}>
+            <ProtectedRoute roles={['PLAYER']}>
               <MyBookings />
             </ProtectedRoute>
           }
@@ -87,7 +94,7 @@ export function App() {
         <Route
           path="/teams"
           element={
-            <ProtectedRoute roles={['PLAYER', 'ADMIN']}>
+            <ProtectedRoute roles={['PLAYER']}>
               <Teams />
             </ProtectedRoute>
           }
@@ -95,7 +102,7 @@ export function App() {
         <Route
           path="/owner/courts"
           element={
-            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute roles={['OWNER']}>
               <OwnerCourts />
             </ProtectedRoute>
           }
@@ -103,7 +110,7 @@ export function App() {
         <Route
           path="/owner/courts/create"
           element={
-            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute roles={['OWNER']}>
               <CreateCourt />
             </ProtectedRoute>
           }
@@ -111,7 +118,7 @@ export function App() {
         <Route
           path="/owner/bookings"
           element={
-            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute roles={['OWNER']}>
               <OwnerBookings />
             </ProtectedRoute>
           }
@@ -119,7 +126,7 @@ export function App() {
         <Route
           path="/owner/events"
           element={
-            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute roles={['OWNER']}>
               <OwnerEvents />
             </ProtectedRoute>
           }
@@ -127,7 +134,7 @@ export function App() {
         <Route
           path="/owner/events/:id/edit"
           element={
-            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute roles={['OWNER']}>
               <CreateEvent />
             </ProtectedRoute>
           }
@@ -135,7 +142,7 @@ export function App() {
         <Route
           path="/owner/events/create"
           element={
-            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute roles={['OWNER']}>
               <CreateEvent />
             </ProtectedRoute>
           }

@@ -175,3 +175,40 @@ test('admin cannot deactivate themselves (400), but can reactivate', async () =>
   const recovered = await api('GET', '/api/admin/stats', { cookie: adminCookie });
   assert.equal(recovered.status, 200);
 });
+
+
+test('admin session and logout remain available', async () => {
+  const session = await api('GET', '/api/auth/me', { cookie: adminCookie });
+  assert.equal(session.status, 200);
+  assert.equal(session.body.user.role, 'ADMIN');
+  assert.equal((await api('POST', '/api/auth/logout', { cookie: adminCookie })).status, 200);
+});
+
+test('admin is denied every non-dashboard API area before validation or mutation', async () => {
+  const requests: Array<[string, string]> = [
+    ['GET', '/api/courts'], ['GET', `/api/courts/${courtId}`],
+    ['GET', `/api/courts/${courtId}/availability`], ['GET', `/api/courts/${courtId}/slots`],
+    ['GET', '/api/courts/owner/me'], ['POST', '/api/courts'],
+    ['PUT', `/api/courts/${courtId}`], ['DELETE', `/api/courts/${courtId}`],
+    ['POST', `/api/courts/${courtId}/slots`], ['DELETE', `/api/courts/${courtId}/slots/missing`],
+    ['GET', `/api/courts/${courtId}/blocks`], ['POST', `/api/courts/${courtId}/blocks`],
+    ['DELETE', `/api/courts/${courtId}/blocks/missing`],
+    ['GET', '/api/bookings/me'], ['POST', '/api/bookings'],
+    ['PATCH', '/api/bookings/missing/cancel'], ['GET', '/api/bookings/owner'],
+    ['PATCH', '/api/bookings/owner/missing/status'],
+    ['GET', '/api/teams'], ['POST', '/api/teams'], ['GET', '/api/teams/missing'],
+    ['POST', '/api/teams/missing/join'], ['DELETE', '/api/teams/missing/leave'],
+    ['DELETE', '/api/teams/missing'],
+    ['GET', '/api/players/me'], ['PUT', '/api/players/me'],
+    ['GET', '/api/players/search'], ['GET', '/api/players/friends'],
+    ['GET', `/api/reviews/${courtId}`], ['POST', '/api/reviews'],
+    ['PATCH', '/api/reviews/missing'], ['DELETE', '/api/reviews/missing'],
+  ];
+  for (const [method, path] of requests) {
+    const result = await api(method, path, { cookie: adminCookie });
+    assert.equal(result.status, 403, `${method} ${path}`);
+  }
+  // An admin session must not disable anonymous public browsing.
+  assert.equal((await api('GET', '/api/courts')).status, 200);
+  assert.equal((await api('GET', '/api/events')).status, 200);
+});

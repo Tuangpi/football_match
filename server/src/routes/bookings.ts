@@ -25,10 +25,10 @@ router.get("/me", getMyBookings);
 router.patch("/:id/cancel", cancelBooking);
 
 // Owner booking management
-router.get("/owner", authorize("OWNER", "ADMIN"), getOwnerBookings);
+router.get("/owner", authorize("OWNER"), getOwnerBookings);
 router.patch(
   "/owner/:id/status",
-  authorize("OWNER", "ADMIN"),
+  authorize("OWNER"),
   validate(updateBookingStatusSchema),
   updateBookingStatus,
 );

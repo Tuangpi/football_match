@@ -12,6 +12,13 @@
 
 ## Active Tasks
 
+### T027 - Dashboard-only admin role
+- Status: DONE (2026-10-19)
+- Expected: ADMIN can access only the admin dashboard and its APIs; player/owner pages, public court/event browsing while signed in, and non-admin actions are denied. Existing dashboard features remain intact.
+- Check: API permission regression tests, frontend redirect/navigation checks, builds, typecheck and lint.
+- Dependencies: Existing admin dashboard and authentication.
+- Result: Global session-aware page guard, dashboard-only desktop/mobile navigation, forced admin login destination, blocked court-detail links, API boundary denying admins all non-admin resources, and removed owner-route ADMIN grants. Existing dashboard moderation remains intact. Verified 68/68 server tests, 7/7 frontend tests, client typecheck and both builds; lint 0 errors (34 client/28 server warnings). Existing bundle-size warning remains. Browser click-through not run.
+
 ### T025 - Restrict friendships to players
 - Status: DONE (2026-10-19)
 - Expected: Only PLAYER accounts can discover active players, send requests, view friendships, and respond. Non-player legacy relationships remain stored but hidden and cannot be accepted. Friends navigation and route are player-only.

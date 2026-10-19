@@ -14,6 +14,7 @@ import bookingRoutes from './routes/bookings';
 import eventRoutes from './routes/events';
 import reviewRoutes from './routes/reviews';
 import adminRoutes from './routes/admin';
+import { restrictAdminToDashboard } from './middleware/auth';
 
 const app = express();
 
@@ -31,13 +32,14 @@ app.get('/health', (_req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api', restrictAdminToDashboard);
 app.use('/api/players', playerRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/courts', courtRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/admin', adminRoutes);
 
 // 404
 app.use(notFound);

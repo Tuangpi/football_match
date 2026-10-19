@@ -4,13 +4,13 @@
 Web application for booking futsal courts (designed to extend to 11-a-side). Players find courts and friends, form teams, and book whole-hour time ranges. Owners manage courts, opening hours, blocked time, bookings, and events.
 
 ## Scope / Requirements
-- Roles: PLAYER, OWNER, ADMIN (ADMIN = platform moderation, future)
+- Roles: PLAYER, OWNER, ADMIN. ADMIN is dashboard-only (`/admin`), not a player/owner superset. Signed-in admins cannot access other pages or non-admin APIs; existing dashboard stats, users/courts lists and moderation toggles remain available.
 - PLAYER: search courts, book/cancel whole-hour time ranges, manage profile, friends, teams, leave reviews
 - Friend discovery and all friendship actions are PLAYER-only (no OWNER/ADMIN exception). Discovery/new recipients require active players; legacy non-player relationships stay stored but hidden and cannot be accepted.
 - OWNER: list courts, configure weekly opening hours and blocked periods, confirm/cancel bookings, publish events (tournaments, discounts, price changes)
 - Out of scope (for now): payments, notifications, messaging
 - All court/slot prices and booking totals use Myanmar kyat (MMK); numeric API amounts are in MMK.
-- Event browsing (`/events`) is public across owners; event management (`/owner/events`) is scoped server-side to the owner's courts, with admin access across all courts.
+- Event browsing (`/events`) is public across owners; event management (`/owner/events`) is scoped server-side to the owner's courts, without ADMIN access. Anonymous browsing remains available, but signed-in admins are limited to the dashboard.
 
 ## Tech Stack
 - **client/**: React 18 + Vite + Tailwind CSS, react-router v6, axios, react-hook-form + zod, sonner (toasts), lucide-react icons

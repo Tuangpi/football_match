@@ -62,19 +62,19 @@ router.get("/:id/availability", getAvailability);
 
 // Owner
 router.use(authenticate);
-router.get("/owner/me", getOwnerCourts);
-router.post("/", authorize("OWNER", "ADMIN"), validate(createCourtSchema), createCourt);
-router.put("/:id", authorize("OWNER", "ADMIN"), validate(updateCourtSchema), updateCourt);
-router.delete("/:id", authorize("OWNER", "ADMIN"), deleteCourt);
+router.get("/owner/me", authorize("OWNER"), getOwnerCourts);
+router.post("/", authorize("OWNER"), validate(createCourtSchema), createCourt);
+router.put("/:id", authorize("OWNER"), validate(updateCourtSchema), updateCourt);
+router.delete("/:id", authorize("OWNER"), deleteCourt);
 router.post(
   "/:id/slots",
-  authorize("OWNER", "ADMIN"),
+  authorize("OWNER"),
   validate(createCourtSlotSchema),
   createCourtSlot,
 );
-router.delete("/:id/slots/:slotId", authorize("OWNER", "ADMIN"), deleteCourtSlot);
-router.get("/:id/blocks", authorize("OWNER", "ADMIN"), getBlocks);
-router.post("/:id/blocks", authorize("OWNER", "ADMIN"), validate(blockSchema), createBlock);
-router.delete("/:id/blocks/:blockId", authorize("OWNER", "ADMIN"), deleteBlock);
+router.delete("/:id/slots/:slotId", authorize("OWNER"), deleteCourtSlot);
+router.get("/:id/blocks", authorize("OWNER"), getBlocks);
+router.post("/:id/blocks", authorize("OWNER"), validate(blockSchema), createBlock);
+router.delete("/:id/blocks/:blockId", authorize("OWNER"), deleteBlock);
 
 export default router;

@@ -324,17 +324,18 @@ Success: `200 { success:true, user:{id,email,role,isActive}, message:"User activ
 
 ## Roles on the wire
 
+As of 2026-10-19, **ADMIN is dashboard-only**, not a role superset. A verified admin session receives `403` for all non-admin resource APIs, including otherwise-public court/event/review browsing. Authentication/session/logout remain available. Anonymous public browsing and PLAYER/OWNER permissions are unchanged. This restriction supersedes older admin exceptions in endpoint descriptions above; those exceptions no longer grant access.
+
 | Area | PLAYER | OWNER | ADMIN |
 |---|---|---|---|
-| Courts: browse, detail, slots | ✅ | ✅ | ✅ |
-| Courts: create / edit / delete / add slots | ❌ | own courts ✅ | any ✅ |
-| Bookings: create / my list / cancel own | ✅ (any role technically — no role check) | ✅ | ✅ |
-| Bookings: owner list / set status | ❌ | own courts ✅ | any ✅ |
-| Events: list | ✅ | ✅ | ✅ |
-| Events: create / edit / delete | ❌ | own courts ✅ | any ✅ |
-| Reviews: list | ✅ | ✅ | ✅ |
-| Reviews: create | ✅ (any logged-in role technically) | ✅ | ✅ |
-| Teams / profile | ✅ (any logged-in role) | ✅ | ✅ |
+| Courts: browse, detail, slots, availability | ✅ | ✅ | ❌ |
+| Courts: create / edit / delete / add slots / blocks | ❌ | own courts ✅ | ❌ |
+| Bookings: create / my list / cancel own | ✅ | ✅ (existing API behavior) | ❌ |
+| Bookings: owner list / set status | ❌ | own courts ✅ | ❌ |
+| Events: browse / detail | ✅ | ✅ | ❌ |
+| Events: management list / create / edit / delete | ❌ | own courts ✅ | ❌ |
+| Reviews: list / create / author actions | ✅ | ✅ (existing API behavior) | ❌ |
+| Teams / profile | ✅ | ✅ (existing API behavior) | ❌ |
 | Player discovery / friends | ✅ | ❌ | ❌ |
 | Admin lists / stats / toggles | ❌ | ❌ | ✅ |
-
+| Auth / session / logout | ✅ | ✅ | ✅ |

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { formatPrice } from '@/lib/currency';
 import { FadeIn } from '@/components/motion';
@@ -296,9 +295,7 @@ function CourtList(p: ViewProps) {
             <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <p className="font-medium">
-                  <Link to={`/courts/${c.id}`} className="hover:underline">
-                    {c.name}
-                  </Link>{' '}
+                  <span>{c.name}</span>{' '}
                   <span className="font-normal text-muted-foreground">· {c.city}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">

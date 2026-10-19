@@ -74,3 +74,25 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+// Public browsing stays anonymous, but an authenticated admin session may only
+// use auth/session endpoints and the separate admin dashboard API.
+export const restrictAdminToDashboard = (req: Request, res: Response, next: NextFunction): void => {
+  const token = req.cookies?.token;
+  if (!token) return next();
+
+  let role: unknown;
+  try {
+    role = (jwt.verify(token, JWT_SECRET) as JwtPayload).role;
+  } catch {
+    // Public routes still accept anonymous requests with stale cookies.
+    // Protected routes validate authentication themselves.
+    return next();
+  }
+  if (role !== 'ADMIN') return next();
+
+  void authenticate(req, res, (err?: unknown) => {
+    if (err) return next(err);
+    return next(new AppError('Forbidden: admins may only access the admin dashboard', 403));
+  });
+};

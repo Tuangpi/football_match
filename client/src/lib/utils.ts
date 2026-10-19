@@ -13,6 +13,7 @@ export function defaultRouteForRole(role?: string): string {
 
 /**
  * Resolve where to send the user after login/register.
+ * - ADMIN always goes to /admin and never inherits player/owner access.
  * - Honors a saved `state.from` (set by ProtectedRoute), so "log in to continue"
  *   actually returns the user where they were going — except auth pages, which
  *   would loop, and role-gated owner/admin paths when the user lacks that role.
@@ -23,8 +24,9 @@ export function resolvePostAuthRedirect(
   fromPath?: string,
 ): string {
   const fallback = defaultRouteForRole(role);
+  if (role === 'ADMIN') return fallback;
   if (!fromPath || fromPath === '/login' || fromPath === '/register') return fallback;
   if (fromPath.startsWith('/admin') && role !== 'ADMIN') return fallback;
-  if (fromPath.startsWith('/owner') && role !== 'OWNER' && role !== 'ADMIN') return fallback;
+  if (fromPath.startsWith('/owner') && role !== 'OWNER') return fallback;
   return fromPath;
 }

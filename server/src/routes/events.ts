@@ -50,10 +50,10 @@ router.get('/:id', getEvent);
 
 // Owner
 router.use(authenticate);
-router.get('/owner/me', authorize('OWNER', 'ADMIN'), getOwnerEvents);
-router.get('/owner/me/:id', authorize('OWNER', 'ADMIN'), getOwnerEvent);
-router.post('/', authorize('OWNER', 'ADMIN'), validate(createEventSchema), createEvent);
-router.put('/:id', authorize('OWNER', 'ADMIN'), validate(updateEventSchema), updateEvent);
-router.delete('/:id', authorize('OWNER', 'ADMIN'), deleteEvent);
+router.get('/owner/me', authorize('OWNER'), getOwnerEvents);
+router.get('/owner/me/:id', authorize('OWNER'), getOwnerEvent);
+router.post('/', authorize('OWNER'), validate(createEventSchema), createEvent);
+router.put('/:id', authorize('OWNER'), validate(updateEventSchema), updateEvent);
+router.delete('/:id', authorize('OWNER'), deleteEvent);
 
 export default router;

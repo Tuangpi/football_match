@@ -152,22 +152,19 @@ test('owner events: authenticated, role-gated and scoped to court ownership', as
   assert.equal((await api('GET', '/api/events/owner/me/missing', { cookie: owner.cookie })).status, 404);
 });
 
-test('admin manages all events and owners see admin-created events on their courts', async () => {
-  const created = await createEvent(adminCookie, {
-    courtId, title: 'Admin announcement', type: 'PRICE_CHANGE',
-    startDate: hoursFromNow(20), endDate: hoursFromNow(21),
-  });
-  assert.equal(created.status, 201);
-  const id = created.body.event.id;
-  const mine = await api('GET', '/api/events/owner/me', { cookie: owner.cookie });
-  assert.ok(mine.body.events.some((e: any) => e.id === id));
-  const all = await api('GET', '/api/events/owner/me', { cookie: adminCookie });
-  assert.equal(all.status, 200);
-  assert.ok(all.body.events.some((e: any) => e.court.id === courtId));
-  assert.ok(all.body.events.some((e: any) => e.court.id === otherCourtId));
-  assert.equal((await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: adminCookie })).status, 200);
-  assert.equal((await api('PUT', `/api/events/${upcomingId}`, { cookie: adminCookie, body: { description: 'Admin edited' } })).status, 200);
-  assert.equal((await api('DELETE', `/api/events/${id}`, { cookie: adminCookie })).status, 200);
+test('admin cannot browse or manage events outside the dashboard', async () => {
+  const requests: Array<[string, string]> = [
+    ['GET', '/api/events'],
+    ['GET', `/api/events/${upcomingId}`],
+    ['GET', '/api/events/owner/me'],
+    ['GET', `/api/events/owner/me/${upcomingId}`],
+    ['POST', '/api/events'],
+    ['PUT', `/api/events/${upcomingId}`],
+    ['DELETE', `/api/events/${upcomingId}`],
+  ];
+  for (const [method, path] of requests) {
+    assert.equal((await api(method, path, { cookie: adminCookie })).status, 403, `${method} ${path}`);
+  }
 });
 
 test('event detail: 200 with court info, 404 when missing', async () => {
