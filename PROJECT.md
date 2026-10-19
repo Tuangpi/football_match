@@ -10,6 +10,7 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - OWNER: list courts, configure weekly opening hours and blocked periods, confirm/cancel bookings, publish events (tournaments, discounts, price changes)
 - Out of scope (for now): payments, notifications, messaging
 - All court/slot prices and booking totals use Myanmar kyat (MMK); numeric API amounts are in MMK.
+- Client language preference supports English (`en`, default) and Myanmar (`my`), saved locally. Translation dictionaries cover application-owned UI text; court names, descriptions, reviews and other user content remain unchanged. Dates retain Asia/Yangon booking rules and prices retain MMK.
 - Event browsing (`/events`) is public across owners; event management (`/owner/events`) is scoped server-side to the owner's courts, without ADMIN access. Anonymous browsing remains available, but signed-in admins are limited to the dashboard.
 
 ## Tech Stack

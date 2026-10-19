@@ -1,3 +1,5 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { formatBooking } from "@/lib/bookingTime";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -23,6 +25,7 @@ type Booking = {
 };
 
 export function MyBookings() {
+  useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +34,7 @@ export function MyBookings() {
       const res = await api.get("/bookings/me");
       setBookings(res.data.bookings);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load bookings");
+      toast.error(t(err.response?.data?.message || t("Failed to load bookings")));
     } finally {
       setLoading(false);
     }
@@ -43,13 +46,13 @@ export function MyBookings() {
   }, []);
 
   async function cancelBooking(id: string) {
-    if (!confirm("Cancel this booking?")) return;
+    if (!confirm(t("Cancel this booking?"))) return;
     try {
       await api.patch(`/bookings/${id}/cancel`);
-      toast.success("Booking cancelled");
+      toast.success(t("Booking cancelled"));
       fetchBookings();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Cancel failed");
+      toast.error(t(err.response?.data?.message || t("Cancel failed")));
     }
   }
 
@@ -63,15 +66,15 @@ export function MyBookings() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground mb-6">My Bookings</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">{t("My Bookings")}</h1>
         {bookings.length === 0 ? (
           <EmptyState
             icon={Calendar}
-            title="No bookings yet"
-            description="Find a court and choose your booking time."
+            title={t("No bookings yet")}
+            description={t("Find a court and choose your booking time.")}
             action={
               <Button asChild variant="outline" size="sm">
-                <Link to="/">Browse courts</Link>
+                <Link to="/">{t("Browse courts")}</Link>
               </Button>
             }
           />
@@ -91,24 +94,21 @@ export function MyBookings() {
                               : "secondary"
                         }
                       >
-                        {b.status}
+                        {t(b.status)}
                       </Badge>
                     </div>
                     <h3 className="font-bold text-lg mb-1">{b.court.name}</h3>
                     <p className="text-sm text-muted-foreground">{b.court.city}</p>
                     <div className="flex items-center gap-3 mt-3 text-sm">
                       <Clock className="h-4 w-4 text-muted-foreground/70" />
-                      <span>{formatBooking(b)} (Myanmar time)</span>
+                      <span>{formatBooking(b)} {t("(Myanmar time)")}</span>
                     </div>
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      Total: {formatPrice(b.totalPrice)}
+                    <div className="mt-2 text-sm text-muted-foreground"> {t("Total:")} {formatPrice(b.totalPrice)}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     {b.status !== "CANCELLED" && (
-                      <Button onClick={() => cancelBooking(b.id)} variant="destructive" size="sm">
-                        Cancel
-                      </Button>
+                      <Button onClick={() => cancelBooking(b.id)} variant="destructive" size="sm"> {t("Cancel")} </Button>
                     )}
                   </div>
                 </CardContent>

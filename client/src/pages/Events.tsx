@@ -1,3 +1,6 @@
+import { message } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
@@ -37,6 +40,7 @@ function splitByTime(events: EventSummary[]) {
 }
 
 export function Events() {
+  useLanguage();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const type = searchParams.get('type') ?? '';
@@ -71,7 +75,7 @@ export function Events() {
       const res = await api.get(`/events${qs ? `?${qs}` : ''}`);
       setEvents(res.data.events ?? []);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load events');
+      toast.error(t(err.response?.data?.message || t("Failed to load events")));
     } finally {
       setLoading(false);
     }
@@ -110,20 +114,13 @@ export function Events() {
         />
         <div className="relative mx-auto max-w-5xl px-4 py-12 text-center sm:py-16">
           <FadeIn>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
-              Tournaments · Promotions · Price changes
-            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur"> {t("Tournaments · Promotions · Price changes")} </span>
           </FadeIn>
           <FadeIn delay={0.06}>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Events &amp; tournaments
-            </h1>
+            <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl"> {t("Events & tournaments")} </h1>
           </FadeIn>
           <FadeIn delay={0.12}>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-white/85 sm:text-base">
-              Find competitions and offers at courts near you, or see what is happening at your
-              favourite venue.
-            </p>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-white/85 sm:text-base"> {t("Find competitions and offers at courts near you, or see what is happening at your favourite venue.")} </p>
           </FadeIn>
         </div>
       </div>
@@ -136,17 +133,17 @@ export function Events() {
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="City or area"
+                placeholder={t("City or area")}
                 value={city}
                 onChange={(e) => setFilter('city', e.target.value)}
-                aria-label="Filter events by city"
+                aria-label={t("Filter events by city")}
                 className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
               {city && (
                 <button
                   type="button"
                   onClick={() => setFilter('city', '')}
-                  aria-label="Clear city filter"
+                  aria-label={t("Clear city filter")}
                   className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
@@ -156,31 +153,30 @@ export function Events() {
             <select
               value={type}
               onChange={(e) => setFilter('type', e.target.value)}
-              aria-label="Filter by event type"
+              aria-label={t("Filter by event type")}
               className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <option value="">All types</option>
+              <option value="">{t("All types")}</option>
               {EVENT_TYPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </option>
               ))}
             </select>
             <select
               value={when}
               onChange={(e) => setFilter('when', e.target.value)}
-              aria-label="Filter by date"
+              aria-label={t("Filter by date")}
               className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {WHEN_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </option>
               ))}
             </select>
             <Button type="button" onClick={() => setReloadKey((k) => k + 1)} className="rounded-full">
-              <Search className="h-4 w-4" /> Search
-            </Button>
+              <Search className="h-4 w-4" /> {t("Search")} </Button>
           </div>
         </div>
       </div>
@@ -189,24 +185,23 @@ export function Events() {
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold">All events</h2>
+            <h2 className="text-2xl font-bold">{t("All events")}</h2>
             <p className="text-sm text-muted-foreground">
               {loading
                 ? 'Loading…'
-                : `${events.length} event${events.length === 1 ? '' : 's'} found`}
+                : message(events.length === 1 ? "{count} event found" : "{count} events found", { count: events.length })}
               {!loading && city && <span> · {city}</span>}
-              {!loading && type && <span> · {getEventMeta(type).label}</span>}
+              {!loading && type && <span> · {t(getEventMeta(type).label)}</span>}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {filtersActive && !loading && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4" /> Clear filters
-              </Button>
+                <X className="h-4 w-4" /> {t("Clear filters")} </Button>
             )}
             {canCreate && (
               <Button asChild>
-                <Link to="/owner/events">Event Management</Link>
+                <Link to="/owner/events">{t("Event Management")}</Link>
               </Button>
             )}
           </div>
@@ -228,17 +223,15 @@ export function Events() {
         ) : events.length === 0 ? (
           <EmptyState
             icon={CalendarX}
-            title="No events found"
+            title={t("No events found")}
             description={
               filtersActive
-                ? 'Try a different city, type or date range, or clear the filters.'
-                : 'Court owners have not published any events yet. Check back soon.'
+                ? t("Try a different city, type or date range, or clear the filters.")
+                : t("Court owners have not published any events yet. Check back soon.")
             }
             action={
               filtersActive ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear filters
-                </Button>
+                <Button variant="outline" onClick={clearFilters}> {t("Clear filters")} </Button>
               ) : undefined
             }
           />
@@ -252,12 +245,12 @@ export function Events() {
                     <h2 className="text-2xl font-bold">{section.title}</h2>
                     <p className="text-sm text-muted-foreground">
                       {section.id === 'past'
-                        ? 'Events that have already finished'
-                        : 'Coming up at courts near you'}
+                        ? t("Events that have already finished")
+                        : t("Coming up at courts near you")}
                     </p>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {section.items.length} event{section.items.length === 1 ? '' : 's'}
+                    {section.items.length} {t("event")}{section.items.length === 1 ? '' : 's'}
                   </span>
                 </div>
                 <div

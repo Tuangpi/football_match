@@ -1,4 +1,5 @@
 import { atHour, overlaps, type TimeRange } from "./bookingTime";
+import { getLocale } from './language';
 
 export type CalendarView = "day" | "week" | "month";
 
@@ -37,7 +38,7 @@ export function onCalendarDay(range: TimeRange, date: string) {
 }
 
 export function calendarLabel(date: string, options: Intl.DateTimeFormatOptions) {
-  return new Date(atHour(date, 12)).toLocaleDateString(undefined, {
+  return new Date(atHour(date, 12)).toLocaleDateString(getLocale(), {
     ...options,
     timeZone: "Asia/Yangon",
   });

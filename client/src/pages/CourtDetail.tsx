@@ -1,4 +1,6 @@
-import { useParams } from "react-router-dom";
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { formatPrice } from "@/lib/currency";
@@ -56,7 +58,10 @@ const reviewSchema = z.object({
 type ReviewFormData = z.infer<typeof reviewSchema>;
 
 export function CourtDetail() {
+  useLanguage();
   const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [court, setCourt] = useState<Court | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +85,7 @@ export function CourtDetail() {
       const res = await api.get(`/courts/${id}`);
       setCourt(res.data.court);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load court");
+      toast.error(t(err.response?.data?.message || t("Failed to load court")));
     } finally {
       setLoading(false);
     }
@@ -115,12 +120,12 @@ export function CourtDetail() {
         rating: data.rating,
         comment: data.comment || undefined,
       });
-      toast.success("Review posted!");
+      toast.success(t("Review posted!"));
       resetReview();
       fetchCourt();
     } catch (err: any) {
       // e.g. friendly duplicate error: "You have already reviewed this court"
-      toast.error(err.response?.data?.message || "Failed to post review");
+      toast.error(t(err.response?.data?.message || t("Failed to post review")));
     } finally {
       setSubmittingReview(false);
     }
@@ -140,13 +145,13 @@ export function CourtDetail() {
         rating: editRating,
         comment: editComment || null,
       });
-      toast.success("Review updated");
+      toast.success(t("Review updated"));
       setEditingReviewId(null);
       fetchCourt();
     } catch (err: unknown) {
       toast.error(
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          "Failed to update review",
+          t("Failed to update review"),
       );
     } finally {
       setReviewBusy(false);
@@ -154,17 +159,17 @@ export function CourtDetail() {
   };
 
   const deleteReview = async (id: string) => {
-    if (!window.confirm("Delete your review? This cannot be undone.")) return;
+    if (!window.confirm(t("Delete your review? This cannot be undone."))) return;
     setReviewBusy(true);
     try {
       await api.delete(`/reviews/${id}`);
-      toast.success("Review deleted");
+      toast.success(t("Review deleted"));
       setEditingReviewId(null);
       fetchCourt();
     } catch (err: unknown) {
       toast.error(
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          "Failed to delete review",
+          t("Failed to delete review"),
       );
     } finally {
       setReviewBusy(false);
@@ -201,9 +206,9 @@ export function CourtDetail() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent">
           <CalendarClock className="h-8 w-8 text-accent-foreground" />
         </div>
-        <p className="text-lg font-semibold">Court not found</p>
+        <p className="text-lg font-semibold">{t("Court not found")}</p>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/courts">Back to courts</Link>
+          <Link to="/courts">{t("Back to courts")}</Link>
         </Button>
       </div>
     );
@@ -216,9 +221,7 @@ export function CourtDetail() {
         <Link
           to="/courts"
           className="text-sm text-muted-foreground mb-4 inline-block hover:text-foreground transition"
-        >
-          ← Back to courts
-        </Link>
+        > {t("← Back to courts")} </Link>
 
         {/* Hero header */}
         <FadeIn>
@@ -232,7 +235,7 @@ export function CourtDetail() {
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 text-white">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <Badge className="border-transparent bg-white/20 text-white backdrop-blur">
-                  {court.sportType === "ELEVEN_A_SIDE" ? "11-a-side" : "Futsal"}
+                  {court.sportType === "ELEVEN_A_SIDE" ? t("11-a-side") : t("Futsal")}
                 </Badge>
                 <Badge variant="secondary" className="bg-white/90 text-foreground">
                   {court.sportType === "ELEVEN_A_SIDE" ? "11 vs 11" : "5 vs 5"}
@@ -257,16 +260,16 @@ export function CourtDetail() {
             {user && user.role === "PLAYER" && myTeams.length > 0 && (
               <Card>
                 <CardContent className="p-4">
-                  <Label className="mb-1 block">Book with team (optional)</Label>
+                  <Label className="mb-1 block">{t("Book with team (optional)")}</Label>
                   <Select
                     value={selectedTeamId || "none"}
                     onValueChange={(v) => setSelectedTeamId(v === "none" ? "" : v)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="No team (individual)" />
+                      <SelectValue placeholder={t("No team (individual)")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No team (individual)</SelectItem>
+                      <SelectItem value="none">{t("No team (individual)")}</SelectItem>
                       {myTeams.map((t) => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name}
@@ -282,40 +285,40 @@ export function CourtDetail() {
               price={court.basePricePerHour}
               canBook={user?.role === "PLAYER"}
               teamId={selectedTeamId}
+              onSignInRequested={
+                !user ? () => navigate("/login", { state: { from: location } }) : undefined
+              }
             />
           </div>
 
           <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Court Info</CardTitle>
+                <CardTitle className="text-lg">{t("Court Info")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-2">
-                  <strong>Price:</strong> {formatPrice(court.basePricePerHour)}/hour
-                </p>
+                  <strong>{t("Price:")}</strong> {formatPrice(court.basePricePerHour)}{t("/hour")} </p>
                 {court.surfaceType && (
                   <p className="text-sm text-muted-foreground mb-2">
-                    <strong>Surface:</strong> {court.surfaceType}
+                    <strong>{t("Surface:")}</strong> {court.surfaceType}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  <strong>Owner:</strong> {court.owner.email}
+                  <strong>{t("Owner:")}</strong> {court.owner.email}
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Reviews ({court.reviews.length})</CardTitle>
+                <CardTitle className="text-lg">{t("Reviews (")}{court.reviews.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 {court.reviews.length === 0 ? (
                   <div className="py-6 text-center">
                     <Star className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="text-muted-foreground text-sm">
-                      No reviews yet. Be the first to rate this court!
-                    </p>
+                    <p className="text-muted-foreground text-sm"> {t("No reviews yet. Be the first to rate this court!")} </p>
                   </div>
                 ) : (
                   court.reviews.map((r) => {
@@ -338,18 +341,14 @@ export function CourtDetail() {
                                   className="h-7 px-2 text-xs"
                                   onClick={() => startEditReview(r)}
                                   disabled={reviewBusy}
-                                >
-                                  Edit
-                                </Button>
+                                > {t("Edit")} </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 px-2 text-xs text-destructive hover:text-destructive"
                                   onClick={() => deleteReview(r.id)}
                                   disabled={reviewBusy}
-                                >
-                                  Delete
-                                </Button>
+                                > {t("Delete")} </Button>
                               </span>
                             )}
                           </div>
@@ -359,7 +358,7 @@ export function CourtDetail() {
                                 value={editRating}
                                 onChange={(e) => setEditRating(Number(e.target.value))}
                                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                aria-label="Edit rating"
+                                aria-label={t("Edit rating")}
                               >
                                 {[5, 4, 3, 2, 1].map((n) => (
                                   <option key={n} value={n}>
@@ -372,7 +371,7 @@ export function CourtDetail() {
                                 rows={2}
                                 value={editComment}
                                 onChange={(e) => setEditComment(e.target.value)}
-                                placeholder="Comment (optional)"
+                                placeholder={t("Comment (optional)")}
                               />
                               <div className="flex justify-end gap-2">
                                 <Button
@@ -380,11 +379,9 @@ export function CourtDetail() {
                                   size="sm"
                                   onClick={() => setEditingReviewId(null)}
                                   disabled={reviewBusy}
-                                >
-                                  Cancel
-                                </Button>
+                                > {t("Cancel")} </Button>
                                 <Button size="sm" onClick={saveEditReview} disabled={reviewBusy}>
-                                  {reviewBusy ? "Saving…" : "Save"}
+                                  {reviewBusy ? "Saving…" : t("Save")}
                                 </Button>
                               </div>
                             </div>
@@ -408,26 +405,20 @@ export function CourtDetail() {
                 <div className="mt-4 pt-4 border-t border-border/60">
                   {!user ? (
                     <p className="text-sm text-muted-foreground">
-                      <Link to="/login" className="text-primary hover:underline">
-                        Login
-                      </Link>{" "}
-                      to leave a review.
-                    </p>
+                      <Link to="/login" className="text-primary hover:underline"> {t("Login")} </Link>{" "} {t("to leave a review.")} </p>
                   ) : user.role !== "PLAYER" ? null : myReview ? (
-                    <p className="text-sm text-muted-foreground">
-                      You&apos;ve already reviewed this court — use <strong>Edit</strong> or{" "}
-                      <strong>Delete</strong> on your review above to change it.
-                    </p>
+                    <p className="text-sm text-muted-foreground"> {t("You've already reviewed this court — use")} <strong>{t("Edit")}</strong> {t("or")}{" "}
+                      <strong>{t("Delete")}</strong> {t("on your review above to change it.")} </p>
                   ) : (
                     <form onSubmit={handleReviewSubmit(onReviewSubmit)} className="space-y-3">
-                      <h4 className="text-sm font-bold text-foreground">Write a Review</h4>
+                      <h4 className="text-sm font-bold text-foreground">{t("Write a Review")}</h4>
                       <div>
-                        <Label className="mb-1 block">Rating</Label>
+                        <Label className="mb-1 block">{t("Rating")}</Label>
                         <select
                           {...registerReview("rating")}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
-                          <option value="">Select rating</option>
+                          <option value="">{t("Select rating")}</option>
                           {[5, 4, 3, 2, 1].map((n) => (
                             <option key={n} value={n}>
                               {"★".repeat(n)}
@@ -436,15 +427,15 @@ export function CourtDetail() {
                           ))}
                         </select>
                         {reviewErrors.rating && (
-                          <p className="text-destructive text-sm">{reviewErrors.rating.message}</p>
+                          <p className="text-destructive text-sm">{t(reviewErrors.rating.message)}</p>
                         )}
                       </div>
                       <div>
-                        <Label className="mb-1 block">Comment (optional)</Label>
+                        <Label className="mb-1 block">{t("Comment (optional)")}</Label>
                         <Textarea {...registerReview("comment")} rows={2} />
                       </div>
                       <Button type="submit" disabled={submittingReview} size="sm">
-                        {submittingReview ? "Posting…" : "Post Review"}
+                        {submittingReview ? "Posting…" : t("Post Review")}
                       </Button>
                     </form>
                   )}

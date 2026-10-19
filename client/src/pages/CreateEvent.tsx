@@ -1,3 +1,5 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -41,6 +43,7 @@ function toLocalDateTime(value: string) {
 }
 
 export function CreateEvent() {
+  useLanguage();
   const { id } = useParams();
   const editing = !!id;
   const { user } = useAuth();
@@ -87,7 +90,7 @@ export function CreateEvent() {
       } catch {
         if (active) {
           setLoadError(true);
-          toast.error(id ? 'Event not found or unavailable for management' : 'Failed to load courts');
+          toast.error(id ? t("Event not found or unavailable for management") : t("Failed to load courts"));
         }
       } finally {
         if (active) setLoadingCourts(false);
@@ -110,17 +113,17 @@ export function CreateEvent() {
       };
       if (editing) await api.put(`/events/${id}`, payload);
       else await api.post('/events', { ...payload, courtId: data.courtId });
-      toast.success(editing ? 'Event updated!' : 'Event published!');
+      toast.success(editing ? t("Event updated!") : t("Event published!"));
       navigate('/owner/events');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to save event');
+      toast.error(t(err.response?.data?.message || t("Failed to save event")));
     } finally {
       setLoading(false);
     }
   };
 
   if (!user || (user.role !== 'OWNER' && user.role !== 'ADMIN')) {
-    return <div className="p-8 text-center">Access denied. Owner or admin role required.</div>;
+    return <div className="p-8 text-center">{t("Access denied. Owner or admin role required.")}</div>;
   }
 
   if (loadingCourts) {
@@ -134,8 +137,8 @@ export function CreateEvent() {
   if (loadError) {
     return (
       <div className="p-8 text-center space-y-4">
-        <p>{editing ? 'Event not found or unavailable for management.' : 'Unable to load courts. Please try again.'}</p>
-        <Button asChild variant="outline"><Link to="/owner/events">Back to event management</Link></Button>
+        <p>{editing ? t("Event not found or unavailable for management.") : t("Unable to load courts. Please try again.")}</p>
+        <Button asChild variant="outline"><Link to="/owner/events">{t("Back to event management")}</Link></Button>
       </div>
     );
   }
@@ -147,12 +150,12 @@ export function CreateEvent() {
           <Calendar className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">
             {isAdmin
-              ? 'There are no active courts to publish an event for.'
-              : 'You need a court before you can create events.'}
+              ? t("There are no active courts to publish an event for.")
+              : t("You need a court before you can create events.")}
           </p>
           {!isAdmin && (
             <Button asChild size="sm">
-              <Link to="/owner/courts/create">List your first court</Link>
+              <Link to="/owner/courts/create">{t("List your first court")}</Link>
             </Button>
           )}
         </div>
@@ -163,54 +166,54 @@ export function CreateEvent() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <Link to="/owner/events" className="mb-4 inline-block text-sm text-primary hover:underline">← Event Management</Link>
-        <h1 className="text-2xl font-bold text-foreground mb-6">{editing ? 'Edit Event' : 'Create Event'}</h1>
+        <Link to="/owner/events" className="mb-4 inline-block text-sm text-primary hover:underline">{t("← Event Management")}</Link>
+        <h1 className="text-2xl font-bold text-foreground mb-6">{editing ? t("Edit Event") : t("Create Event")}</h1>
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
-                <Label className="mb-1 block">Court</Label>
+                <Label className="mb-1 block">{t("Court")}</Label>
                 {editing && <input type="hidden" {...register('courtId')} />}
-                <select {...(editing ? { value: courts[0]?.id } : register('courtId'))} aria-label="Court" disabled={editing} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                  <option value="">Select a court</option>
+                <select {...(editing ? { value: courts[0]?.id } : register('courtId'))} aria-label={t("Court")} disabled={editing} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <option value="">{t("Select a court")}</option>
                   {courts.map((court) => (
                     <option key={court.id} value={court.id}>
                       {court.name} ({court.city})
                     </option>
                   ))}
                 </select>
-                {errors.courtId && <p className="text-destructive text-sm">{errors.courtId.message}</p>}
+                {errors.courtId && <p className="text-destructive text-sm">{t(errors.courtId.message)}</p>}
               </div>
               <div>
-                <Label className="mb-1 block">Title</Label>
-                <Input {...register('title')} placeholder="e.g. Weekend Futsal Tournament" />
-                {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
+                <Label className="mb-1 block">{t("Title")}</Label>
+                <Input {...register('title')} placeholder={t("e.g. Weekend Futsal Tournament")} />
+                {errors.title && <p className="text-destructive text-sm">{t(errors.title.message)}</p>}
               </div>
               <div>
-                <Label className="mb-1 block">Type</Label>
+                <Label className="mb-1 block">{t("Type")}</Label>
                 <select {...register('type')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                  <option value="TOURNAMENT">Tournament</option>
-                  <option value="COMPETITION">Competition</option>
-                  <option value="DISCOUNT">Discount</option>
-                  <option value="PRICE_CHANGE">Price change</option>
+                  <option value="TOURNAMENT">{t("Tournament")}</option>
+                  <option value="COMPETITION">{t("Competition")}</option>
+                  <option value="DISCOUNT">{t("Discount")}</option>
+                  <option value="PRICE_CHANGE">{t("Price change")}</option>
                 </select>
-                {errors.type && <p className="text-destructive text-sm">{errors.type.message}</p>}
+                {errors.type && <p className="text-destructive text-sm">{t(errors.type.message)}</p>}
               </div>
               <div>
-                <Label className="mb-1 block">Description (optional)</Label>
+                <Label className="mb-1 block">{t("Description (optional)")}</Label>
                 <Textarea {...register('description')} rows={3} />
-                {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
+                {errors.description && <p className="text-destructive text-sm">{t(errors.description.message)}</p>}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="mb-1 block">Start Date &amp; Time</Label>
+                  <Label className="mb-1 block">{t("Start Date & Time")}</Label>
                   <Input {...register('startDate')} type="datetime-local" />
-                  {errors.startDate && <p className="text-destructive text-sm">{errors.startDate.message}</p>}
+                  {errors.startDate && <p className="text-destructive text-sm">{t(errors.startDate.message)}</p>}
                 </div>
                 <div>
-                  <Label className="mb-1 block">End Date &amp; Time</Label>
+                  <Label className="mb-1 block">{t("End Date & Time")}</Label>
                   <Input {...register('endDate')} type="datetime-local" />
-                  {errors.endDate && <p className="text-destructive text-sm">{errors.endDate.message}</p>}
+                  {errors.endDate && <p className="text-destructive text-sm">{t(errors.endDate.message)}</p>}
                 </div>
               </div>
               <Button
@@ -218,7 +221,7 @@ export function CreateEvent() {
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : ''} {editing ? 'Save changes' : 'Publish Event'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : ''} {editing ? t("Save changes") : t("Publish Event")}
               </Button>
             </form>
           </CardContent>

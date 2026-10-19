@@ -1,3 +1,5 @@
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -45,6 +47,7 @@ type FormState = {
 const EMPTY_FORM: FormState = { name: "", email: "", subject: "", message: "" };
 
 export function Contact() {
+  useLanguage();
   const { user } = useAuth();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
@@ -71,7 +74,7 @@ export function Contact() {
       form.subject,
     )}&body=${encodeURIComponent(body)}`;
     window.location.href = mailto;
-    toast.success("Opening your email app — just press send.");
+    toast.success(t("Opening your email app — just press send."));
   }
 
   return (
@@ -89,19 +92,13 @@ export function Contact() {
         <div className="relative mx-auto max-w-5xl px-4 py-12 text-center sm:py-14">
           <FadeIn>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
-              <Mail className="h-3.5 w-3.5" /> Contact us
-            </span>
+              <Mail className="h-3.5 w-3.5" /> {t("Contact us")} </span>
           </FadeIn>
           <FadeIn delay={0.06}>
-            <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-5xl">
-              We&apos;d love to hear from you
-            </h1>
+            <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-5xl"> {t("We'd love to hear from you")} </h1>
           </FadeIn>
           <FadeIn delay={0.12}>
-            <p className="mx-auto mt-4 max-w-2xl text-base text-white/85 sm:text-lg">
-              Questions about a booking, your court listing, or something not working? Send us a
-              message and we will help you out.
-            </p>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-white/85 sm:text-lg"> {t("Questions about a booking, your court listing, or something not working? Send us a message and we will help you out.")} </p>
           </FadeIn>
         </div>
       </div>
@@ -114,14 +111,13 @@ export function Contact() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <MessageSquare className="h-5 w-5 text-primary" /> Send us a message
-                  </CardTitle>
+                    <MessageSquare className="h-5 w-5 text-primary" /> {t("Send us a message")} </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={onSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="contact-name">Your name</Label>
+                        <Label htmlFor="contact-name">{t("Your name")}</Label>
                         <Input
                           id="contact-name"
                           required
@@ -132,7 +128,7 @@ export function Contact() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contact-email">Email</Label>
+                        <Label htmlFor="contact-email">{t("Email")}</Label>
                         <Input
                           id="contact-email"
                           type="email"
@@ -145,33 +141,30 @@ export function Contact() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="contact-subject">Subject</Label>
+                      <Label htmlFor="contact-subject">{t("Subject")}</Label>
                       <Input
                         id="contact-subject"
                         required
-                        placeholder="How can we help?"
+                        placeholder={t("How can we help?")}
                         value={form.subject}
                         onChange={update("subject")}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="contact-message">Message</Label>
+                      <Label htmlFor="contact-message">{t("Message")}</Label>
                       <Textarea
                         id="contact-message"
                         required
                         rows={6}
-                        placeholder="Tell us what's on your mind…"
-                        value={form.message}
+                        placeholder={t("Tell us what's on your mind…")}
+                        value={t(form.message)}
                         onChange={update("message")}
                       />
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs text-muted-foreground">
-                        This opens your email app with the message ready to send.
-                      </p>
+                      <p className="text-xs text-muted-foreground"> {t("This opens your email app with the message ready to send.")} </p>
                       <Button type="submit" className="rounded-full">
-                        <Send /> Send message
-                      </Button>
+                        <Send /> {t("Send message")} </Button>
                     </div>
                   </form>
                 </CardContent>
@@ -184,14 +177,13 @@ export function Contact() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Mail className="h-5 w-5 text-primary" /> Other ways to reach us
-                  </CardTitle>
+                    <Mail className="h-5 w-5 text-primary" /> {t("Other ways to reach us")} </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="flex gap-3">
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Email</p>
+                      <p className="text-sm font-medium text-foreground">{t("Email")}</p>
                       <a
                         href={`mailto:${SUPPORT_EMAIL}`}
                         className="text-sm text-primary hover:underline"
@@ -203,19 +195,15 @@ export function Contact() {
                   <div className="flex gap-3">
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Response time</p>
-                      <p className="text-sm text-muted-foreground">
-                        We usually reply within one business day.
-                      </p>
+                      <p className="text-sm font-medium text-foreground">{t("Response time")}</p>
+                      <p className="text-sm text-muted-foreground"> {t("We usually reply within one business day.")} </p>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <UsersRound className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Community</p>
-                      <p className="text-sm text-muted-foreground">
-                        Questions about teams, friends or bookings are welcome too.
-                      </p>
+                      <p className="text-sm font-medium text-foreground">{t("Community")}</p>
+                      <p className="text-sm text-muted-foreground"> {t("Questions about teams, friends or bookings are welcome too.")} </p>
                     </div>
                   </div>
                 </CardContent>
@@ -225,25 +213,19 @@ export function Contact() {
             <FadeIn delay={0.14}>
               <Card>
                 <CardContent className="space-y-2 p-5 text-sm">
-                  <p className="font-medium text-foreground">Looking for something specific?</p>
+                  <p className="font-medium text-foreground">{t("Looking for something specific?")}</p>
                   <Link
                     to="/"
                     className="block text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Browse courts →
-                  </Link>
+                  > {t("Browse courts →")} </Link>
                   <Link
                     to="/about"
                     className="block text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    About FootballMatch →
-                  </Link>
+                  > {t("About FootballMatch →")} </Link>
                   <Link
                     to="/events"
                     className="block text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Court events →
-                  </Link>
+                  > {t("Court events →")} </Link>
                 </CardContent>
               </Card>
             </FadeIn>
@@ -254,20 +236,18 @@ export function Contact() {
       {/* FAQ */}
       <div className="mx-auto max-w-5xl px-4 pb-8">
         <div className="mb-4 text-center">
-          <h2 className="text-2xl font-bold text-foreground">Frequently asked questions</h2>
-          <p className="text-sm text-muted-foreground">
-            Quick answers to the most common questions
-          </p>
+          <h2 className="text-2xl font-bold text-foreground">{t("Frequently asked questions")}</h2>
+          <p className="text-sm text-muted-foreground"> {t("Quick answers to the most common questions")} </p>
         </div>
         <Card>
           <CardContent className="divide-y divide-border/60 p-2 sm:p-4">
             {FAQS.map((faq) => (
               <details key={faq.q} className="group px-2">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
-                  {faq.q}
+                  {t(faq.q)}
                   <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
                 </summary>
-                <p className="pb-4 text-sm text-muted-foreground">{faq.a}</p>
+                <p className="pb-4 text-sm text-muted-foreground">{t(faq.a)}</p>
               </details>
             ))}
           </CardContent>

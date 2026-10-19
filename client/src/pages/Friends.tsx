@@ -1,3 +1,6 @@
+import { message } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
@@ -29,6 +32,7 @@ const errorMessage = (error: unknown, fallback: string) =>
   (error as { response?: { data?: { message?: string } } }).response?.data?.message || fallback;
 
 function PlayerDetails({ player }: { player: Player }) {
+  useLanguage();
   return (
     <div className="flex min-w-0 items-center gap-3">
       <Avatar name={nameOf(player)} src={player.playerProfile?.avatarUrl} size="lg" />
@@ -55,6 +59,7 @@ function PlayerDetails({ player }: { player: Player }) {
 }
 
 export function Friends() {
+  useLanguage();
   const { user } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
@@ -141,7 +146,7 @@ export function Friends() {
     try {
       await work();
     } catch (error: unknown) {
-      toast.error(errorMessage(error, "Unable to update this request. Please try again."));
+      toast.error(t(errorMessage(error, "Unable to update this request. Please try again.")));
     } finally {
       busyRef.current.delete(key);
       setBusy(new Set(busyRef.current));
@@ -151,7 +156,7 @@ export function Friends() {
     void perform(player.id, async () => {
       await api.post("/players/friends/request", { receiverId: player.id });
       setSent((previous) => new Set(previous).add(player.id));
-      toast.success(`Friend request sent to ${nameOf(player)}`);
+      toast.success(message("Friend request sent to {name}", { name: nameOf(player) }));
     });
   }
   function respond(request: Request, accept: boolean) {
@@ -165,7 +170,7 @@ export function Friends() {
             : [...previous, res.data.friend],
         );
       toast.success(
-        accept ? `You and ${nameOf(request.sender)} are now friends` : "Friend request declined",
+        accept ? message("You and {name} are now friends", { name: nameOf(request.sender) }) : t("Friend request declined"),
       );
     });
   }
@@ -189,17 +194,12 @@ export function Friends() {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
-              Your football community
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight">Friends</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Find your people. Build your next match together.
-            </p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary"> {t("Your football community")} </p>
+            <h1 className="text-3xl font-bold tracking-tight">{t("Friends")}</h1>
+            <p className="mt-2 text-sm text-muted-foreground"> {t("Find your people. Build your next match together.")} </p>
           </div>
           <Button onClick={() => changeSection("discover")} className="self-start">
-            <UserPlus className="h-4 w-4" /> Find players
-          </Button>
+            <UserPlus className="h-4 w-4" /> {t("Find players")} </Button>
         </div>
 
         <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
@@ -208,11 +208,8 @@ export function Friends() {
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="font-semibold">Better football starts with good teammates</h2>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Connect with players you know, respond to requests, and keep your football circle in
-                one place.
-              </p>
+              <h2 className="font-semibold">{t("Better football starts with good teammates")}</h2>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground"> {t("Connect with players you know, respond to requests, and keep your football circle in one place.")} </p>
             </div>
           </div>
         </div>
@@ -220,7 +217,7 @@ export function Friends() {
         <div
           className="grid grid-cols-3 gap-1 rounded-xl border bg-card p-1"
           role="tablist"
-          aria-label="Friends sections"
+          aria-label={t("Friends sections")}
         >
           {tabs.map(({ id, title, count, icon: Icon }) => (
             <button
@@ -247,7 +244,7 @@ export function Friends() {
               tabIndex={section === id ? 0 : -1}
             >
               <Icon className="hidden h-4 w-4 sm:block" />
-              {title}
+              {t(title)}
               {count !== undefined && !loading && !loadError && (
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{count}</span>
               )}
@@ -258,7 +255,7 @@ export function Friends() {
         {loading ? (
           <div
             role="status"
-            aria-label="Loading friends"
+            aria-label={t("Loading friends")}
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {[0, 1, 2].map((n) => (
@@ -276,11 +273,9 @@ export function Friends() {
         ) : loadError ? (
           <Card>
             <CardContent className="space-y-3 p-6" role="alert">
-              <h2 className="font-semibold">Couldn’t load your community</h2>
-              <p className="text-sm text-muted-foreground">{loadError}</p>
-              <Button variant="outline" onClick={() => void load()}>
-                Try again
-              </Button>
+              <h2 className="font-semibold">{t("Couldn’t load your community")}</h2>
+              <p className="text-sm text-muted-foreground">{t(loadError)}</p>
+              <Button variant="outline" onClick={() => void load()}> {t("Try again")} </Button>
             </CardContent>
           </Card>
         ) : (
@@ -294,16 +289,15 @@ export function Friends() {
               <>
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
-                    <h2 className="text-lg font-semibold">Your friends</h2>
+                    <h2 className="text-lg font-semibold">{t("Your friends")}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {friends.length} {friends.length === 1 ? "player" : "players"} in your circle
-                    </p>
+                      {friends.length} {friends.length === 1 ? "player" : "players"} {t("in your circle")} </p>
                   </div>
                   <div className="relative sm:w-72">
                     <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      aria-label="Filter friends"
-                      placeholder="Search your friends"
+                      aria-label={t("Filter friends")}
+                      placeholder={t("Search your friends")}
                       className="pl-9"
                       value={filter}
                       onChange={(e) => setFilter(e.target.value)}
@@ -314,12 +308,11 @@ export function Friends() {
                   <Card>
                     <EmptyState
                       icon={Users}
-                      title="Your team starts here"
-                      description="Find players you know and send your first friend request."
+                      title={t("Your team starts here")}
+                      description={t("Find players you know and send your first friend request.")}
                       action={
                         <Button onClick={() => changeSection("discover")}>
-                          <UserPlus className="h-4 w-4" /> Find players
-                        </Button>
+                          <UserPlus className="h-4 w-4" /> {t("Find players")} </Button>
                       }
                     />
                   </Card>
@@ -327,12 +320,10 @@ export function Friends() {
                   <Card>
                     <EmptyState
                       icon={Search}
-                      title="No matching friends"
-                      description="Try another name or email address."
+                      title={t("No matching friends")}
+                      description={t("Try another name or email address.")}
                       action={
-                        <Button variant="outline" onClick={() => setFilter("")}>
-                          Clear search
-                        </Button>
+                        <Button variant="outline" onClick={() => setFilter("")}> {t("Clear search")} </Button>
                       }
                     />
                   </Card>
@@ -343,8 +334,7 @@ export function Friends() {
                         <CardContent className="space-y-4 p-5">
                           <PlayerDetails player={player} />
                           <div className="flex items-center gap-1.5 border-t pt-3 text-xs font-medium text-primary">
-                            <CheckCheck className="h-4 w-4" /> Friends
-                          </div>
+                            <CheckCheck className="h-4 w-4" /> {t("Friends")} </div>
                         </CardContent>
                       </Card>
                     ))}
@@ -356,17 +346,15 @@ export function Friends() {
             {section === "requests" && (
               <>
                 <div>
-                  <h2 className="text-lg font-semibold">Friend requests</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Players who would like to connect with you.
-                  </p>
+                  <h2 className="text-lg font-semibold">{t("Friend requests")}</h2>
+                  <p className="text-sm text-muted-foreground"> {t("Players who would like to connect with you.")} </p>
                 </div>
                 {!requests.length ? (
                   <Card>
                     <EmptyState
                       icon={CheckCheck}
-                      title="You’re all caught up"
-                      description="New friend requests will appear here."
+                      title={t("You’re all caught up")}
+                      description={t("New friend requests will appear here.")}
                     />
                   </Card>
                 ) : (
@@ -380,24 +368,21 @@ export function Friends() {
                               className="flex-1"
                               disabled={busy.has(request.id)}
                               onClick={() => respond(request, true)}
-                              aria-label={`Accept request from ${nameOf(request.sender)}`}
+                              aria-label={message("Accept request from {name}", { name: nameOf(request.sender) })}
                             >
                               {busy.has(request.id) ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <Check className="h-4 w-4" />
-                              )}{" "}
-                              Accept
-                            </Button>
+                              )}{" "} {t("Accept")} </Button>
                             <Button
                               className="flex-1"
                               variant="outline"
                               disabled={busy.has(request.id)}
                               onClick={() => respond(request, false)}
-                              aria-label={`Decline request from ${nameOf(request.sender)}`}
+                              aria-label={message("Decline request from {name}", { name: nameOf(request.sender) })}
                             >
-                              <X className="h-4 w-4" /> Decline
-                            </Button>
+                              <X className="h-4 w-4" /> {t("Decline")} </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -412,19 +397,17 @@ export function Friends() {
                 <Card>
                   <CardContent className="space-y-4 p-5 sm:p-6">
                     <div>
-                      <h2 className="text-lg font-semibold">Find your next teammate</h2>
-                      <p id="player-search-hint" className="mt-1 text-sm text-muted-foreground">
-                        Search accounts by email address. Showing up to 10 matches.
-                      </p>
+                      <h2 className="text-lg font-semibold">{t("Find your next teammate")}</h2>
+                      <p id="player-search-hint" className="mt-1 text-sm text-muted-foreground"> {t("Search accounts by email address. Showing up to 10 matches.")} </p>
                     </div>
                     <form onSubmit={search} className="flex flex-col gap-3 sm:flex-row">
                       <div className="relative flex-1">
                         <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           ref={discoverInput}
-                          aria-label="Search players by email"
+                          aria-label={t("Search players by email")}
                           aria-describedby="player-search-hint"
-                          placeholder="Enter an email address"
+                          placeholder={t("Enter an email address")}
                           value={query}
                           onChange={(e) => changeQuery(e.target.value)}
                           className="pl-9"
@@ -437,7 +420,7 @@ export function Friends() {
                         ) : (
                           <Search className="h-4 w-4" />
                         )}{" "}
-                        {searching ? "Searching…" : "Search"}
+                        {searching ? "Searching…" : t("Search")}
                       </Button>
                     </form>
                   </CardContent>
@@ -448,31 +431,27 @@ export function Friends() {
                       role="alert"
                       className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-sm"
                     >
-                      {searchError} Submit your search again to retry.
-                    </div>
+                      {t(searchError)} {t("Submit your search again to retry.")} </div>
                   ) : searching ? (
-                    <p role="status" className="py-6 text-center text-sm text-muted-foreground">
-                      Searching players…
-                    </p>
+                    <p role="status" className="py-6 text-center text-sm text-muted-foreground"> {t("Searching players…")} </p>
                   ) : !searchedQuery ? (
                     <EmptyState
                       icon={Search}
-                      title="Good teammates are a search away"
-                      description="Enter an email address above to find someone you know."
+                      title={t("Good teammates are a search away")}
+                      description={t("Enter an email address above to find someone you know.")}
                     />
                   ) : !results.length ? (
                     <Card>
                       <EmptyState
                         icon={Search}
-                        title="No players found"
-                        description={`No accounts matched “${searchedQuery}”. Check the email and try again.`}
+                        title={t("No players found")}
+                        description={message("No accounts matched “{query}”. Check the email and try again.", { query: searchedQuery })}
                       />
                     </Card>
                   ) : (
                     <>
                       <p className="mb-3 text-sm text-muted-foreground">
-                        {results.length} {results.length === 1 ? "match" : "matches"} for “
-                        {searchedQuery}”
+                        {results.length} {results.length === 1 ? "match" : "matches"} {t("for “")} {searchedQuery}”
                       </p>
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {results.map((player) => (
@@ -482,34 +461,29 @@ export function Friends() {
                               <div className="border-t pt-4">
                                 {friendIds.has(player.id) ? (
                                   <Button variant="secondary" className="w-full" disabled>
-                                    <CheckCheck className="h-4 w-4" /> Already friends
-                                  </Button>
+                                    <CheckCheck className="h-4 w-4" /> {t("Already friends")} </Button>
                                 ) : incomingIds.has(player.id) ? (
                                   <Button
                                     variant="outline"
                                     className="w-full"
                                     onClick={() => changeSection("requests")}
                                   >
-                                    <Clock className="h-4 w-4" /> Respond to request
-                                  </Button>
+                                    <Clock className="h-4 w-4" /> {t("Respond to request")} </Button>
                                 ) : sent.has(player.id) ? (
                                   <Button variant="secondary" className="w-full" disabled>
-                                    <Check className="h-4 w-4" /> Request sent
-                                  </Button>
+                                    <Check className="h-4 w-4" /> {t("Request sent")} </Button>
                                 ) : (
                                   <Button
                                     className="w-full"
                                     disabled={busy.has(player.id)}
                                     onClick={() => send(player)}
-                                    aria-label={`Add ${nameOf(player)} as a friend`}
+                                    aria-label={message("Add {name} as a friend", { name: nameOf(player) })}
                                   >
                                     {busy.has(player.id) ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
                                       <UserPlus className="h-4 w-4" />
-                                    )}{" "}
-                                    Add friend
-                                  </Button>
+                                    )}{" "} {t("Add friend")} </Button>
                                 )}
                               </div>
                             </CardContent>

@@ -1,3 +1,6 @@
+import { message } from '../lib/language';
+import { t as translate } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -37,6 +40,7 @@ const createTeamSchema = z.object({
 type CreateTeamFormData = z.infer<typeof createTeamSchema>;
 
 export function Teams() {
+  useLanguage();
   const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +63,7 @@ export function Teams() {
       const res = await api.get('/teams', { params });
       setTeams(res.data.teams);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load teams');
+      toast.error(translate(err.response?.data?.message || translate("Failed to load teams")));
     } finally {
       setLoading(false);
     }
@@ -74,11 +78,11 @@ export function Teams() {
   const onCreate = async (data: CreateTeamFormData) => {
     try {
       await api.post('/teams', { name: data.name, sportType: data.sportType });
-      toast.success('Team created!');
+      toast.success(translate("Team created!"));
       reset();
       refresh();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create team');
+      toast.error(translate(err.response?.data?.message || translate("Failed to create team")));
     }
   };
 
@@ -86,10 +90,10 @@ export function Teams() {
     setBusyId(teamId);
     try {
       await api.post(`/teams/${teamId}/join`);
-      toast.success('Joined the team');
+      toast.success(translate("Joined the team"));
       refresh();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to join team');
+      toast.error(translate(err.response?.data?.message || translate("Failed to join team")));
     } finally {
       setBusyId(null);
     }
@@ -99,32 +103,32 @@ export function Teams() {
     setBusyId(teamId);
     try {
       await api.delete(`/teams/${teamId}/leave`);
-      toast.success('Left the team');
+      toast.success(translate("Left the team"));
       refresh();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to leave team');
+      toast.error(translate(err.response?.data?.message || translate("Failed to leave team")));
     } finally {
       setBusyId(null);
     }
   }
 
   async function removeTeam(teamId: string, name: string) {
-    if (!window.confirm(`Delete "${name}"? Members and history will be removed. This cannot be undone.`))
+    if (!window.confirm(message('Delete "{name}"? Members and history will be removed. This cannot be undone.', { name })))
       return;
     setBusyId(teamId);
     try {
       await api.delete(`/teams/${teamId}`);
-      toast.success('Team deleted');
+      toast.success(translate("Team deleted"));
       refresh();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to delete team');
+      toast.error(translate(err.response?.data?.message || translate("Failed to delete team")));
     } finally {
       setBusyId(null);
     }
   }
 
 
-  if (!user) return <div className="p-8 text-center">Access denied. Login required.</div>;
+  if (!user) return <div className="p-8 text-center">{translate("Access denied. Login required.")}</div>;
 
   if (loading) {
     return (
@@ -137,28 +141,27 @@ export function Teams() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Teams</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">{translate("Teams")}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-primary" /> Create a Team
-                </CardTitle>
+                  <UserPlus className="h-5 w-5 text-primary" /> {translate("Create a Team")} </CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
                   <div>
-                    <Label className="mb-1 block">Team name</Label>
-                    <Input {...register('name')} placeholder="e.g. Sunset Strikers" />
-                    {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
+                    <Label className="mb-1 block">{translate("Team name")}</Label>
+                    <Input {...register('name')} placeholder={translate("e.g. Sunset Strikers")} />
+                    {errors.name && <p className="text-destructive text-sm">{translate(errors.name.message)}</p>}
                   </div>
                   <div>
-                    <Label className="mb-1 block">Sport</Label>
+                    <Label className="mb-1 block">{translate("Sport")}</Label>
                     <select {...register('sportType')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                      <option value="FUTSAL">Futsal (5 vs 5)</option>
-                      <option value="ELEVEN_A_SIDE">11-a-side</option>
+                      <option value="FUTSAL">{translate("Futsal (5 vs 5)")}</option>
+                      <option value="ELEVEN_A_SIDE">{translate("11-a-side")}</option>
                     </select>
                   </div>
                   <Button
@@ -166,16 +169,16 @@ export function Teams() {
                     disabled={isSubmitting}
                     size="sm"
                   >
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Team'}
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : translate("Create Team")}
                   </Button>
                 </form>
-                <p className="text-xs text-muted-foreground mt-3">You become the captain and are added as a member automatically.</p>
+                <p className="text-xs text-muted-foreground mt-3">{translate("You become the captain and are added as a member automatically.")}</p>
               </CardContent>
             </Card>
 
             <Card className="self-start">
               <CardHeader>
-                <CardTitle className="text-lg">Filter</CardTitle>
+                <CardTitle className="text-lg">{translate("Filter")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-2">
@@ -186,7 +189,7 @@ export function Teams() {
                       variant={filter === f ? 'default' : 'secondary'}
                       size="sm"
                     >
-                      {f === 'ALL' ? 'All' : f === 'FUTSAL' ? 'Futsal' : '11-a-side'}
+                      {f === 'ALL' ? translate("All") : f === 'FUTSAL' ? translate("Futsal") : translate("11-a-side")}
                     </Button>
                   ))}
                 </div>
@@ -196,13 +199,13 @@ export function Teams() {
 
           <div className="lg:col-span-2 space-y-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" /> All Teams ({teams.length})
+              <Trophy className="h-5 w-5 text-primary" /> {translate("All Teams (")}{teams.length})
             </h3>
             {teams.length === 0 ? (
               <EmptyState
                 icon={Trophy}
-                title="No teams yet"
-                description="Create the first one — you'll become its captain."
+                title={translate("No teams yet")}
+                description={translate("Create the first one — you'll become its captain.")}
               />
             ) : (
               teams.map((t) => {
@@ -216,22 +219,20 @@ export function Teams() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-bold text-foreground">{t.name}</p>
                             <Badge variant="secondary">
-                              {t.sportType === 'ELEVEN_A_SIDE' ? '11-a-side' : 'Futsal'}
+                              {t.sportType === 'ELEVEN_A_SIDE' ? translate("11-a-side") : translate("Futsal")}
                             </Badge>
                             {isMember && (
                               <Badge>
-                                {isCaptain ? 'Captain' : 'Member'}
+                                {isCaptain ? translate("Captain") : translate("Member")}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Captain: {t.captain.email} · {t._count?.members ?? t.members.length} member(s)
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-1"> {translate("Captain:")} {t.captain.email} · {t._count?.members ?? t.members.length} {translate("member(s)")} </p>
                         </div>
                         {isMember ? (
                           isCaptain ? (
                             <span className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground/70">Captains can&apos;t leave</span>
+                              <span className="text-xs text-muted-foreground/70">{translate("Captains can't leave")}</span>
                               <Button
                                 onClick={() => removeTeam(t.id, t.name)}
                                 disabled={busyId === t.id}
@@ -243,9 +244,7 @@ export function Teams() {
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 ) : (
                                   <Trash2 className="h-3.5 w-3.5" />
-                                )}{' '}
-                                Delete
-                              </Button>
+                                )}{' '} {translate("Delete")} </Button>
                             </span>
                           ) : (
                             <Button
@@ -254,8 +253,7 @@ export function Teams() {
                               variant="secondary"
                               size="sm"
                             >
-                              {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />} Leave
-                            </Button>
+                              {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />} {translate("Leave")} </Button>
                           )
                         ) : (
                           <Button
@@ -263,13 +261,12 @@ export function Teams() {
                             disabled={busyId === t.id}
                             size="sm"
                           >
-                            {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} Join
-                          </Button>
+                            {busyId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} {translate("Join")} </Button>
                         )}
                       </div>
                       {t.members.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-border/60">
-                          <p className="text-xs text-muted-foreground mb-1">Members:</p>
+                          <p className="text-xs text-muted-foreground mb-1">{translate("Members:")}</p>
                           <div className="flex flex-wrap gap-1.5">
                             {t.members.map((m) => (
                               <Badge key={m.id} variant="secondary">

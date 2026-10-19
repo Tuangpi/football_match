@@ -1,3 +1,6 @@
+import { message, getLocale } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import {
@@ -38,6 +41,7 @@ type Booking = TimeRange & {
 type Court = { id: string; name: string };
 type Block = TimeRange & { courtId: string; reason: string };
 export function OwnerBookings() {
+  useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [courts, setCourts] = useState<Court[]>([]);
   const [date, setDate] = useState(courtDate());
@@ -75,19 +79,19 @@ export function OwnerBookings() {
   }, []);
   async function update(next: string) {
     if (!selected || busy) return;
-    if (next === "CANCELLED" && !window.confirm("Cancel this booking and release its time?"))
+    if (next === "CANCELLED" && !window.confirm(t("Cancel this booking and release its time?")))
       return;
     setBusy(true);
     try {
       await api.patch(`/bookings/owner/${selected.id}/status`, { status: next });
-      toast.success("Booking updated");
+      toast.success(t("Booking updated"));
       setSelected(null);
       await load();
     } catch (err: unknown) {
-      toast.error(
+      toast.error(t(
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
           "Update failed",
-      );
+      ));
     } finally {
       setBusy(false);
     }
@@ -134,30 +138,26 @@ export function OwnerBookings() {
       onClick={() => setSelected(b)}
       className={`w-full rounded border p-2 text-left text-xs ${b.status === "CONFIRMED" ? "border-green-500 bg-green-500/10" : b.status === "CANCELLED" ? "border-muted text-muted-foreground line-through" : "border-amber-500 bg-amber-500/10"}`}
     >
-      <strong>{b.status}</strong>
+      <strong>{t(b.status)}</strong>
       <span className="block font-medium">{b.court.name}</span>
       <span className="block">
         {compact
-          ? `${new Date(b.startsAt).toLocaleTimeString(undefined, { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" })} – ${new Date(b.endsAt).toLocaleTimeString(undefined, { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" })}`
+          ? `${new Date(b.startsAt).toLocaleTimeString(getLocale(), { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" })} – ${new Date(b.endsAt).toLocaleTimeString(getLocale(), { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" })}`
           : formatBooking(b)}
       </span>
       {!compact && <span className="block truncate">{b.player.email}</span>}
     </button>
   );
   const blockSummary = (b: Block, compact = false) => (
-    <p className="rounded border bg-muted p-2 text-xs break-words">
-      Blocked · {courts.find((c) => c.id === b.courtId)?.name} ·{" "}
+    <p className="rounded border bg-muted p-2 text-xs break-words"> {t("Blocked ·")} {courts.find((c) => c.id === b.courtId)?.name} ·{" "}
       {compact ? b.reason : `${formatBooking(b)} · ${b.reason}`}
     </p>
   );
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="mx-auto max-w-7xl space-y-5">
-        <h1 className="text-2xl font-bold">Booking Management</h1>
-        <p className="text-sm text-muted-foreground">
-          Myanmar time · Select a booking for details. Manage opening hours and blocked time in My
-          Courts.
-        </p>
+        <h1 className="text-2xl font-bold">{t("Booking Management")}</h1>
+        <p className="text-sm text-muted-foreground"> {t("Myanmar time · Select a booking for details. Manage opening hours and blocked time in My Courts.")} </p>
         <div className="flex flex-wrap gap-2">
           {(["day", "week", "month"] as const).map((mode) => (
             <Button
@@ -166,28 +166,25 @@ export function OwnerBookings() {
               aria-pressed={view === mode}
               onClick={() => setView(mode)}
             >
-              {mode[0].toUpperCase() + mode.slice(1)}
+              {t(mode[0].toUpperCase() + mode.slice(1))}
             </Button>
           ))}
-          <Button variant={view === "list" ? "default" : "outline"} onClick={() => setView("list")}>
-            List / history
-          </Button>
+          <Button variant={view === "list" ? "default" : "outline"} onClick={() => setView("list")}> {t("List / history")} </Button>
           <Button
             variant="outline"
             onClick={() => {
               setView("list");
               setStatus("PENDING");
             }}
-          >
-            Pending ({pending})
+          > {t("Pending (")}{pending})
           </Button>
           <select
-            aria-label="Filter court"
+            aria-label={t("Filter court")}
             className="rounded border bg-background p-2"
             value={courtId}
             onChange={(e) => setCourtId(e.target.value)}
           >
-            <option value="">All courts</option>
+            <option value="">{t("All courts")}</option>
             {courts.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -195,27 +192,25 @@ export function OwnerBookings() {
             ))}
           </select>
           <select
-            aria-label="Filter status"
+            aria-label={t("Filter status")}
             className="rounded border bg-background p-2"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            <option value="">All statuses</option>
+            <option value="">{t("All statuses")}</option>
             {["PENDING", "CONFIRMED", "CANCELLED"].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>{t(s)}</option>
             ))}
           </select>
         </div>
         {view !== "list" && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" aria-label={`Previous ${view}`} onClick={() => shift(-1)}>
+            <Button variant="outline" aria-label={message("Previous {period}", { period: t(view) })} onClick={() => shift(-1)}>
               ←
             </Button>
-            <Button variant="outline" onClick={() => setDate(courtDate())}>
-              Today
-            </Button>
+            <Button variant="outline" onClick={() => setDate(courtDate())}> {t("Today")} </Button>
             <Input
-              aria-label="Schedule date"
+              aria-label={t("Schedule date")}
               className="w-auto"
               type="date"
               value={date}
@@ -223,7 +218,7 @@ export function OwnerBookings() {
                 if (e.target.value) setDate(e.target.value);
               }}
             />
-            <Button variant="outline" aria-label={`Next ${view}`} onClick={() => shift(1)}>
+            <Button variant="outline" aria-label={message("Next {period}", { period: t(view) })} onClick={() => shift(1)}>
               →
             </Button>
             <h2 className="font-semibold" aria-live="polite">
@@ -232,14 +227,14 @@ export function OwnerBookings() {
           </div>
         )}
         {loading ? (
-          <p role="status">Loading schedule…</p>
+          <p role="status">{t("Loading schedule…")}</p>
         ) : error ? (
           <p role="alert">
-            {error} <Button onClick={load}>Retry</Button>
+            {t(error)} <Button onClick={load}>{t("Retry")}</Button>
           </p>
         ) : view === "list" ? (
           <div className="space-y-3">
-            {!filtered.length && <p>No bookings match these filters.</p>}
+            {!filtered.length && <p>{t("No bookings match these filters.")}</p>}
             {filtered.map((b) => (
               <div key={b.id} className="rounded-xl border p-4">
                 <h2 className="font-semibold">{b.court.name}</h2>
@@ -250,16 +245,16 @@ export function OwnerBookings() {
         ) : view === "week" || view === "month" ? (
           <>
             {!shownCourts.length ? (
-              <p>No courts to display.</p>
+              <p>{t("No courts to display.")}</p>
             ) : (
               <>
-                <div className="space-y-4 md:hidden" aria-label={`${view} agenda`}>
+                <div className="space-y-4 md:hidden" aria-label={message("{period} agenda", { period: t(view) })}>
                   {agenda.map(({ day, bookings: dayBookings, blocks: dayBlocks }) => (
                     <section key={day} className="space-y-2 rounded-xl border p-3">
                       <Button
                         variant="ghost"
                         onClick={() => openDay(day)}
-                        aria-label={`Open day ${day}`}
+                        aria-label={message("Open day {date}", { date: day })}
                       >
                         {calendarLabel(day, { weekday: "long", month: "short", day: "numeric" })}
                       </Button>
@@ -268,17 +263,15 @@ export function OwnerBookings() {
                         <div key={i}>{blockSummary(b)}</div>
                       ))}
                       {!dayBookings.length && !dayBlocks.length && (
-                        <p className="text-sm text-muted-foreground">
-                          No bookings or blocked time.
-                        </p>
+                        <p className="text-sm text-muted-foreground"> {t("No bookings or blocked time.")} </p>
                       )}
                     </section>
                   ))}
-                  {!agenda.length && <p>No bookings or blocked time this month.</p>}
+                  {!agenda.length && <p>{t("No bookings or blocked time this month.")}</p>}
                 </div>
                 <div
                   className="hidden overflow-x-auto rounded-xl border md:block"
-                  aria-label={`${view} calendar`}
+                  aria-label={message("{period} calendar", { period: t(view) })}
                 >
                   <div className="grid min-w-[980px] grid-cols-7">
                     {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
@@ -286,7 +279,7 @@ export function OwnerBookings() {
                         key={day}
                         className="border-b bg-muted/50 p-3 text-center text-sm font-semibold"
                       >
-                        {day}
+                        {t(day)}
                       </div>
                     ))}
                     {schedule.map(({ day, bookings: bookingsForDay, blocks: blocksForDay }) => {
@@ -310,15 +303,14 @@ export function OwnerBookings() {
                         >
                           <button
                             onClick={() => openDay(day)}
-                            aria-label={`Open day ${day}`}
+                            aria-label={message("Open day {date}", { date: day })}
                             aria-current={day === courtDate() ? "date" : undefined}
                             className={`rounded px-2 py-1 text-sm font-semibold hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${day === courtDate() ? "bg-primary text-primary-foreground" : ""}`}
                           >
                             {calendarLabel(day, { month: "short", day: "numeric" })}
                           </button>
                           <p className="text-xs text-muted-foreground">
-                            {bookingsForDay.length} bookings · {blocksForDay.length} blocks
-                          </p>
+                            {bookingsForDay.length} {t("bookings ·")} {blocksForDay.length} {t("blocks")} </p>
                           {visible.map((entry, i) =>
                             entry.booking ? (
                               bookingButton(entry.booking, view === "month")
@@ -333,13 +325,10 @@ export function OwnerBookings() {
                               className="rounded p-1 text-xs font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                               onClick={() => openDay(day)}
                             >
-                              +{entries.length - visible.length} more
-                            </button>
+                              +{entries.length - visible.length} {t("more")} </button>
                           )}
                           {!entries.length && (
-                            <p className="text-xs text-muted-foreground">
-                              No bookings or blocked time.
-                            </p>
+                            <p className="text-xs text-muted-foreground"> {t("No bookings or blocked time.")} </p>
                           )}
                         </section>
                       );
@@ -352,7 +341,7 @@ export function OwnerBookings() {
         ) : (
           <>
             <div className="space-y-3 md:hidden">
-              {!daily.length && <p>No bookings on this date.</p>}
+              {!daily.length && <p>{t("No bookings on this date.")}</p>}
               {daily.map((b) => (
                 <div key={b.id}>
                   <h2 className="font-semibold">{b.court.name}</h2>
@@ -362,14 +351,13 @@ export function OwnerBookings() {
               {blocked
                 .filter((b) => overlaps(b, dayRange) && (!courtId || courtId === b.courtId))
                 .map((b, i) => (
-                  <p key={i} className="rounded border p-3 text-sm">
-                    Blocked · {courts.find((c) => c.id === b.courtId)?.name} · {formatBooking(b)} ·{" "}
+                  <p key={i} className="rounded border p-3 text-sm"> {t("Blocked ·")} {courts.find((c) => c.id === b.courtId)?.name} · {formatBooking(b)} ·{" "}
                     {b.reason}
                   </p>
                 ))}
             </div>
             {!shownCourts.length ? (
-              <p>No courts to display.</p>
+              <p>{t("No courts to display.")}</p>
             ) : (
               <div className="hidden overflow-x-auto rounded-xl border md:block">
                 <div style={{ minWidth: 100 + shownCourts.length * 220 }}>
@@ -379,7 +367,7 @@ export function OwnerBookings() {
                       gridTemplateColumns: `100px repeat(${shownCourts.length}, minmax(220px, 1fr))`,
                     }}
                   >
-                    <div className="p-3">Time</div>
+                    <div className="p-3">{t("Time")}</div>
                     {shownCourts.map((c) => (
                       <h2 key={c.id} className="border-l p-3 font-semibold">
                         {c.name}
@@ -463,8 +451,7 @@ export function OwnerBookings() {
                                     64 -
                                   3,
                               }}
-                            >
-                              Blocked · {b.reason}
+                            > {t("Blocked ·")} {b.reason}
                             </div>
                           ))}
                       </div>
@@ -483,32 +470,28 @@ export function OwnerBookings() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Booking details</DialogTitle>
-              <DialogDescription>Review the reservation and manage its status.</DialogDescription>
+              <DialogTitle>{t("Booking details")}</DialogTitle>
+              <DialogDescription>{t("Review the reservation and manage its status.")}</DialogDescription>
             </DialogHeader>
             {selected && (
               <div className="space-y-3">
                 <h2 className="font-semibold">{selected.court.name}</h2>
-                <p>{formatBooking(selected)} · Myanmar time</p>
-                <p>Player: {selected.player.email}</p>
-                <p>Team: {selected.team?.name || "Individual"}</p>
+                <p>{formatBooking(selected)} {t("· Myanmar time")}</p>
+                <p>{t("Player:")} {selected.player.email}</p>
+                <p>{t("Team:")} {selected.team?.name || t("Individual")}</p>
                 <p>
-                  {selected.status} · {formatPrice(selected.totalPrice)}
+                  {t(selected.status)} · {formatPrice(selected.totalPrice)}
                 </p>
                 <div className="flex gap-2">
                   {selected.status === "PENDING" && (
-                    <Button disabled={busy} onClick={() => update("CONFIRMED")}>
-                      Confirm
-                    </Button>
+                    <Button disabled={busy} onClick={() => update("CONFIRMED")}> {t("Confirm")} </Button>
                   )}
                   {selected.status !== "CANCELLED" && (
                     <Button
                       variant="destructive"
                       disabled={busy}
                       onClick={() => update("CANCELLED")}
-                    >
-                      Cancel booking
-                    </Button>
+                    > {t("Cancel booking")} </Button>
                   )}
                 </div>
               </div>

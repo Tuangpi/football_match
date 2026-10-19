@@ -1,3 +1,6 @@
+import { message } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { CourtAvailabilitySettings } from "@/components/CourtAvailabilitySettings";
 import { type OpeningDay } from "@/lib/bookingTime";
 import { useState, useEffect } from "react";
@@ -43,6 +46,7 @@ const editSchema = z.object({
 type EditFormData = z.infer<typeof editSchema>;
 
 function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }) {
+  useLanguage();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -63,11 +67,11 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
     setSaving(true);
     try {
       await api.put(`/courts/${court.id}`, data);
-      toast.success("Court updated");
+      toast.success(t("Court updated"));
       setEditing(false);
       onChanged();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update court");
+      toast.error(t(err.response?.data?.message || t("Failed to update court")));
     } finally {
       setSaving(false);
     }
@@ -76,21 +80,21 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
   async function toggleActive() {
     try {
       await api.put(`/courts/${court.id}`, { isActive: !court.isActive });
-      toast.success(court.isActive ? "Court deactivated" : "Court activated");
+      toast.success(court.isActive ? t("Court deactivated") : t("Court activated"));
       onChanged();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update court");
+      toast.error(t(err.response?.data?.message || t("Failed to update court")));
     }
   }
 
   async function onDelete() {
-    if (!window.confirm(`Delete "${court.name}"? This cannot be undone.`)) return;
+    if (!window.confirm(message('Delete "{name}"? This cannot be undone.', { name: court.name }))) return;
     try {
       await api.delete(`/courts/${court.id}`);
-      toast.success("Court deleted");
+      toast.success(t("Court deleted"));
       onChanged();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to delete court");
+      toast.error(t(err.response?.data?.message || t("Failed to delete court")));
     }
   }
 
@@ -104,21 +108,18 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
               <Badge variant={court.isActive ? "default" : "secondary"}>
                 {court.isActive ? "ACTIVE" : "INACTIVE"}
               </Badge>
-              <Badge variant="secondary">{court.sportType}</Badge>
+              <Badge variant="secondary">{t(court.sportType)}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 inline mr-1" />
               {court.address}, {court.city}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              {formatPrice(court.basePricePerHour)}/hour
-            </p>
+              {formatPrice(court.basePricePerHour)}{t("/hour")} </p>
             <Link
               to={`/courts/${court.id}`}
               className="text-sm text-primary hover:underline mt-1 inline-block"
-            >
-              View public page →
-            </Link>
+            > {t("View public page →")} </Link>
           </div>
           <div className="flex flex-col gap-2 shrink-0">
             <Button
@@ -128,14 +129,12 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
               variant="secondary"
               size="sm"
             >
-              <Pencil className="h-3.5 w-3.5" /> Edit
-            </Button>
+              <Pencil className="h-3.5 w-3.5" /> {t("Edit")} </Button>
             <Button onClick={toggleActive} variant="secondary" size="sm">
-              {court.isActive ? "Deactivate" : "Activate"}
+              {court.isActive ? t("Deactivate") : t("Activate")}
             </Button>
             <Button onClick={onDelete} variant="destructive" size="sm">
-              <Trash2 className="h-3.5 w-3.5" /> Delete
-            </Button>
+              <Trash2 className="h-3.5 w-3.5" /> {t("Delete")} </Button>
           </div>
         </div>
 
@@ -145,73 +144,73 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
             className="mt-4 pt-4 border-t border-border/60 space-y-4"
           >
             <div className="flex justify-between items-center">
-              <h4 className="font-medium text-foreground">Edit court</h4>
+              <h4 className="font-medium text-foreground">{t("Edit court")}</h4>
               <Button type="button" variant="ghost" size="icon" onClick={() => setEditing(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-1 block">Court Name</Label>
+                <Label className="mb-1 block">{t("Court Name")}</Label>
                 <Input {...editForm.register("name")} />
                 {editForm.formState.errors.name && (
                   <p className="text-destructive text-sm">
-                    {editForm.formState.errors.name.message}
+                    {t(editForm.formState.errors.name.message)}
                   </p>
                 )}
               </div>
               <div>
-                <Label className="mb-1 block">Sport Type</Label>
+                <Label className="mb-1 block">{t("Sport Type")}</Label>
                 <select
                   {...editForm.register("sportType")}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  <option value="FUTSAL">Futsal (5v5)</option>
-                  <option value="ELEVEN_A_SIDE">11-a-side</option>
+                  <option value="FUTSAL">{t("Futsal (5v5)")}</option>
+                  <option value="ELEVEN_A_SIDE">{t("11-a-side")}</option>
                 </select>
               </div>
             </div>
             <div>
-              <Label className="mb-1 block">Address</Label>
+              <Label className="mb-1 block">{t("Address")}</Label>
               <Input {...editForm.register("address")} />
               {editForm.formState.errors.address && (
                 <p className="text-destructive text-sm">
-                  {editForm.formState.errors.address.message}
+                  {t(editForm.formState.errors.address.message)}
                 </p>
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-1 block">City</Label>
+                <Label className="mb-1 block">{t("City")}</Label>
                 <Input {...editForm.register("city")} />
                 {editForm.formState.errors.city && (
                   <p className="text-destructive text-sm">
-                    {editForm.formState.errors.city.message}
+                    {t(editForm.formState.errors.city.message)}
                   </p>
                 )}
               </div>
               <div>
-                <Label className="mb-1 block">Price per Hour (MMK)</Label>
+                <Label className="mb-1 block">{t("Price per Hour (MMK)")}</Label>
                 <Input {...editForm.register("basePricePerHour")} type="number" />
                 {editForm.formState.errors.basePricePerHour && (
                   <p className="text-destructive text-sm">
-                    {editForm.formState.errors.basePricePerHour.message}
+                    {t(editForm.formState.errors.basePricePerHour.message)}
                   </p>
                 )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-1 block">Dimensions</Label>
+                <Label className="mb-1 block">{t("Dimensions")}</Label>
                 <Input {...editForm.register("dimensions")} />
               </div>
               <div>
-                <Label className="mb-1 block">Surface Type</Label>
+                <Label className="mb-1 block">{t("Surface Type")}</Label>
                 <Input {...editForm.register("surfaceType")} />
               </div>
             </div>
             <Button type="submit" disabled={saving} size="sm">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Save changes")}
             </Button>
           </form>
         )}
@@ -227,6 +226,7 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
 }
 
 export function OwnerCourts() {
+  useLanguage();
   const { user } = useAuth();
   const [courts, setCourts] = useState<Court[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +236,7 @@ export function OwnerCourts() {
       const res = await api.get("/courts/owner/me");
       setCourts(res.data.courts);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load courts");
+      toast.error(t(err.response?.data?.message || t("Failed to load courts")));
     } finally {
       setLoading(false);
     }
@@ -248,7 +248,7 @@ export function OwnerCourts() {
   }, []);
 
   if (!user || user.role !== "OWNER") {
-    return <div className="p-8 text-center">Access denied. Owner role required.</div>;
+    return <div className="p-8 text-center">{t("Access denied. Owner role required.")}</div>;
   }
 
   if (loading) {
@@ -263,21 +263,20 @@ export function OwnerCourts() {
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground">My Courts</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("My Courts")}</h1>
           <Button asChild size="sm">
             <Link to="/owner/courts/create">
-              <Plus className="h-4 w-4" /> Add Court
-            </Link>
+              <Plus className="h-4 w-4" /> {t("Add Court")} </Link>
           </Button>
         </div>
         {courts.length === 0 ? (
           <EmptyState
             icon={MapPin}
-            title="You have no courts yet"
-            description="List your first court so players can find and book it."
+            title={t("You have no courts yet")}
+            description={t("List your first court so players can find and book it.")}
             action={
               <Button asChild size="sm">
-                <Link to="/owner/courts/create">List your first court</Link>
+                <Link to="/owner/courts/create">{t("List your first court")}</Link>
               </Button>
             }
           />

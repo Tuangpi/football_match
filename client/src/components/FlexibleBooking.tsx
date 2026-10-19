@@ -1,3 +1,6 @@
+import { message } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import {
@@ -18,12 +21,15 @@ export function FlexibleBooking({
   price,
   canBook,
   teamId,
+  onSignInRequested,
 }: {
   courtId: string;
   price: number;
   canBook: boolean;
   teamId: string;
+  onSignInRequested?: () => void;
 }) {
+  useLanguage();
   const [date, setDate] = useState(courtDate());
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -82,9 +88,13 @@ export function FlexibleBooking({
   const total = (Number(end) - Number(start)) * price;
   async function submit() {
     if (start === "" || end === "" || booking) return;
+    if (!canBook) {
+      onSignInRequested?.();
+      return;
+    }
     if (
       !window.confirm(
-        `Request ${hourLabel(Number(start))}–${hourLabel(Number(end))} on ${date} for ${formatPrice(total)}?`,
+        message("Request {start}–{end} on {date} for {price}?", { start: hourLabel(Number(start)), end: hourLabel(Number(end)), date, price: formatPrice(total) }),
       )
     )
       return;
@@ -96,12 +106,12 @@ export function FlexibleBooking({
         endsAt: atHour(date, Number(end)),
         teamId: teamId || undefined,
       });
-      toast.success("Booking requested. Pending owner confirmation.");
+      toast.success(t("Booking requested. Pending owner confirmation."));
     } catch (err: unknown) {
-      toast.error(
+      toast.error(t(
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
           "Booking failed",
-      );
+      ));
     } finally {
       setBooking(false);
       setRefresh((v) => v + 1);
@@ -109,14 +119,10 @@ export function FlexibleBooking({
   }
   return (
     <section className="rounded-xl border bg-card p-5 space-y-4">
-      <h2 className="text-xl font-bold">Choose your booking time</h2>
-      <p className="text-sm text-muted-foreground">
-        All times are Myanmar time (Asia/Yangon). Whole hours only, minimum one hour.
-      </p>
-      <label className="block text-sm">
-        Date
-        <Input
-          aria-label="Booking date"
+      <h2 className="text-xl font-bold">{t("Choose your booking time")}</h2>
+      <p className="text-sm text-muted-foreground"> {t("All times are Myanmar time (Asia/Yangon). Whole hours only, minimum one hour.")} </p>
+      <label className="block text-sm"> {t("Date")} <Input
+          aria-label={t("Booking date")}
           type="date"
           min={courtDate()}
           value={date}
@@ -126,26 +132,21 @@ export function FlexibleBooking({
         />
       </label>
       {loading ? (
-        <p role="status">Loading availability…</p>
+        <p role="status">{t("Loading availability…")}</p>
       ) : error ? (
         <div role="alert">
-          {error}{" "}
-          <Button variant="outline" onClick={() => setRefresh((v) => v + 1)}>
-            Retry
-          </Button>
+          {t(error)}{" "}
+          <Button variant="outline" onClick={() => setRefresh((v) => v + 1)}> {t("Retry")} </Button>
         </div>
       ) : !hours.length ? (
-        <p>This court is closed on this date.</p>
+        <p>{t("This court is closed on this date.")}</p>
       ) : (
         <>
-          <p className="text-sm">
-            Opening hours: {hourLabel(day!.open)}–{hourLabel(day!.close)}
+          <p className="text-sm"> {t("Opening hours:")} {hourLabel(day!.open)}–{hourLabel(day!.close)}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="text-sm">
-              Start time
-              <select
-                aria-label="Start time"
+            <label className="text-sm"> {t("Start time")} <select
+                aria-label={t("Start time")}
                 className="mt-1 w-full rounded-md border bg-background p-2"
                 value={start}
                 onChange={(e) => {
@@ -153,7 +154,7 @@ export function FlexibleBooking({
                   setEnd("");
                 }}
               >
-                <option value="">Choose start</option>
+                <option value="">{t("Choose start")}</option>
                 {hours.map((h) => (
                   <option key={h} value={h} disabled={!free(h, h + 1)}>
                     {hourLabel(h)}
@@ -162,16 +163,14 @@ export function FlexibleBooking({
                 ))}
               </select>
             </label>
-            <label className="text-sm">
-              End time
-              <select
-                aria-label="End time"
+            <label className="text-sm"> {t("End time")} <select
+                aria-label={t("End time")}
                 className="mt-1 w-full rounded-md border bg-background p-2"
                 value={end}
                 disabled={start === ""}
                 onChange={(e) => setEnd(e.target.value)}
               >
-                <option value="">Choose end</option>
+                <option value="">{t("Choose end")}</option>
                 {ends.map((h) => (
                   <option key={h} value={h}>
                     {hourLabel(h)}
@@ -182,17 +181,20 @@ export function FlexibleBooking({
           </div>
           {start !== "" && end !== "" && (
             <p className="font-medium">
-              {Number(end) - Number(start)} hour(s) · Total: {formatPrice(total)}
+              {Number(end) - Number(start)} {t("hour(s) · Total:")} {formatPrice(total)}
             </p>
           )}
-          {canBook ? (
-            <Button disabled={start === "" || end === "" || booking} onClick={submit}>
-              {booking ? "Requesting…" : "Request booking"}
-            </Button>
+          {canBook || onSignInRequested ? (
+            <div className="space-y-2">
+              <Button disabled={start === "" || end === "" || booking} onClick={submit}>
+                {booking ? "Requesting…" : t("Request booking")}
+              </Button>
+              {!canBook && (
+                <p className="text-sm text-muted-foreground"> {t("Sign in or create a player account to continue. No booking is submitted yet.")} </p>
+              )}
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Sign in as a player to request a booking.
-            </p>
+            <p className="text-sm text-muted-foreground"> {t("Sign in as a player to request a booking.")} </p>
           )}
         </>
       )}

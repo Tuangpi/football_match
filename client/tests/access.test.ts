@@ -18,3 +18,11 @@ test('player and owner redirects retain their existing destinations and role gua
   assert.equal(resolvePostAuthRedirect('OWNER', '/admin'), '/owner/courts');
   assert.equal(resolvePostAuthRedirect('PLAYER', '/admin'), '/');
 });
+
+test('authentication returns players to the court without changing default registration destinations', () => {
+  const courtPath = '/courts/cmver5jnw000211o3u9mk9d8b';
+  assert.equal(resolvePostAuthRedirect('PLAYER', courtPath), courtPath);
+  assert.equal(resolvePostAuthRedirect('ADMIN', courtPath), '/admin');
+  assert.equal(resolvePostAuthRedirect('PLAYER'), '/');
+  assert.equal(resolvePostAuthRedirect('OWNER'), '/owner/courts');
+});

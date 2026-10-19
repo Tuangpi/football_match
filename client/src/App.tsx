@@ -1,3 +1,5 @@
+import { t } from './lib/language';
+import { useLanguage } from './context/LanguageContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -31,12 +33,13 @@ import { Footer } from '@/components/ui/footer';
 const PUBLIC_FOOTER_PATHS = ['/', '/about', '/contact', '/events', '/courts'];
 
 export function App() {
+  useLanguage();
   const { resolvedTheme } = useTheme();
   const { user, loading } = useAuth();
   const location = useLocation();
   const pathname = location.pathname.replace(/\/+$/, '') || '/';
   // Wait for the session before mounting pages that may fetch public data.
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) return <div className="p-8 text-center">{t("Loading...")}</div>;
   if (user?.role === 'ADMIN' && pathname !== '/admin') {
     return <Navigate to="/admin" replace />;
   }

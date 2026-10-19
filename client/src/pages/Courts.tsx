@@ -1,3 +1,6 @@
+import { message } from '../lib/language';
+import { t } from '../lib/language';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
@@ -17,6 +20,7 @@ const SPORTS = [
 ];
 
 export function Courts() {
+  useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const city = searchParams.get("city") ?? "";
   const sport = searchParams.get("sportType") ?? "";
@@ -45,7 +49,7 @@ export function Courts() {
       const res = await api.get(`/courts?${params.toString()}`);
       setCourts(res.data.courts);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load courts");
+      toast.error(t(err.response?.data?.message || t("Failed to load courts")));
     } finally {
       setLoading(false);
     }
@@ -72,19 +76,13 @@ export function Courts() {
         />
         <div className="relative mx-auto max-w-5xl px-4 py-12 text-center sm:py-16">
           <FadeIn>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
-              Futsal · 11-a-side · All cities
-            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur"> {t("Futsal · 11-a-side · All cities")} </span>
           </FadeIn>
           <FadeIn delay={0.06}>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Find a court near you
-            </h1>
+            <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl"> {t("Find a court near you")} </h1>
           </FadeIn>
           <FadeIn delay={0.12}>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-white/85 sm:text-base">
-              Browse every active court, filter by city or format, and choose your booking hours.
-            </p>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-white/85 sm:text-base"> {t("Browse every active court, filter by city or format, and choose your booking hours.")} </p>
           </FadeIn>
         </div>
       </div>
@@ -97,17 +95,17 @@ export function Courts() {
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="City or area"
+                placeholder={t("City or area")}
                 value={city}
                 onChange={(e) => setFilter("city", e.target.value)}
-                aria-label="Filter courts by city"
+                aria-label={t("Filter courts by city")}
                 className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
               {city && (
                 <button
                   type="button"
                   onClick={() => setFilter("city", "")}
-                  aria-label="Clear city filter"
+                  aria-label={t("Clear city filter")}
                   className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
@@ -117,18 +115,17 @@ export function Courts() {
             <select
               value={sport}
               onChange={(e) => setFilter("sportType", e.target.value)}
-              aria-label="Filter by sport type"
+              aria-label={t("Filter by sport type")}
               className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {SPORTS.map((s) => (
                 <option key={s.value} value={s.value}>
-                  {s.label}
+                  {t(s.label)}
                 </option>
               ))}
             </select>
             <Button type="button" onClick={fetchCourts} className="rounded-full">
-              <Search className="h-4 w-4" /> Search
-            </Button>
+              <Search className="h-4 w-4" /> {t("Search")} </Button>
           </div>
         </div>
       </div>
@@ -137,21 +134,20 @@ export function Courts() {
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold">Available courts</h2>
+            <h2 className="text-2xl font-bold">{t("Available courts")}</h2>
             <p className="text-sm text-muted-foreground">
               {loading
                 ? "Loading…"
-                : `${courts.length} court${courts.length === 1 ? "" : "s"} found`}
+                : message(courts.length === 1 ? "{count} court found" : "{count} courts found", { count: courts.length })}
               {!loading && city && <span> · {city}</span>}
               {!loading && sport && (
-                <span> · {sport === "ELEVEN_A_SIDE" ? "11-a-side" : "Futsal"}</span>
+                <span> · {sport === "ELEVEN_A_SIDE" ? t("11-a-side") : t("Futsal")}</span>
               )}
             </p>
           </div>
           {filtersActive && !loading && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <X className="h-4 w-4" /> Clear filters
-            </Button>
+              <X className="h-4 w-4" /> {t("Clear filters")} </Button>
           )}
         </div>
 
@@ -171,17 +167,15 @@ export function Courts() {
         ) : courts.length === 0 ? (
           <EmptyState
             icon={Search}
-            title="No courts found"
+            title={t("No courts found")}
             description={
               filtersActive
-                ? "Try a different city or sport, or clear the filters."
-                : "No courts are listed yet. Check back soon."
+                ? t("Try a different city or sport, or clear the filters.")
+                : t("No courts are listed yet. Check back soon.")
             }
             action={
               filtersActive ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear filters
-                </Button>
+                <Button variant="outline" onClick={clearFilters}> {t("Clear filters")} </Button>
               ) : undefined
             }
           />
