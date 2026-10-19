@@ -206,7 +206,7 @@ export function Events() {
             )}
             {canCreate && (
               <Button asChild>
-                <Link to="/owner/events/create">+ Create event</Link>
+                <Link to="/owner/events">Event Management</Link>
               </Button>
             )}
           </div>

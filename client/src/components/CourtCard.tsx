@@ -3,6 +3,7 @@ import { ArrowRight, MapPin, Star, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { courtImage } from '@/lib/images';
+import { formatPrice } from '@/lib/currency';
 
 export type CourtSummary = {
   id: string;
@@ -48,7 +49,7 @@ export function CourtCard({ court }: { court: CourtSummary }) {
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="font-semibold text-foreground">
-              ${court.basePricePerHour}
+              {formatPrice(court.basePricePerHour)}
               <span className="font-normal text-muted-foreground">/hr</span>
             </span>
             {rating ? (

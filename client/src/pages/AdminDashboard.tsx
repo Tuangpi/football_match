@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/currency';
 import { FadeIn } from '@/components/motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -302,7 +303,7 @@ function CourtList(p: ViewProps) {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Owner: {c.owner.email} · {c._count.bookings} bookings · {c._count.reviews}{' '}
-                  reviews · ${c.basePricePerHour}/hr
+                  reviews · {formatPrice(c.basePricePerHour)}/hr
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -378,7 +379,7 @@ function Overview({
                     {b.court.name} · {b.court.city}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {b.player.email} · {new Date(b.bookedAt).toLocaleDateString()} · ${b.totalPrice}
+                    {b.player.email} · {new Date(b.bookedAt).toLocaleDateString()} · {formatPrice(b.totalPrice)}
                   </p>
                 </div>
                 <Badge variant={b.status === 'CANCELLED' ? 'secondary' : 'default'}>{b.status}</Badge>

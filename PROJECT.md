@@ -8,6 +8,8 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - PLAYER: search courts, book/cancel slots, manage profile, friends, teams, leave reviews
 - OWNER: list courts, manage time slots, confirm/cancel bookings, publish events (tournaments, discounts, price changes)
 - Out of scope (for now): payments, notifications, messaging
+- All court/slot prices and booking totals use Myanmar kyat (MMK); numeric API amounts are in MMK.
+- Event browsing (`/events`) is public across owners; event management (`/owner/events`) is scoped server-side to the owner's courts, with admin access across all courts.
 
 ## Tech Stack
 - **client/**: React 18 + Vite + Tailwind CSS, react-router v6, axios, react-hook-form + zod, sonner (toasts), lucide-react icons

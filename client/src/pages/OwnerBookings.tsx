@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/currency';
 import { Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -75,7 +76,7 @@ export function OwnerBookings() {
                       <Calendar className="h-4 w-4 text-muted-foreground/70" />
                       <span>{new Date(b.courtSlot.date).toLocaleDateString()}, {b.courtSlot.startTime} - {b.courtSlot.endTime}</span>
                     </div>
-                    <div className="mt-2 text-sm text-muted-foreground">Total: ${b.totalPrice}</div>
+                    <div className="mt-2 text-sm text-muted-foreground">Total: {formatPrice(b.totalPrice)}</div>
                   </div>
                   <div className="flex flex-col gap-2">
                     {b.status === 'PENDING' && (

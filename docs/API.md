@@ -7,6 +7,7 @@ Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last verifi
 
 ## Conventions
 
+- Currency: all price fields (`basePricePerHour`, `pricePerHour`, `totalPrice`) are numeric amounts in Myanmar kyat (MMK).
 - Success envelope: `{ "success": true, ... }` plus the resource (`user`, `court`, `courts`, `booking`, …).
 - Error envelope: `{ "success": false, "message": "<reason>" }`.
 - Validation errors (Zod): `400 { success:false, message:"Validation error", errors:[{field,message}] }`. Only the request **body** is validated; query/path params are used as-is.
@@ -218,6 +219,16 @@ Public event detail. Includes the court `id`, `name`, `city`, `address`, `sportT
 Errors: `404 Event not found`.
 Success: `200 { success:true, event }`.
 
+### `GET /api/events/owner/me` 👑
+
+Management list, newest start date first, including court id/name/city. Owners receive only events for courts they own (including events published by an admin); admins receive all events. Ownership comes from the authenticated session; query parameters cannot override it.
+Success: `200 { success:true, events }`.
+
+### `GET /api/events/owner/me/:id` 👑
+
+Management detail with court id/name/city, subject to the same ownership scope. Unknown or other-owner event: `404 Event not found`.
+Success: `200 { success:true, event }`.
+
 ### `POST /api/events` 👑
 
 Body: `{ courtId: string, title: string(min 1), type: "TOURNAMENT"|"COMPETITION"|"DISCOUNT"|"PRICE_CHANGE", description?, startDate: string(datetime), endDate: string(datetime) }`.
@@ -227,7 +238,7 @@ Success: `201 { success:true, event }` (+court id/name).
 
 ### `PUT /api/events/:id` 👑
 
-Partial update `{ title?, type?, description?, startDate?, endDate? }`. When both dates are sent, `endDate` must be after `startDate` (`400`).
+Partial update `{ title?, type?, description?, startDate?, endDate? }`. The resulting `endDate` must be after `startDate` (`400`), including when only one date is sent. An empty description clears the description. Court owner or admin only.
 Errors: `404 Event not found`, `403 Not authorized to update this event`.
 Success: `200 { success:true, event }`.
 

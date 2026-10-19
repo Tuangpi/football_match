@@ -76,7 +76,6 @@ export function Navbar() {
   const closeMenu = () => setMenuOpen(false);
 
   const displayName = user?.playerProfile?.fullName || user?.email.split('@')[0] || '';
-  const isOwnerArea = location.pathname.startsWith('/owner');
   // OWNER accounts manage courts; player activity (bookings, teams, friends)
   // is only available to PLAYER and ADMIN accounts.
   const isOwner = user?.role === 'OWNER';
@@ -133,36 +132,12 @@ export function Navbar() {
             )}
 
             {user?.role === 'OWNER' && (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className={cn(
-                    'flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium transition-colors',
-                    isOwnerArea
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                  )}
-                >
-                  Manage <ChevronDown className="h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/owner/courts">
-                      <Building2 className="mr-2 h-4 w-4" /> My Courts
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/owner/bookings">
-                      <Calendar className="mr-2 h-4 w-4" /> Booking Management
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/owner/courts/create">
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add a court
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+                <NavLink to="/owner/bookings" className={navLinkClass}>
+                  Booking Management
+                </NavLink>
+              </>
             )}
           </nav>
 
@@ -228,6 +203,18 @@ export function Navbar() {
                       <Link to="/owner/courts">
                         <Building2 className="mr-2 h-4 w-4" /> My courts
                       </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'OWNER' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/owner/courts/create">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add a court
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {(user.role === 'OWNER' || user.role === 'ADMIN') && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/owner/events"><CalendarCheck className="mr-2 h-4 w-4" /> Event Management</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -365,6 +352,9 @@ export function Navbar() {
                         <LayoutDashboard className="h-4 w-4" /> Admin dashboard
                       </NavLink>
                     )}
+                    <NavLink to="/owner/events" className={mobileLinkClass} onClick={closeMenu}>
+                      <CalendarCheck className="h-4 w-4" /> Event Management
+                    </NavLink>
                     {user.role === 'OWNER' && (
                       <>
                         <NavLink to="/owner/courts" className={mobileLinkClass} onClick={closeMenu}>

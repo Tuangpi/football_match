@@ -19,6 +19,7 @@ import { OwnerBookings } from '@/pages/OwnerBookings';
 import { Events } from '@/pages/Events';
 import { EventDetail } from '@/pages/EventDetail';
 import { CreateEvent } from '@/pages/CreateEvent';
+import { OwnerEvents } from '@/pages/OwnerEvents';
 import { Friends } from '@/pages/Friends';
 import { Teams } from '@/pages/Teams';
 import { AdminDashboard } from '@/pages/AdminDashboard';
@@ -112,6 +113,22 @@ export function App() {
           element={
             <ProtectedRoute roles={['OWNER', 'ADMIN']}>
               <OwnerBookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/events"
+          element={
+            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+              <OwnerEvents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/events/:id/edit"
+          element={
+            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
+              <CreateEvent />
             </ProtectedRoute>
           }
         />

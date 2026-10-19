@@ -19,7 +19,7 @@ const schema = z.object({
   sportType: z.enum(['FUTSAL', 'ELEVEN_A_SIDE']),
   dimensions: z.string().optional(),
   surfaceType: z.string().optional(),
-  basePricePerHour: z.number().positive('Price must be positive'),
+  basePricePerHour: z.coerce.number().positive('Price must be positive'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -85,7 +85,7 @@ export function CreateCourt() {
                   {errors.city && <p className="text-destructive text-sm">{errors.city.message}</p>}
                 </div>
                 <div>
-                  <Label className="mb-1 block">Price per Hour ($)</Label>
+                  <Label className="mb-1 block">Price per Hour (MMK)</Label>
                   <Input {...register('basePricePerHour')} type="number" />
                   {errors.basePricePerHour && <p className="text-destructive text-sm">{errors.basePricePerHour.message}</p>}
                 </div>

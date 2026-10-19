@@ -1,5 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { prisma } from '../utils/prisma';
+import { generateToken } from '../utils/auth';
 import {
   api,
   registerUser,
@@ -16,6 +18,7 @@ let courtId: string;
 let otherCourtId: string;
 let upcomingId: string;
 let pastId: string;
+let adminCookie: string;
 
 const hoursFromNow = (hours: number) =>
   new Date(Date.now() + hours * 3_600_000).toISOString();
@@ -38,6 +41,9 @@ before(async () => {
   owner = await registerUser('OWNER', 'ev-owner');
   otherOwner = await registerUser('OWNER', 'ev-other-owner');
   player = await registerUser('PLAYER', 'ev-player');
+  const admin = await registerUser('OWNER', 'ev-admin');
+  await prisma.user.update({ where: { id: admin.userId }, data: { role: 'ADMIN' } });
+  adminCookie = `token=${generateToken({ id: admin.userId, email: admin.email, role: 'ADMIN' })}`;
 
   courtId = await createCourt(owner.cookie, 'Event Arena', 'Eventville');
   otherCourtId = await createCourt(otherOwner.cookie, 'Other Arena', 'Elsewhere');
@@ -127,6 +133,43 @@ test('events list: type, city and when filters', async () => {
   assert.equal(past.body.events[0].title, 'Past Promo', 'past is newest first');
 });
 
+test('owner events: authenticated, role-gated and scoped to court ownership', async () => {
+  for (const path of ['/api/events/owner/me', `/api/events/owner/me/${upcomingId}`]) {
+    assert.equal((await api('GET', path)).status, 401);
+    assert.equal((await api('GET', path, { cookie: player.cookie })).status, 403);
+  }
+  const mine = await api('GET', '/api/events/owner/me', { cookie: owner.cookie });
+  assert.equal(mine.status, 200);
+  assert.deepEqual(new Set(mine.body.events.map((e: any) => e.id)), new Set([upcomingId, pastId]));
+  const other = await api('GET', `/api/events/owner/me?ownerId=${owner.userId}&courtId=${courtId}`, { cookie: otherOwner.cookie });
+  assert.equal(other.status, 200);
+  assert.equal(other.body.events.length, 1);
+  assert.equal(other.body.events[0].court.id, otherCourtId);
+  const detail = await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: owner.cookie });
+  assert.equal(detail.status, 200);
+  assert.equal(detail.body.event.court.id, courtId);
+  assert.equal((await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: otherOwner.cookie })).status, 404);
+  assert.equal((await api('GET', '/api/events/owner/me/missing', { cookie: owner.cookie })).status, 404);
+});
+
+test('admin manages all events and owners see admin-created events on their courts', async () => {
+  const created = await createEvent(adminCookie, {
+    courtId, title: 'Admin announcement', type: 'PRICE_CHANGE',
+    startDate: hoursFromNow(20), endDate: hoursFromNow(21),
+  });
+  assert.equal(created.status, 201);
+  const id = created.body.event.id;
+  const mine = await api('GET', '/api/events/owner/me', { cookie: owner.cookie });
+  assert.ok(mine.body.events.some((e: any) => e.id === id));
+  const all = await api('GET', '/api/events/owner/me', { cookie: adminCookie });
+  assert.equal(all.status, 200);
+  assert.ok(all.body.events.some((e: any) => e.court.id === courtId));
+  assert.ok(all.body.events.some((e: any) => e.court.id === otherCourtId));
+  assert.equal((await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: adminCookie })).status, 200);
+  assert.equal((await api('PUT', `/api/events/${upcomingId}`, { cookie: adminCookie, body: { description: 'Admin edited' } })).status, 200);
+  assert.equal((await api('DELETE', `/api/events/${id}`, { cookie: adminCookie })).status, 200);
+});
+
 test('event detail: 200 with court info, 404 when missing', async () => {
   const res = await api('GET', `/api/events/${upcomingId}`);
   assert.equal(res.status, 200);
@@ -172,12 +215,19 @@ test('update event: owner can edit, player and other owner are forbidden', async
   });
   assert.equal(badRange.status, 400);
 
+  for (const body of [{ startDate: hoursFromNow(60) }, { endDate: hoursFromNow(40) }]) {
+    const invalid = await api('PUT', `/api/events/${upcomingId}`, { cookie: owner.cookie, body });
+    assert.equal(invalid.status, 400, 'partial updates must validate against the stored other date');
+  }
+
   const ok = await api('PUT', `/api/events/${upcomingId}`, {
     cookie: owner.cookie,
     body: { title: 'Weekend Cup (updated)' },
   });
   assert.equal(ok.status, 200);
   assert.equal(ok.body.event.title, 'Weekend Cup (updated)');
+  const saved = await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: owner.cookie });
+  assert.equal(saved.body.event.title, 'Weekend Cup (updated)');
 });
 
 test('delete event: 401 anonymous, 403 others, owner deletes', async () => {
@@ -197,4 +247,6 @@ test('delete event: 401 anonymous, 403 others, owner deletes', async () => {
 
   const gone = await api('GET', `/api/events/${pastId}`);
   assert.equal(gone.status, 404);
+  const mine = await api('GET', '/api/events/owner/me', { cookie: owner.cookie });
+  assert.ok(!mine.body.events.some((e: any) => e.id === pastId));
 });

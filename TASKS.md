@@ -12,6 +12,13 @@
 
 ## Active Tasks
 
+### T023 - Separate owner event management from public events
+- Status: DONE (2026-10-19)
+- Expected: owners list only events on their courts in `/owner/events`, edit and delete with confirmation; public browsing remains separate; admins retain access.
+- Check: owner-list isolation and access-control API tests, partial-date validation, server tests/build, client typecheck/lint/build, focused UI checks where available.
+- Dependencies: T004, T022
+- Result: authenticated owner-scoped list/detail endpoints; separate `/owner/events` with edit/delete confirmation, loading/error/retry/empty states; shared create/edit form returns to management and preserves local date/time; account/mobile management links and public-page management shortcut; partial-date API validation fixed. Verified server 53/53 tests, server build, client typecheck/lint (0 errors, 42 existing warnings)/build (existing chunk-size warning), mocked-API Chrome checks for list/edit/create/delete/access/error/empty flows and mobile navigation, and diff whitespace check.
+
 ### T001 - Fix server start scripts
 - Status: DONE (2026-10-17)
 - Expected: `npm run dev` in server/ actually serves the API (currently runs src/app.ts which never calls listen(); only index.ts does). Same bug in `npm start` (runs dist/src/app.js).

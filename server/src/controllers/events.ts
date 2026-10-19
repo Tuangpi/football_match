@@ -104,6 +104,46 @@ export const getEvent = async (
   }
 };
 
+// Management reads are scoped to court ownership, not the event's creator.
+export const getOwnerEvents = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) return next(new AppError('Authentication required', 401));
+    const events = await prisma.event.findMany({
+      where: req.user.role === 'ADMIN' ? {} : { court: { ownerId: req.user.id } },
+      include: { court: { select: { id: true, name: true, city: true } } },
+      orderBy: { startDate: 'desc' },
+    });
+    res.json({ success: true, events });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getOwnerEvent = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) return next(new AppError('Authentication required', 401));
+    const event = await prisma.event.findFirst({
+      where: {
+        id: req.params.id,
+        ...(req.user.role === 'ADMIN' ? {} : { court: { ownerId: req.user.id } }),
+      },
+      include: { court: { select: { id: true, name: true, city: true } } },
+    });
+    if (!event) return next(new AppError('Event not found', 404));
+    res.json({ success: true, event });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Owner
 export const createEvent = async (
   req: Request,
@@ -157,6 +197,12 @@ export const updateEvent = async (
 
     if (event.court.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
       return next(new AppError('Not authorized to update this event', 403));
+    }
+
+    const startDate = data.startDate ? new Date(data.startDate) : event.startDate;
+    const endDate = data.endDate ? new Date(data.endDate) : event.endDate;
+    if (endDate <= startDate) {
+      return next(new AppError('endDate must be after startDate', 400));
     }
 
     const updated = await prisma.event.update({ where: { id }, data });

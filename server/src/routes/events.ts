@@ -2,6 +2,8 @@ import { Router } from 'express';
 import {
   getEvents,
   getEvent,
+  getOwnerEvents,
+  getOwnerEvent,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -48,6 +50,8 @@ router.get('/:id', getEvent);
 
 // Owner
 router.use(authenticate);
+router.get('/owner/me', authorize('OWNER', 'ADMIN'), getOwnerEvents);
+router.get('/owner/me/:id', authorize('OWNER', 'ADMIN'), getOwnerEvent);
 router.post('/', authorize('OWNER', 'ADMIN'), validate(createEventSchema), createEvent);
 router.put('/:id', authorize('OWNER', 'ADMIN'), validate(updateEventSchema), updateEvent);
 router.delete('/:id', authorize('OWNER', 'ADMIN'), deleteEvent);

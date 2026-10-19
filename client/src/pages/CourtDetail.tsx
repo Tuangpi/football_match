@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/currency';
 import { useAuth } from '@/context/AuthContext';
 import { FadeIn } from '@/components/motion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -343,7 +344,7 @@ export function CourtDetail() {
                           </div>
                           <div className="font-bold text-foreground text-lg">{slot.startTime} - {slot.endTime}</div>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                            <Tag className="h-3.5 w-3.5" /> ${slot.pricePerHour}/hr
+                            <Tag className="h-3.5 w-3.5" /> {formatPrice(slot.pricePerHour)}/hr
                           </div>
                           {user && user.role === 'PLAYER' && (
                             <Button
@@ -372,7 +373,7 @@ export function CourtDetail() {
                 <CardTitle className="text-lg">Court Info</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-2"><strong>Price:</strong> ${court.basePricePerHour}/hour</p>
+                <p className="text-sm text-muted-foreground mb-2"><strong>Price:</strong> {formatPrice(court.basePricePerHour)}/hour</p>
                 {court.surfaceType && (
                   <p className="text-sm text-muted-foreground mb-2"><strong>Surface:</strong> {court.surfaceType}</p>
                 )}
@@ -546,7 +547,7 @@ export function CourtDetail() {
             <div className="rounded-lg bg-accent/60 p-4 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Price</span>
-                <span className="font-semibold">${pendingSlot?.pricePerHour}/hr</span>
+                <span className="font-semibold">{pendingSlot ? `${formatPrice(pendingSlot.pricePerHour)}/hr` : '—'}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-muted-foreground">Team</span>

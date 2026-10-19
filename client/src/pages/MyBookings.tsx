@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/currency';
 import { Clock, Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -83,7 +84,7 @@ export function MyBookings() {
                       <span>{new Date(b.courtSlot.date).toLocaleDateString()}, {b.courtSlot.startTime} - {b.courtSlot.endTime}</span>
                     </div>
                     <div className="mt-2 text-sm text-muted-foreground">
-                      Total: ${b.totalPrice}
+                      Total: {formatPrice(b.totalPrice)}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">

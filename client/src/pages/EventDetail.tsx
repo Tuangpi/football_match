@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/currency';
 import { FadeIn } from '@/components/motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -229,7 +230,7 @@ export function EventDetail() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{sportLabel}</Badge>
                   <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Tag className="h-3.5 w-3.5" aria-hidden /> ${event.court.basePricePerHour}/hr
+                    <Tag className="h-3.5 w-3.5" aria-hidden /> {formatPrice(event.court.basePricePerHour)}/hr
                   </span>
                 </div>
                 <Button asChild className="w-full">

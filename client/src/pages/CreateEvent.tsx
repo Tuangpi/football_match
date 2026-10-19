@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { useForm } from 'react-hook-form';
@@ -35,16 +35,25 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
+function toLocalDateTime(value: string) {
+  const date = new Date(value);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
 export function CreateEvent() {
+  const { id } = useParams();
+  const editing = !!id;
   const { user } = useAuth();
   const navigate = useNavigate();
   const [courts, setCourts] = useState<Court[]>([]);
   const [loadingCourts, setLoadingCourts] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -53,40 +62,58 @@ export function CreateEvent() {
 
   const isAdmin = user?.role === 'ADMIN';
 
-  async function fetchCourts() {
-    try {
-      // Admins can publish for any active court; owners only for their own.
-      const res = await api.get(isAdmin ? '/courts' : '/courts/owner/me');
-      setCourts(res.data.courts);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load courts');
-    } finally {
-      setLoadingCourts(false);
-    }
-  }
-
   useEffect(() => {
     if (!user || (user.role !== 'OWNER' && user.role !== 'ADMIN')) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchCourts();
-  }, [user]);
+    let active = true;
+    async function load() {
+      try {
+        if (id) {
+          const res = await api.get(`/events/owner/me/${id}`);
+          if (!active) return;
+          const event = res.data.event;
+          setCourts([event.court]);
+          reset({
+            courtId: event.court.id,
+            title: event.title,
+            type: event.type,
+            description: event.description ?? '',
+            startDate: toLocalDateTime(event.startDate),
+            endDate: toLocalDateTime(event.endDate),
+          });
+        } else {
+          const res = await api.get(isAdmin ? '/courts' : '/courts/owner/me');
+          if (active) setCourts(res.data.courts);
+        }
+      } catch {
+        if (active) {
+          setLoadError(true);
+          toast.error(id ? 'Event not found or unavailable for management' : 'Failed to load courts');
+        }
+      } finally {
+        if (active) setLoadingCourts(false);
+      }
+    }
+    load();
+    return () => { active = false; };
+  }, [user, id, isAdmin, reset]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await api.post('/events', {
-        courtId: data.courtId,
+      const payload = {
         title: data.title,
         type: data.type,
-        description: data.description || undefined,
+        description: data.description ?? '',
         // datetime-local values are local time; send full ISO (Z) as the API requires
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
-      });
-      toast.success('Event published!');
-      navigate('/events');
+      };
+      if (editing) await api.put(`/events/${id}`, payload);
+      else await api.post('/events', { ...payload, courtId: data.courtId });
+      toast.success(editing ? 'Event updated!' : 'Event published!');
+      navigate('/owner/events');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create event');
+      toast.error(err.response?.data?.message || 'Failed to save event');
     } finally {
       setLoading(false);
     }
@@ -100,6 +127,15 @@ export function CreateEvent() {
     return (
       <div className="p-8 text-center">
         <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <p>{editing ? 'Event not found or unavailable for management.' : 'Unable to load courts. Please try again.'}</p>
+        <Button asChild variant="outline"><Link to="/owner/events">Back to event management</Link></Button>
       </div>
     );
   }
@@ -127,13 +163,15 @@ export function CreateEvent() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Create Event</h1>
+        <Link to="/owner/events" className="mb-4 inline-block text-sm text-primary hover:underline">← Event Management</Link>
+        <h1 className="text-2xl font-bold text-foreground mb-6">{editing ? 'Edit Event' : 'Create Event'}</h1>
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
                 <Label className="mb-1 block">Court</Label>
-                <select {...register('courtId')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                {editing && <input type="hidden" {...register('courtId')} />}
+                <select {...(editing ? { value: courts[0]?.id } : register('courtId'))} aria-label="Court" disabled={editing} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   <option value="">Select a court</option>
                   {courts.map((court) => (
                     <option key={court.id} value={court.id}>
@@ -180,7 +218,7 @@ export function CreateEvent() {
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : ''} Publish Event
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : ''} {editing ? 'Save changes' : 'Publish Event'}
               </Button>
             </form>
           </CardContent>

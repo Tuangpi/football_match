@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/currency';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -168,7 +169,7 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
               <MapPin className="h-4 w-4 inline mr-1" />
               {court.address}, {court.city}
             </p>
-            <p className="text-sm text-muted-foreground mt-1">${court.basePricePerHour}/hour</p>
+            <p className="text-sm text-muted-foreground mt-1">{formatPrice(court.basePricePerHour)}/hour</p>
             <Link to={`/courts/${court.id}`} className="text-sm text-primary hover:underline mt-1 inline-block">
               View public page →
             </Link>
@@ -241,7 +242,7 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
               )}
             </div>
             <div>
-              <Label className="mb-1 block">Price per Hour ($)</Label>
+              <Label className="mb-1 block">Price per Hour (MMK)</Label>
               <Input {...editForm.register('basePricePerHour')} type="number" />
               {editForm.formState.errors.basePricePerHour && (
                 <p className="text-destructive text-sm">{editForm.formState.errors.basePricePerHour.message}</p>
@@ -290,7 +291,7 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
             {court.slots.map((slot) => (
               <li key={slot.id} className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
-                {new Date(slot.date).toLocaleDateString()}, {slot.startTime} - {slot.endTime} (${slot.pricePerHour}/hr)
+                {new Date(slot.date).toLocaleDateString()}, {slot.startTime} - {slot.endTime} ({formatPrice(slot.pricePerHour)}/hr)
                 <Badge variant={slot.isAvailable ? 'default' : 'destructive'}>
                   {slot.isAvailable ? 'Available' : 'Booked'}
                 </Badge>
@@ -339,7 +340,7 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
                 )}
               </div>
               <div>
-                <Label className="mb-1 block">Price/Hour ($) — optional</Label>
+                <Label className="mb-1 block">Price/Hour (MMK) — optional</Label>
                 <Input
                   {...slotForm.register('pricePerHour')}
                   type="number"
