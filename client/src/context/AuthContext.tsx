@@ -8,11 +8,13 @@ type User = {
   playerProfile?: { fullName?: string | null; avatarUrl?: string | null } | null;
 };
 
+type AuthResult = { success: boolean; user: User; message?: string };
+
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, role: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  register: (email: string, password: string, role: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
 };
 
@@ -34,14 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     const res = await api.post('/auth/login', { email, password });
     setUser(res.data.user);
+    return { success: true, user: res.data.user };
   };
 
-  const register = async (email: string, password: string, role: string) => {
+  const register = async (email: string, password: string, role: string): Promise<AuthResult> => {
     const res = await api.post('/auth/register', { email, password, role });
     setUser(res.data.user);
+    return { success: true, user: res.data.user };
   };
 
   const logout = async () => {

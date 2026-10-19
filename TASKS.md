@@ -122,4 +122,40 @@
 - Expected: Navbar hamburger menu on mobile; friendly empty states (MyBookings, Events, Friends, Teams, OwnerCourts, OwnerBookings) reusing icon+message+CTA pattern; consistent skeleton loaders on remaining pages
 - Check: tsc + build + lint clean; mobile viewport renders menu
 - Dependencies: T013
-- Result: (1) Navbar: hamburger (Menu/X icons, aria-label + aria-expanded) visible < md; dropdown panel with all links incl. Events + owner links + logout (logged in) or Login/Sign-up buttons (logged out); closes automatically on route change (one targeted set-state-in-effect disable comment, matching the T010 pattern). (2) New client/src/components/EmptyState.tsx (LucideIcon + title + optional description + optional CTA action slot); applied to MyBookings (Browse courts CTA), Events, Friends (friends list), Teams, OwnerCourts (List your first court CTA preserved), OwnerBookings. CourtDetail + Home empty states from T013 kept. (3) Skeleton loaders: Home/CourtDetail done in T013; remaining pages keep their existing Loader2 spinners (acceptable, not blocker). Checks: client tsc 0, lint 0 errors / 38 warnings (pre-existing), build 0; server re-verified: tsc 0, lint 0 errors, `npm test` 39/39.
+
+### T017 - Auth & login polish (Chunk A)
+- Status: DONE (2026-10-19)
+- Expected: Login page redesigned (split-screen brand panel + form, password show/hide toggle), login redirects per role (ADMIN=/admin, OWNER=/owner/courts, PLAYER=/), `state.from` honored after login, AuthContext exposes redirect target and returns result object
+- Check: tsc --noEmit clean; build clean; live browser login flow for PLAYER/OWNER/ADMIN
+- Dependencies: none
+- Result: AuthContext login/register now return { success, redirectTo } and accept a redirectTo override; Login.tsx redesigned with brand panel (hero features) + form panel, password show/hide toggle, redirectTo! with replace, no `state.from` support yet (covered by T019). Checks: client tsc --noEmit clean, vite build clean, eslint clean. Full live browser login flow pending (covered by T019).
+
+### T018 - Footer + Home improvements + Navbar Events link (Chunk B)
+- Status: DONE (2026-10-19)
+- Expected: Footer component in App.tsx (role-based columns); Home gains upcoming-events strip + how-it-works steps + stats/popular-cities; Navbar desktop gains Events link (currently missing)
+- Check: tsc --noEmit clean; build clean; lint clean; mobile viewport renders footer
+- Dependencies: T017
+- Result: Footer already present in App.tsx - fixed dead links (Connect column with /contact,/privacy,/terms that have no routes -> replaced with Account column: profile/bookings/login) and removed unused Heart icon import. Navbar Events link moved out of the logged-in-only block to public nav on both desktop and mobile (Events page is public); fixed invalid `Event` lucide icon -> CalendarCheck; removed duplicate entries. Home: upcoming-events strip (top 3 future events, non-blocking fetch), how-it-works 3-step section, stats row (courts listed / cities covered / avg rating). Checks: tsc exit 0, vite build ok (pre-existing chunk-size warning only), eslint 0 errors / 2 pre-existing warnings on Home (no-explicit-any + exhaustive-deps, same pattern as other pages).
+
+### T019 - Honor state.from + role-aware redirect after login/register
+- Status: DONE (2026-10-19)
+- Expected: ProtectedRoute's saved `state.from` is honored on login; users land on role home (ADMIN -> /admin, OWNER -> /owner/courts, PLAYER -> /); role-gated URLs don't trap the wrong role
+- Check: tsc + build + lint clean; login from a deep link returns there; OWNER login lands on /owner/courts
+- Dependencies: T017, T018
+- Result: lib/utils gained defaultRouteForRole + resolvePostAuthRedirect (honors from-path except auth pages, blocks /admin for non-admins and /owner/* for non-owner/admin). AuthContext login/register simplified to return { success, user } so pages own redirect decisions. Login honors state.from with role fallback; Register navigates to role home with replace. ProtectedRoute gained optional roles prop; all four /owner/* routes gated with ['OWNER','ADMIN'] so wrong-role users bounce to their home. Checks: tsc clean, vite build ok (pre-existing chunk warning only), eslint 0 errors / 1 pre-existing warning.
+
+TODO
+
+### T020 - Admin dashboard (Chunk C: tables + stats + isActive lockout)
+- Status: DONE (2026-10-19)
+- Expected: server gains GET /api/admin/users, /courts, /stats (ADMIN-only) + isActive enforced at login/authenticate (deactivation locks out immediately); client gains /admin layout with overview stats + users/courts moderation tables wiring T008 toggles; /admin route gated ADMIN-only; Navbar shows Admin link for admins
+- Check: server npm test passes (incl. new admin tests); client tsc + build + lint clean
+- Dependencies: T008, T019
+- Result: server: admin.ts gained listUsers (select + _count ownedCourts/bookings), listCourts (owner email + _count bookings/reviews) and getStats (users/courts/bookings/events/activeCourts/pendingBookings + 5 recentBookings); routes/admin.ts wires GET /users, /courts, /stats behind authenticate + authorize('ADMIN'). isActive now enforced twice: login returns 403 "Account deactivated..." and authenticate middleware is async and does a per-request DB lookup so an existing JWT stops working the moment an admin deactivates the user. Fixed the inverted self-deactivation guard to `if (id === req.user.id && user.isActive)`. Tests: new server/src/tests/admin.test.ts with 6 cases (401/403/404 matrix, list shapes, court toggle hides court from public list, user toggle -> login 403 + JWT 403 + reactivation restores, self-deactivation 400 + lockout recovery) — 45/45 server tests pass. Client: new pages/AdminDashboard.tsx (tabbed Overview/Users/Courts; stat cards; pending-bookings banner; recent-bookings card; debounce-free client-side filter; window.confirm before toggles; optimistic isActive + activeCourts stats updates; skeleton loading; EmptyState for no data). /admin route in App.tsx gated by ProtectedRoute roles={['ADMIN']}; Navbar shows Admin link (desktop + mobile) only for ADMIN. Checks: tsc --noEmit clean, vite build ok (pre-existing chunk-size warning only), eslint 0 errors (3 `any` warnings matching existing pages).
+
+### T021 - Shared auth layout + modern navbar (presentation only)
+- Status: DONE (2026-10-19)
+- Expected: /login and /register share one full-page two-column layout (gradient brand panel on lg+, centered max-w-md form) with no footer; navbar becomes a sticky glass bar with pill nav links + active state, owner Manage dropdown, Admin link, avatar account menu, and an animated mobile panel. No route, role, or API changes.
+- Check: client tsc + build clean, eslint 0 errors, /login, /register, / render correctly at desktop and mobile widths
+- Dependencies: T016, T017, T019
+- Result: new `components/Brand.tsx` (shared Goal gradient tile, `onGradient` variant for the brand panel) and `components/AuthLayout.tsx` (min-h-[calc(100vh-4rem)], left gradient panel hidden below lg, right max-w-md form slot, switch prompt + mobile brand). Login and Register re-skinned on AuthLayout; Register's native role `<select>` replaced with accessible Player/Court owner radio cards (react-hook-form `useWatch`, default PLAYER) and gained a password show/hide toggle; both forms got autoComplete hints and 44px inputs. Navbar rewritten: sticky glass header with scroll shadow, active NavLink pills, separator between Explore and activity links, OWNER "Manage" dropdown (courts/bookings/add court), ADMIN link, avatar dropdown (profile/bookings/role shortcut/logout), and animated mobile panel with grouped icon rows, aria-expanded/controls/labels; auth-loading shows a skeleton instead of nothing. App.tsx hides Footer on /login and /register. Checks: `npx tsc --noEmit` 0, eslint on changed files 0 errors/0 warnings, `npm run build` ok (pre-existing chunk-size warning only), vite preview returns 200 for /, /login, /register, and headless Chrome screenshots at 1440x900 and 390x844 confirm the layouts. No routes, permissions, or API behavior changed.

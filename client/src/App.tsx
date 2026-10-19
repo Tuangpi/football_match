@@ -17,10 +17,14 @@ import { Events } from '@/pages/Events';
 import { CreateEvent } from '@/pages/CreateEvent';
 import { Friends } from '@/pages/Friends';
 import { Teams } from '@/pages/Teams';
+import { AdminDashboard } from '@/pages/AdminDashboard';
+import { Footer } from '@/components/ui/footer';
 
 export function App() {
   const { resolvedTheme } = useTheme();
   const location = useLocation();
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
+
   return (
     <div className="app">
       <Navbar />
@@ -67,7 +71,7 @@ export function App() {
         <Route
           path="/owner/courts"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
               <OwnerCourts />
             </ProtectedRoute>
           }
@@ -75,7 +79,7 @@ export function App() {
         <Route
           path="/owner/courts/create"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
               <CreateCourt />
             </ProtectedRoute>
           }
@@ -83,7 +87,7 @@ export function App() {
         <Route
           path="/owner/bookings"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
               <OwnerBookings />
             </ProtectedRoute>
           }
@@ -91,14 +95,23 @@ export function App() {
         <Route
           path="/owner/events/create"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['OWNER', 'ADMIN']}>
               <CreateEvent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
+      {!isAuthRoute && <Footer />}
     </div>
   );
 }

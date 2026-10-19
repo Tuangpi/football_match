@@ -71,6 +71,10 @@ export const login = async (
       return next(new AppError('Invalid credentials', 401));
     }
 
+    if (!user.isActive) {
+      return next(new AppError('Account deactivated. Contact support.', 403));
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return next(new AppError('Invalid credentials', 401));

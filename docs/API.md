@@ -3,7 +3,7 @@
 Base URL: `http://localhost:3000`. All API routes are prefixed with `/api`.
 Frontend calls `/api/*` (Vite dev server proxies `/api` → `http://localhost:3000`).
 
-Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last verified 2026-10-18 (Tier 1 endpoints added: review PATCH/DELETE, slot DELETE, team DELETE, avatarUrl write path — see entries marked “Added 2026-10-18”).
+Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last verified 2026-10-19 (admin list/stats endpoints + immediate `isActive` lockout — see entries marked “Added 2026-10-19”).
 
 ## Conventions
 
@@ -250,6 +250,21 @@ Success: `200 { success:true, message:"Review deleted" }`.
 
 ## Admin (`/api/admin`) — all 🛡 ADMIN
 
+### `GET /api/admin/users` 🛡
+
+**Added 2026-10-19.** All users, newest first. Each: `{ id, email, role, isActive, createdAt, _count:{ ownedCourts, bookings } }`.
+Success: `200 { success:true, users }`.
+
+### `GET /api/admin/courts` 🛡
+
+**Added 2026-10-19.** All courts including inactive ones, newest first. Each: `{ id, name, city, sportType, basePricePerHour, isActive, createdAt, owner:{ id, email }, _count:{ bookings, reviews } }`.
+Success: `200 { success:true, courts }`.
+
+### `GET /api/admin/stats` 🛡
+
+**Added 2026-10-19.** Dashboard counters: `{ users, courts, bookings, events, activeCourts, pendingBookings, recentBookings }`. `recentBookings` is the latest 5 with `{ id, status, totalPrice, bookedAt, player:{ email }, court:{ name, city } }`.
+Success: `200 { success:true, stats }`.
+
 ### `PATCH /api/admin/courts/:id/toggle` 🛡
 
 Flips `Court.isActive`. Deactivated courts vanish from public list/detail filters (`GET /courts` filters `isActive:true`). Errors: `401`, `403 Forbidden: insufficient role` (non-admin), `404 Court not found`.
@@ -258,7 +273,7 @@ Success: `200 { success:true, court, message:"Court activated|deactivated" }`.
 ### `PATCH /api/admin/users/:id/toggle` 🛡
 
 Flips `User.isActive`. Errors: `401`, `403` (non-admin), `404 User not found`, `400 Cannot deactivate yourself` (self-deactivation only blocked when it would deactivate — an already-inactive admin re-toggling self back on is allowed, which is also the recovery path).
-Toggling `isActive` does **not** revoke existing JWTs — a deactivated user keeps API access until their token expires. Enforce an `isActive` check at login/`authenticate` if you need immediate lockout.
+**Updated 2026-10-19:** deactivation now locks the account out immediately. `POST /api/auth/login` returns `403 Account deactivated. Contact support.` and `authenticate` does a per-request DB check, so an existing JWT stops working on the next call. Reactivating restores access.
 Success: `200 { success:true, user:{id,email,role,isActive}, message:"User activated|deactivated" }`.
 
 ## Roles on the wire
@@ -274,5 +289,5 @@ Success: `200 { success:true, user:{id,email,role,isActive}, message:"User activ
 | Reviews: list | ✅ | ✅ | ✅ |
 | Reviews: create | ✅ (any logged-in role technically) | ✅ | ✅ |
 | Teams / friends / profile | ✅ (any logged-in role) | ✅ | ✅ |
-| Admin toggles | ❌ | ❌ | ✅ |
+| Admin lists / stats / toggles | ❌ | ❌ | ✅ |
 

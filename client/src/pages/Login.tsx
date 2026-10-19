@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { resolvePostAuthRedirect } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AuthLayout } from '@/components/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -19,71 +20,89 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function Login() {
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await login(data.email, data.password);
-      toast.success('Welcome back!');
-      navigate('/');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      const { success, user } = await login(data.email, data.password);
+      if (success) {
+        toast.success('Welcome back!');
+        navigate(resolvePostAuthRedirect(user?.role, fromPath), { replace: true });
+      }
+    } catch {
+      toast.error('Login failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-4 sm:p-6">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Sign in to your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div>
-                <Label htmlFor="email" className="mb-1 block">
-                  Email
-                </Label>
-                <Input id="email" {...register('email')} type="email" placeholder="you@example.com" />
-                {errors.email && <p className="text-destructive text-sm mt-1">{errors.email.message}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="password" className="mb-1 block">
-                  Password
-                </Label>
-                <Input id="password" {...register('password')} type="password" placeholder="••••••••" />
-                {errors.password && <p className="text-destructive text-sm mt-1">{errors.password.message}</p>}
-              </div>
-
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : ''} Sign in
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-sm text-muted-foreground">
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to book courts, join teams, and manage your matches."
+      switchPrompt={
+        <>
           Don&apos;t have an account?{' '}
-          <Link to="/register" className="text-primary hover:text-primary/80 font-medium">
-            Create account
+          <Link to="/register" className="font-medium text-primary hover:text-primary/80">
+            Create one
           </Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            {...register('email')}
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            className="h-11 rounded-lg"
+          />
+          {errors.email && <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              {...register('password')}
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className="h-11 rounded-lg pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
+          )}
+        </div>
+
+        <Button type="submit" size="lg" disabled={loading} className="w-full rounded-lg">
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Sign in
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

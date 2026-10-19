@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { AppError } from './error';
+import { prisma } from '../utils/prisma';
 
 declare global {
   namespace Express {
@@ -16,11 +17,11 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables');
 }
 
-export const authenticate = (
+export const authenticate = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   const token = req.cookies?.token;
 
   if (!token) {
@@ -34,6 +35,19 @@ export const authenticate = (
       role: string;
     };
 
+    // Enforce deactivation immediately: a toggled-off user loses API access
+    // even while their JWT is still technically valid.
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, isActive: true },
+    });
+    if (!user) {
+      return next(new AppError('User not found', 401));
+    }
+    if (!user.isActive) {
+      return next(new AppError('Account deactivated. Contact support.', 403));
+    }
+
     req.user = {
       id: decoded.id,
       email: decoded.email,
@@ -41,7 +55,8 @@ export const authenticate = (
     };
 
     next();
-  } catch {
+  } catch (err) {
+    if (err instanceof AppError) return next(err);
     return next(new AppError('Invalid or expired token', 401));
   }
 };

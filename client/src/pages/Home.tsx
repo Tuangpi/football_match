@@ -13,6 +13,10 @@ import {
   UsersRound,
   ShieldCheck,
   ArrowRight,
+  Calendar,
+  Trophy,
+  Percent,
+  Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -28,6 +32,44 @@ type Court = {
   basePricePerHour: number;
   reviews?: Array<{ rating: number }>;
 };
+
+type HomeEvent = {
+  id: string;
+  title: string;
+  type: string;
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  court: { id: string; name: string; city: string };
+};
+
+const eventIcon: Record<string, typeof Trophy> = {
+  TOURNAMENT: Trophy,
+  COMPETITION: Calendar,
+  DISCOUNT: Percent,
+  PRICE_CHANGE: Building2,
+};
+
+const STEPS = [
+  {
+    icon: Search,
+    step: '1',
+    title: 'Find a court',
+    text: 'Search by city or sport and pick a court near you.',
+  },
+  {
+    icon: CalendarCheck,
+    step: '2',
+    title: 'Book a slot',
+    text: 'Choose an open slot and book it in seconds.',
+  },
+  {
+    icon: UsersRound,
+    step: '3',
+    title: 'Play together',
+    text: 'Bring your team — or find teammates along the way.',
+  },
+];
 
 const FEATURES = [
   {
@@ -50,6 +92,7 @@ const FEATURES = [
 export function Home() {
   const { user } = useAuth();
   const [courts, setCourts] = useState<Court[]>([]);
+  const [events, setEvents] = useState<HomeEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
   const [sport, setSport] = useState('');
@@ -73,10 +116,34 @@ export function Home() {
     fetchCourts();
   }, [city, sport]);
 
+  useEffect(() => {
+    async function fetchUpcomingEvents() {
+      try {
+        const res = await api.get('/events');
+        const all: HomeEvent[] = res.data.events ?? [];
+        const now = new Date();
+        const upcoming = all
+          .filter((e) => new Date(e.endDate ?? e.startDate) >= now)
+          .sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+          .slice(0, 3);
+        setEvents(upcoming);
+      } catch {
+        // Non-blocking: courts are the main content; events strip just hides.
+      }
+    }
+    fetchUpcomingEvents();
+  }, []);
+
   const avgRating = (court: Court) => {
     if (!court.reviews?.length) return null;
     return court.reviews.reduce((s, r) => s + r.rating, 0) / court.reviews.length;
   };
+
+  const cities = [...new Set(courts.map((c) => c.city).filter(Boolean))];
+  const rated = courts.map(avgRating).filter((r): r is number => r !== null);
+  const overallRating = rated.length
+    ? rated.reduce((s, r) => s + r, 0) / rated.length
+    : null;
 
   return (
     <div className="min-h-screen">
@@ -175,6 +242,124 @@ export function Home() {
           ))}
         </div>
       </div>
+
+      {/* Upcoming events */}
+      {events.length > 0 && (
+        <div className="mx-auto max-w-5xl px-4 pt-10">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Upcoming events</h2>
+              <p className="text-sm text-muted-foreground">
+                Tournaments, discounts and promos from court owners
+              </p>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/events">
+                View all <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {events.map((e, i) => {
+              const Icon = eventIcon[e.type] || Calendar;
+              return (
+                <FadeIn key={e.id} delay={i * 0.07}>
+                  <Link to="/events" className="group block h-full">
+                    <Card className="h-full transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
+                      <CardContent className="p-5">
+                        <div className="mb-3 flex items-center gap-3">
+                          <div className="rounded-lg bg-accent p-2 text-accent-foreground">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <Badge variant="secondary">{e.type}</Badge>
+                        </div>
+                        <h3 className="font-bold">{e.title}</h3>
+                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                          {e.description || 'No description'}
+                        </p>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{new Date(e.startDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Building2 className="h-3 w-3" />
+                          <span>
+                            {e.court.name}, {e.court.city}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* How it works */}
+      <div className="mx-auto max-w-5xl px-4 pt-12">
+        <div className="mb-4 text-center">
+          <h2 className="text-2xl font-bold">How it works</h2>
+          <p className="text-sm text-muted-foreground">
+            From search to kickoff in three steps
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <FadeIn key={s.title} delay={i * 0.07}>
+              <Card className="h-full">
+                <CardContent className="flex items-start gap-3 p-5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+                    {s.step}
+                  </div>
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold">
+                      <s.icon className="h-4 w-4 text-muted-foreground" />
+                      {s.title}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{s.text}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats */}
+      {!loading && courts.length > 0 && (
+        <div className="mx-auto max-w-5xl px-4 pt-10">
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-card p-6 sm:grid-cols-3">
+            <div className="text-center">
+              <p className="text-3xl font-extrabold text-primary">{courts.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Court{courts.length === 1 ? '' : 's'} listed
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-extrabold text-primary">{cities.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {cities.length === 1 ? 'City' : 'Cities'} covered
+                {cities.length > 0 && ` · ${cities.slice(0, 3).join(', ')}`}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="flex items-center justify-center gap-1 text-3xl font-extrabold text-primary">
+                {overallRating ? (
+                  <>
+                    <Star className="h-6 w-6 fill-primary text-primary" />
+                    {overallRating.toFixed(1)}
+                  </>
+                ) : (
+                  '—'
+                )}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Average player rating</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Court list */}
       <div className="mx-auto max-w-5xl px-4 py-10">
