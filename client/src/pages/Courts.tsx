@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import api from '@/lib/api';
-import { FadeIn } from '@/components/motion';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { CourtCard, type CourtSummary } from '@/components/CourtCard';
-import { EmptyState } from '@/components/EmptyState';
-import { MapPin, Search, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import api from "@/lib/api";
+import { FadeIn } from "@/components/motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CourtCard, type CourtSummary } from "@/components/CourtCard";
+import { EmptyState } from "@/components/EmptyState";
+import { MapPin, Search, X } from "lucide-react";
+import { toast } from "sonner";
 
 const SPORTS = [
-  { value: '', label: 'All sports' },
-  { value: 'FUTSAL', label: 'Futsal (5v5)' },
-  { value: 'ELEVEN_A_SIDE', label: '11-a-side' },
+  { value: "", label: "All sports" },
+  { value: "FUTSAL", label: "Futsal (5v5)" },
+  { value: "ELEVEN_A_SIDE", label: "11-a-side" },
 ];
 
 export function Courts() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const city = searchParams.get('city') ?? '';
-  const sport = searchParams.get('sportType') ?? '';
+  const city = searchParams.get("city") ?? "";
+  const sport = searchParams.get("sportType") ?? "";
 
   const [courts, setCourts] = useState<CourtSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  function setFilter(key: 'city' | 'sportType', value: string) {
+  function setFilter(key: "city" | "sportType", value: string) {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
@@ -40,12 +40,12 @@ export function Courts() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (city) params.set('city', city);
-      if (sport) params.set('sportType', sport);
+      if (city) params.set("city", city);
+      if (sport) params.set("sportType", sport);
       const res = await api.get(`/courts?${params.toString()}`);
       setCourts(res.data.courts);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load courts');
+      toast.error(err.response?.data?.message || "Failed to load courts");
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export function Courts() {
     fetchCourts();
   }, [city, sport]);
 
-  const filtersActive = city !== '' || sport !== '';
+  const filtersActive = city !== "" || sport !== "";
 
   return (
     <div className="min-h-screen">
@@ -83,7 +83,7 @@ export function Courts() {
           </FadeIn>
           <FadeIn delay={0.12}>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-white/85 sm:text-base">
-              Browse every active court, filter by city or format, and book a slot in seconds.
+              Browse every active court, filter by city or format, and choose your booking hours.
             </p>
           </FadeIn>
         </div>
@@ -99,14 +99,14 @@ export function Courts() {
                 type="text"
                 placeholder="City or area"
                 value={city}
-                onChange={(e) => setFilter('city', e.target.value)}
+                onChange={(e) => setFilter("city", e.target.value)}
                 aria-label="Filter courts by city"
                 className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
               {city && (
                 <button
                   type="button"
-                  onClick={() => setFilter('city', '')}
+                  onClick={() => setFilter("city", "")}
                   aria-label="Clear city filter"
                   className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 >
@@ -116,7 +116,7 @@ export function Courts() {
             </div>
             <select
               value={sport}
-              onChange={(e) => setFilter('sportType', e.target.value)}
+              onChange={(e) => setFilter("sportType", e.target.value)}
               aria-label="Filter by sport type"
               className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -140,14 +140,11 @@ export function Courts() {
             <h2 className="text-2xl font-bold">Available courts</h2>
             <p className="text-sm text-muted-foreground">
               {loading
-                ? 'Loading…'
-                : `${courts.length} court${courts.length === 1 ? '' : 's'} found`}
+                ? "Loading…"
+                : `${courts.length} court${courts.length === 1 ? "" : "s"} found`}
               {!loading && city && <span> · {city}</span>}
               {!loading && sport && (
-                <span>
-                  {' '}
-                  · {sport === 'ELEVEN_A_SIDE' ? '11-a-side' : 'Futsal'}
-                </span>
+                <span> · {sport === "ELEVEN_A_SIDE" ? "11-a-side" : "Futsal"}</span>
               )}
             </p>
           </div>
@@ -177,8 +174,8 @@ export function Courts() {
             title="No courts found"
             description={
               filtersActive
-                ? 'Try a different city or sport, or clear the filters.'
-                : 'No courts are listed yet. Check back soon.'
+                ? "Try a different city or sport, or clear the filters."
+                : "No courts are listed yet. Check back soon."
             }
             action={
               filtersActive ? (

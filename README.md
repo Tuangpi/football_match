@@ -27,7 +27,7 @@ cd server
 cp .env.example .env   # configure DATABASE_URL, JWT_SECRET, PORT
 npm install
 npx prisma generate
-npx prisma migrate dev --name init
+npx prisma migrate deploy
 npm run dev
 ```
 
@@ -40,7 +40,7 @@ npm run dev
 
 ## Roles
 - **PLAYER** — find friends, join/create teams, book courts
-- **OWNER** — manage courts, slots, bookings, events
+- **OWNER** — manage courts, opening hours, calendar bookings, events
 - **ADMIN** — platform moderation (future)
 
 ## Docs

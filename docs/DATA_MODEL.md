@@ -44,21 +44,26 @@ Notes: `role` is a free string, not an enum. Booking with a `teamId` requires a 
 
 ### Court
 
-`id · ownerId (FK → User, onDelete: Cascade) · name · address · city · sportType (default FUTSAL) · dimensions? · surfaceType? · basePricePerHour · isActive (default true) · createdAt · updatedAt`
-Relations: `owner → User`, `slots[]`, `bookings[]`, `events[]`, `reviews[]`.
+`id · ownerId (FK → User, onDelete: Cascade) · name · address · city · sportType (default FUTSAL) · dimensions? · surfaceType? · basePricePerHour · openingHours (JSON weekly schedule) · isActive (default true) · createdAt · updatedAt`
+Relations: `owner → User`, `slots[]` (legacy), `blockedPeriods[]`, `bookings[]`, `events[]`, `reviews[]`.
 Notes: public listing shows only `isActive:true`. `PUT /courts/:id` can flip `isActive` (owner self-deactivate); admin toggle does the same. Deleting a court cascades to slots, events, reviews — but **not** bookings (no cascade declared), so a court with bookings cannot be deleted without removing bookings first.
 
-### CourtSlot
+### CourtSlot (legacy archive)
 
-`id · courtId (FK → Court, onDelete: Cascade) · date (DateTime) · startTime (string) · endTime (string) · isAvailable (default true) · pricePerHour · createdAt`
-Relations: `court → Court`, `bookings[]`. Index: `(courtId, date, startTime)` — a performance index only, **not** a uniqueness guard; overlapping/duplicate slots are possible.
-Notes: `date` carries the day (time component ignored by day-filter queries); `startTime`/`endTime` are unvalidated strings. `pricePerHour` snapshots at creation (defaults to the court's base price). No update/delete endpoint. Booking sets `isAvailable=false`; cancel/CANCELLED sets it back to `true`.
+Existing rows are retained for historical reference. New booking availability does not depend on these records, and no player-facing slot creation/selection exists. Legacy management endpoints remain for compatibility; archived slots cannot be booked through the new booking API.
 
 ### Booking
 
-`id · courtId (FK → Court, no cascade) · courtSlotId (FK → CourtSlot, no cascade) · playerId (FK → User, no cascade) · teamId? (FK → Team, no cascade) · status (default PENDING) · totalPrice · bookedAt · cancelledAt?`
-Index: `(courtSlotId)`. Relations: `court`, `courtSlot`, `player → User`, `team?`.
-Lifecycle: created PENDING (slot flagged unavailable, `totalPrice` = slot price); owner sets CONFIRMED or CANCELLED; player cancels own via `PATCH /:id/cancel` (sets CANCELLED + `cancelledAt`, frees slot). Double-booking is guarded twice: the `isAvailable` flag (checked first) and a live PENDING/CONFIRMED row check. Because none of court/slot/player/team cascade to bookings, history rows survive their parents' deletion attempts — in practice the FKs block deleting a referenced court, slot, user, or team.
+`id · courtId · courtSlotId? (legacy FK) · startsAt · endsAt · playerId · teamId? · status · totalPrice · bookedAt · cancelledAt?`
+Indexes: `(courtSlotId)` and `(courtId, startsAt, endsAt)`. Database check: end > start.
+New bookings store UTC timestamps directly and have no slot link. API validates whole hours in Asia/Yangon and court opening hours. Pending/confirmed bookings block overlapping requests. Price snapshots hourly rate × duration; cancellation releases time without removing history. Cancelled records cannot be reopened.
+
+Migration `20261019070000_flexible_booking` backfills timestamps from the archived slot's stored UTC calendar date and time strings interpreted in Yangon. Overnight legacy end times move to the next day. Existing totals and non-whole-hour times are unchanged. Invalid legacy strings fail the migration instead of silently rounding. Review legacy date-carrier conventions before applying this migration to another database.
+
+### CourtBlock
+
+`id · courtId (FK → Court, onDelete: Cascade) · startsAt · endsAt · reason · createdAt`
+Index: `(courtId, startsAt, endsAt)`. Database check: end > start. Owner-only reasons are never exposed through public availability. Booking and block creation share a per-court transaction lock and check overlapping ranges after acquiring it.
 
 ### Event
 
@@ -87,6 +92,7 @@ User ──1:n── Friend (as sender / receiver, no cascade)
 Team ──1:n── TeamMember (onDelete: Cascade)
 Team ──1:n── Booking (optional teamId, no cascade)
 
+Court ──1:n── CourtBlock (onDelete: Cascade)
 Court ──1:n── CourtSlot (onDelete: Cascade)
 Court ──1:n── Booking (no cascade)
 Court ──1:n── Event (onDelete: Cascade)

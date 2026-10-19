@@ -116,6 +116,8 @@ model Court {
   dimensions     String?
   surfaceType    String?
   basePricePerHour Float
+  openingHours   Json        @default("[{\"day\":0,\"open\":8,\"close\":23,\"closed\":false},{\"day\":1,\"open\":8,\"close\":23,\"closed\":false},{\"day\":2,\"open\":8,\"close\":23,\"closed\":false},{\"day\":3,\"open\":8,\"close\":23,\"closed\":false},{\"day\":4,\"open\":8,\"close\":23,\"closed\":false},{\"day\":5,\"open\":8,\"close\":23,\"closed\":false},{\"day\":6,\"open\":8,\"close\":23,\"closed\":false}]")
+  blockedPeriods CourtBlock[]
   isActive       Boolean     @default(true)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -146,8 +148,10 @@ model Booking {
   id          String         @id @default(cuid())
   courtId     String
   court       Court          @relation(fields: [courtId], references: [id])
-  courtSlotId String
-  courtSlot   CourtSlot      @relation(fields: [courtSlotId], references: [id])
+  courtSlotId String?
+  courtSlot   CourtSlot?     @relation(fields: [courtSlotId], references: [id])
+  startsAt    DateTime
+  endsAt      DateTime
   playerId    String
   player      User           @relation(fields: [playerId], references: [id])
   teamId      String?
@@ -158,6 +162,19 @@ model Booking {
   cancelledAt DateTime?
 
   @@index([courtSlotId])
+  @@index([courtId, startsAt, endsAt])
+}
+
+model CourtBlock {
+  id        String   @id @default(cuid())
+  courtId   String
+  court     Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([courtId, startsAt, endsAt])
 }
 
 model Event {

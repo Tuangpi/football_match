@@ -1,23 +1,23 @@
-import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, UsersRound, Zap } from 'lucide-react';
-import { Brand } from '@/components/Brand';
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, ShieldCheck, UsersRound, Zap } from "lucide-react";
+import { Brand } from "@/components/Brand";
 
 const BENEFITS = [
   {
     icon: Zap,
-    title: 'Instant booking',
-    text: 'Pick an open slot and lock it in — no phone calls.',
+    title: "Instant booking",
+    text: "Choose your booking hours — no phone calls.",
   },
   {
     icon: UsersRound,
-    title: 'Play with friends',
-    text: 'Build a team, invite friends, and book together.',
+    title: "Play with friends",
+    text: "Build a team, invite friends, and book together.",
   },
   {
     icon: ShieldCheck,
-    title: 'Trusted reviews',
-    text: 'Real ratings from players who showed up.',
+    title: "Trusted reviews",
+    text: "Real ratings from players who showed up.",
   },
 ];
 

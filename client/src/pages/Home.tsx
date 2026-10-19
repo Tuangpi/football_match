@@ -1,59 +1,52 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
-import { FadeIn } from '@/components/motion';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Search,
-  MapPin,
-  CalendarCheck,
-  UsersRound,
-  ShieldCheck,
-  ArrowRight,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { CourtCard, type CourtSummary } from '@/components/CourtCard';
-import { EventCard, type EventSummary } from '@/components/EventCard';
+import { useState, useEffect, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { FadeIn } from "@/components/motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, MapPin, CalendarCheck, UsersRound, ShieldCheck, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CourtCard, type CourtSummary } from "@/components/CourtCard";
+import { EventCard, type EventSummary } from "@/components/EventCard";
 
 const STEPS = [
   {
     icon: Search,
-    step: '1',
-    title: 'Find a court',
-    text: 'Search by city or sport and pick a court near you.',
+    step: "1",
+    title: "Find a court",
+    text: "Search by city or sport and pick a court near you.",
   },
   {
     icon: CalendarCheck,
-    step: '2',
-    title: 'Book a slot',
-    text: 'Choose an open slot and book it in seconds.',
+    step: "2",
+    title: "Choose your time",
+    text: "Choose a date and whole-hour start/end times.",
   },
   {
     icon: UsersRound,
-    step: '3',
-    title: 'Play together',
-    text: 'Bring your team — or find teammates along the way.',
+    step: "3",
+    title: "Play together",
+    text: "Bring your team — or find teammates along the way.",
   },
 ];
 
 const FEATURES = [
   {
     icon: CalendarCheck,
-    title: 'Instant booking',
-    text: 'Pick a slot, book in seconds. Owners confirm fast.',
+    title: "Instant booking",
+    text: "Choose your hours and request a booking. Owners confirm fast.",
   },
   {
     icon: UsersRound,
-    title: 'Play with friends',
-    text: 'Build teams, invite friends, book together.',
+    title: "Play with friends",
+    text: "Build teams, invite friends, book together.",
   },
   {
     icon: ShieldCheck,
-    title: 'Trusted reviews',
-    text: 'Real ratings from real players for every court.',
+    title: "Trusted reviews",
+    text: "Real ratings from real players for every court.",
   },
 ];
 
@@ -65,16 +58,16 @@ export function Home() {
   const [courts, setCourts] = useState<CourtSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [city, setCity] = useState('');
-  const [sport, setSport] = useState('');
+  const [city, setCity] = useState("");
+  const [sport, setSport] = useState("");
 
   // Home only previews courts; the full, filterable list lives on /courts.
   async function fetchCourts() {
     try {
-      const res = await api.get('/courts');
+      const res = await api.get("/courts");
       setCourts(res.data.courts);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to load courts');
+      toast.error(err.response?.data?.message || "Failed to load courts");
     } finally {
       setLoading(false);
     }
@@ -89,16 +82,16 @@ export function Home() {
   function searchCourts(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (city.trim()) params.set('city', city.trim());
-    if (sport) params.set('sportType', sport);
+    if (city.trim()) params.set("city", city.trim());
+    if (sport) params.set("sportType", sport);
     const qs = params.toString();
-    navigate(qs ? `/courts?${qs}` : '/courts');
+    navigate(qs ? `/courts?${qs}` : "/courts");
   }
 
   useEffect(() => {
     async function fetchUpcomingEvents() {
       try {
-        const res = await api.get('/events?when=upcoming');
+        const res = await api.get("/events?when=upcoming");
         const upcoming: EventSummary[] = res.data.events ?? [];
         setEvents(upcoming.slice(0, 3));
       } catch {
@@ -133,7 +126,7 @@ export function Home() {
           </FadeIn>
           <FadeIn delay={0.12}>
             <p className="mt-4 text-white/85 max-w-2xl mx-auto text-base sm:text-lg">
-              Spin up a team, grab a slot, and get on the pitch. Real-time availability for
+              Spin up a team, choose your time, and get on the pitch. Real-time availability for
               players — simple management for owners.
             </p>
           </FadeIn>
@@ -172,7 +165,7 @@ export function Home() {
               </Button>
             </form>
           </FadeIn>
-          {user && user.role === 'OWNER' && (
+          {user && user.role === "OWNER" && (
             <FadeIn delay={0.26}>
               <div className="mt-6 flex justify-center">
                 <Button
@@ -239,9 +232,7 @@ export function Home() {
       <div className="mx-auto max-w-5xl px-4 pt-12">
         <div className="mb-4 text-center">
           <h2 className="text-2xl font-bold">How it works</h2>
-          <p className="text-sm text-muted-foreground">
-            From search to kickoff in three steps
-          </p>
+          <p className="text-sm text-muted-foreground">From search to kickoff in three steps</p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {STEPS.map((s, i) => (
@@ -271,7 +262,7 @@ export function Home() {
           <div>
             <h2 className="text-2xl font-bold">Featured courts</h2>
             <p className="text-sm text-muted-foreground">
-              {loading ? 'Loading…' : 'A few courts to get you started'}
+              {loading ? "Loading…" : "A few courts to get you started"}
             </p>
           </div>
           <Button asChild variant="ghost" size="sm">

@@ -132,15 +132,15 @@ Success: `200 { success:true, courts }` (each with `owner{id,email}`, `reviews[{
 
 ### `GET /api/courts/:id` 🔓
 
-Court detail with owner, future slots (`date >= now`, ordered by date+startTime), and reviews (newest first, with reviewer id/email). Errors: `404 Court not found`. → `200 { success:true, court }`.
+Court detail with owner, weekly `openingHours`, and reviews (newest first, with reviewer id/email). Errors: `404 Court not found`. → `200 { success:true, court }`.
 
 ### `GET /api/courts/:id/slots?date=` 🔓
 
-Slots for a court, ordered by date+startTime. Optional `?date=<parseable date>` filters to that calendar day (server-local 00:00–23:59:59.999). No court-exists check — unknown id returns `200 { success:true, slots:[] }`.
+Legacy archival slots (not bookable or used for availability), ordered by date+startTime. Optional `?date=<parseable date>` filters to that calendar day (server-local 00:00–23:59:59.999). No court-exists check — unknown id returns `200 { success:true, slots:[] }`.
 
 ### `GET /api/courts/owner/me` 🔒
 
-Own courts (any `isActive`), each with latest 5 slots + latest 5 bookings. Note: registered **after** `/:id` but still works — `/owner/me` (2 segments) never collides with `/:id` (1 segment). → `200 { success:true, courts }`.
+Own courts (any `isActive`), each with weekly `openingHours` + latest 5 bookings. Note: registered **after** `/:id` but still works — `/owner/me` (2 segments) never collides with `/:id` (1 segment). → `200 { success:true, courts }`.
 
 ### `POST /api/courts` 👑
 
@@ -159,7 +159,7 @@ Owner-or-admin only. Cascades to slots, events, reviews (FK `onDelete:Cascade`);
 Errors: `404 Court not found`, `403 Not authorized to delete this court`.
 Success: `200 { success:true, message:"Court deleted" }`.
 
-### `POST /api/courts/:id/slots` 👑
+### `POST /api/courts/:id/slots` 👑 (legacy)
 
 Body: `{ date: string(datetime, required), startTime: string(required, e.g. "19:00"), endTime: string(required), pricePerHour?: number(positive, defaults to court's basePricePerHour) }`.
 No format/ordering validation on `startTime`/`endTime`, no overlap guard.
@@ -169,37 +169,56 @@ Success: `201 { success:true, slot }`.
 ### `DELETE /api/courts/:id/slots/:slotId` 👑
 
 **Added 2026-10-18.** Court-owner-or-admin only. The slot must belong to `:id`.
-Bookings block deletion while active (`PENDING`/`CONFIRMED`); once all bookings on the slot are `CANCELLED`, they are removed with the slot in one transaction (the FK has no cascade).
+Bookings block deletion while active (`PENDING`/`CONFIRMED`); once all bookings on the slot are `CANCELLED`, their legacy slot link is cleared in the same transaction; booking history is preserved (the FK has no cascade).
 Errors: `404 Court not found`, `403 Not authorized to delete slots on this court`, `404 Slot not found` (or slot on another court), `400 Cannot delete a slot with active bookings`.
 Success: `200 { success:true, message:"Slot deleted" }`.
 
 ## Bookings (`/api/bookings`) — all 🔒
 
-Lifecycle: booking starts `PENDING`; creating flips `CourtSlot.isAvailable=false`. Player-cancel or owner-set-`CANCELLED` flips it back to `true`. Nothing else re-opens a slot.
+Bookings store `startsAt` and `endsAt` UTC timestamps directly. All court rules and UI selections use **Asia/Yangon (UTC+06:30)**. New bookings must be future whole-hour ranges of at least one hour within one operating day. Midnight closing (`close:24`) is supported; overnight operating schedules are not supported in this version. PENDING and CONFIRMED ranges block availability, CANCELLED does not. Adjacent bookings are allowed.
 
 ### `POST /api/bookings` 🔒
 
-Body: `{ courtSlotId: string, teamId?: string }` (`teamId` requires caller membership).
-Guards in order: `404 Court slot not found` → `400 Slot is not available` (slot flag) → `403 You are not a member of this team` → `400 Slot already booked` (live PENDING/CONFIRMED row).
-`totalPrice` = slot's `pricePerHour`. Success: `201 { success:true, booking }` (`status: PENDING`, includes court, courtSlot, team).
+Body: `{ courtId: string, startsAt: ISO datetime with timezone, endsAt: ISO datetime with timezone, teamId?: string }`.
+Example: `{ "courtId":"court-id", "startsAt":"2026-11-01T18:00:00+06:30", "endsAt":"2026-11-01T20:00:00+06:30" }`.
+No slot creation or slot ID is required. `courtSlotId`-only requests are no longer accepted. The server checks team membership, active court, opening hours, pending/confirmed booking overlaps and owner-blocked periods. Per-court transaction locks serialize booking and block creation, including simultaneous requests. Overlaps return `409`; invalid hours/ranges or inactive court return `400`; foreign team returns `403`; unknown court returns `404`.
+`totalPrice` = current court hourly rate × duration in hours, stored permanently. Success: `201 { success:true, booking }` (PENDING, includes court and team).
 
 ### `GET /api/bookings/me` 🔒
 
-Own bookings, newest first (court id/name/city, full slot, team id/name). → `200 { success:true, bookings }`.
+Own bookings, newest first, with direct start/end timestamps, court id/name/city and team id/name. → `200 { success:true, bookings }`.
 
 ### `PATCH /api/bookings/:id/cancel` 🔒
 
-Player cancels **own** booking. Errors: `404 Booking not found`, `403 Not authorized to cancel this booking`, `400 Booking already cancelled`. Frees the slot. Success: `200 { success:true, booking }` (`status: CANCELLED`, `cancelledAt` set).
+Cancels caller's own booking and sets `cancelledAt`; releases its time. Errors: `404` missing, `403` not caller's booking, `400` already cancelled. → `200 { success:true, booking }`.
 
 ### `GET /api/bookings/owner` 👑
 
-Bookings for courts owned by the caller, newest first (court id/name, full slot, player id/email, team id/name). → `200 { success:true, bookings }`.
+Bookings on caller-owned courts, newest first, including direct timestamps, court, player id/email and team. → `200 { success:true, bookings }`.
 
 ### `PATCH /api/bookings/owner/:id/status` 👑
 
-Body: `{ status: "PENDING"|"CONFIRMED"|"CANCELLED" }`. Court-owner-or-admin only. Setting `CANCELLED` from PENDING/CONFIRMED frees the slot (other transitions leave the flag untouched).
-Errors: `404 Booking not found`, `403 Not authorized to update this booking`.
-Success: `200 { success:true, booking }`.
+Body: `{ status: "PENDING"|"CONFIRMED"|"CANCELLED" }`. Court-owner-or-admin only. CANCELLED releases time and sets `cancelledAt`. Cancelled bookings cannot be reopened; create a new request instead. Missing `404`, foreign owner `403`, reopen `400`, concurrent/already cancelled update `409`. → `200 { success:true, booking }`.
+
+### Weekly operating hours
+
+Court create/update accepts optional `openingHours`: exactly seven unique `{ day:0..6, open:0..23, close:1..24, closed:boolean }` entries (Sunday=0). An open day's closing hour must follow its opening hour. Default: 08:00–23:00 every day. Closing a day or changing hours/rate affects new requests only; existing reservations and totals stay unchanged.
+
+### `GET /api/courts/:id/availability?date=YYYY-MM-DD` 🔓
+
+Returns `{ success:true, openingHours, isActive, busy:[{ startsAt, endsAt }] }` for the Yangon calendar day. Includes active bookings and blocked periods, but never player identities or private block reasons. Invalid/missing date `400`; unknown court `404`.
+
+### `GET /api/courts/:id/blocks` 👑
+
+Owner-or-admin only. Upcoming blocked periods with IDs, timestamps and private reasons. → `{ success:true, blocks }`.
+
+### `POST /api/courts/:id/blocks` 👑
+
+Body: `{ startsAt, endsAt, reason: string(1..200) }`. Future whole-hour range, maximum 24 hours. Rejects overlaps with active bookings or blocks (`409`). Uses the same court transaction lock as booking creation. → `201 { success:true, block }`.
+
+### `DELETE /api/courts/:id/blocks/:blockId` 👑
+
+Court-owner-or-admin only; block must belong to court. Removes the block and releases time. Missing court/block `404`, unauthorized `403`. → `200 { success:true }`.
 
 ## Events (`/api/events`)
 

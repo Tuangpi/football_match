@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
-import { FadeIn } from '@/components/motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Link } from "react-router-dom";
+import { FadeIn } from "@/components/motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ArrowRight,
   Building2,
@@ -10,43 +10,43 @@ import {
   Goal,
   ShieldCheck,
   UsersRound,
-} from 'lucide-react';
+} from "lucide-react";
 
 const VALUES = [
   {
     icon: CalendarCheck,
-    title: 'Simple booking',
-    text: 'See real availability and lock in a slot in seconds — no calls, no back-and-forth.',
+    title: "Simple booking",
+    text: "See real availability and choose your booking hours in seconds — no calls, no back-and-forth.",
   },
   {
     icon: UsersRound,
-    title: 'Community first',
-    text: 'Friends and teams live next to your bookings, so the next match is easy to organise.',
+    title: "Community first",
+    text: "Friends and teams live next to your bookings, so the next match is easy to organise.",
   },
   {
     icon: ShieldCheck,
-    title: 'Trusted reviews',
-    text: 'Ratings and reviews come from players who actually played on the pitch.',
+    title: "Trusted reviews",
+    text: "Ratings and reviews come from players who actually played on the pitch.",
   },
   {
     icon: Building2,
-    title: 'Owner tools',
-    text: 'Courts, slots, bookings and promotions managed from one clear dashboard.',
+    title: "Owner tools",
+    text: "Courts, opening hours, bookings and promotions managed from one clear dashboard.",
   },
 ];
 
 const PLAYER_POINTS = [
-  'Search courts by city and sport',
-  'Book or cancel a slot online',
-  'Create teams and add friends',
-  'Leave a review after you play',
+  "Search courts by city and sport",
+  "Request or cancel a court booking online",
+  "Create teams and add friends",
+  "Leave a review after you play",
 ];
 
 const OWNER_POINTS = [
-  'List your courts and time slots',
-  'Confirm or cancel incoming bookings',
-  'Publish tournaments, discounts and price changes',
-  'Keep an eye on every booking in one place',
+  "List your courts and set opening hours",
+  "Confirm or cancel incoming bookings",
+  "Publish tournaments, discounts and price changes",
+  "Keep an eye on every booking in one place",
 ];
 
 export function About() {
@@ -111,13 +111,13 @@ export function About() {
               <h2 className="text-2xl font-bold text-foreground">Why we built FootballMatch</h2>
               <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
                 <p>
-                  It started with a familiar frustration: finding an open pitch and confirming a time
-                  took more calls than the match itself.
+                  It started with a familiar frustration: finding an open pitch and confirming a
+                  time took more calls than the match itself.
                 </p>
                 <p>
-                  FootballMatch puts court discovery, bookings, teams, friends, events and reviews in
-                  one place — for players who just want to play, and for owners who want their courts
-                  full.
+                  FootballMatch puts court discovery, bookings, teams, friends, events and reviews
+                  in one place — for players who just want to play, and for owners who want their
+                  courts full.
                 </p>
                 <p>
                   We are not trying to replace the local game. We want to remove the admin around it
@@ -279,5 +279,3 @@ export function About() {
     </div>
   );
 }
-
-

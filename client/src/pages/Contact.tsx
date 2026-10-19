@@ -1,37 +1,37 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { FadeIn } from '@/components/motion';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ChevronDown, Clock, Mail, MessageSquare, Send, UsersRound } from 'lucide-react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { FadeIn } from "@/components/motion";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronDown, Clock, Mail, MessageSquare, Send, UsersRound } from "lucide-react";
 
-const SUPPORT_EMAIL = 'contact@footballmatch.app';
+const SUPPORT_EMAIL = "contact@footballmatch.app";
 
 const FAQS = [
   {
-    q: 'How do I book a court?',
-    a: 'Browse courts from the home page, open the court you like and pick an open slot. Bookings start as pending until the court owner confirms.',
+    q: "How do I book a court?",
+    a: "Browse courts from the home page, open the court you like and choose a date and whole-hour start/end times. Bookings start as pending until the court owner confirms.",
   },
   {
-    q: 'Can I cancel a booking?',
-    a: 'Yes. Open My bookings from the account menu and cancel the slot. It becomes available to other players again.',
+    q: "Can I cancel a booking?",
+    a: "Yes. Open My bookings from the account menu and cancel your booking. It becomes available to other players again.",
   },
   {
-    q: 'How do I list my court?',
-    a: 'Register as a court owner, then go to Manage → My courts → Add a court. Add time slots so players can book them.',
+    q: "How do I list my court?",
+    a: "Register as a court owner, then go to Manage → My courts → Add a court. Set weekly opening hours and an hourly price. Players choose their own booking times.",
   },
   {
-    q: 'Can I pay through FootballMatch?',
-    a: 'Online payments are not supported yet. Arrange payment directly with the court owner when you play.',
+    q: "Can I pay through FootballMatch?",
+    a: "Online payments are not supported yet. Arrange payment directly with the court owner when you play.",
   },
   {
-    q: 'I found a problem with a court. What should I do?',
-    a: 'Send us the court name and a short description using the form on this page and we will look into it.',
+    q: "I found a problem with a court. What should I do?",
+    a: "Send us the court name and a short description using the form on this page and we will look into it.",
   },
 ];
 
@@ -42,7 +42,7 @@ type FormState = {
   message: string;
 };
 
-const EMPTY_FORM: FormState = { name: '', email: '', subject: '', message: '' };
+const EMPTY_FORM: FormState = { name: "", email: "", subject: "", message: "" };
 
 export function Contact() {
   const { user } = useAuth();
@@ -54,7 +54,7 @@ export function Contact() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm((f) => ({
       ...f,
-      name: f.name || user.playerProfile?.fullName || '',
+      name: f.name || user.playerProfile?.fullName || "",
       email: f.email || user.email,
     }));
   }, [user]);
@@ -71,7 +71,7 @@ export function Contact() {
       form.subject,
     )}&body=${encodeURIComponent(body)}`;
     window.location.href = mailto;
-    toast.success('Opening your email app — just press send.');
+    toast.success("Opening your email app — just press send.");
   }
 
   return (
@@ -128,7 +128,7 @@ export function Contact() {
                           autoComplete="name"
                           placeholder="Alex Morgan"
                           value={form.name}
-                          onChange={update('name')}
+                          onChange={update("name")}
                         />
                       </div>
                       <div className="space-y-2">
@@ -140,7 +140,7 @@ export function Contact() {
                           autoComplete="email"
                           placeholder="you@example.com"
                           value={form.email}
-                          onChange={update('email')}
+                          onChange={update("email")}
                         />
                       </div>
                     </div>
@@ -151,7 +151,7 @@ export function Contact() {
                         required
                         placeholder="How can we help?"
                         value={form.subject}
-                        onChange={update('subject')}
+                        onChange={update("subject")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -162,7 +162,7 @@ export function Contact() {
                         rows={6}
                         placeholder="Tell us what's on your mind…"
                         value={form.message}
-                        onChange={update('message')}
+                        onChange={update("message")}
                       />
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -248,7 +248,6 @@ export function Contact() {
               </Card>
             </FadeIn>
           </div>
-
         </div>
       </div>
 
@@ -256,7 +255,9 @@ export function Contact() {
       <div className="mx-auto max-w-5xl px-4 pb-8">
         <div className="mb-4 text-center">
           <h2 className="text-2xl font-bold text-foreground">Frequently asked questions</h2>
-          <p className="text-sm text-muted-foreground">Quick answers to the most common questions</p>
+          <p className="text-sm text-muted-foreground">
+            Quick answers to the most common questions
+          </p>
         </div>
         <Card>
           <CardContent className="divide-y divide-border/60 p-2 sm:p-4">
@@ -272,7 +273,6 @@ export function Contact() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }
