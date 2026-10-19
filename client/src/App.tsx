@@ -27,7 +27,7 @@ export function App() {
 
   return (
     <div className="app">
-      <Navbar />
+      {!isAuthRoute && <Navbar />}
       <Toaster theme={resolvedTheme} richColors position="top-center" />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>

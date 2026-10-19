@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ShieldCheck, UsersRound, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, ShieldCheck, UsersRound, Zap } from 'lucide-react';
 import { Brand } from '@/components/Brand';
 
 const BENEFITS = [
@@ -29,12 +30,13 @@ type AuthLayoutProps = {
 };
 
 /**
- * Shared full-height layout for /login and /register.
+ * Shared full-screen layout for /login and /register.
+ * The navbar and footer are hidden on these routes, so the page owns the viewport.
  * Brand panel on the left (large screens), form column on the right.
  */
 export function AuthLayout({ title, subtitle, children, switchPrompt }: AuthLayoutProps) {
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full bg-background lg:grid lg:grid-cols-2">
+    <div className="min-h-dvh w-full bg-background lg:grid lg:grid-cols-2">
       {/* Brand panel */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-emerald-600 to-teal-700 p-10 text-white lg:flex xl:p-14">
         <div
@@ -51,7 +53,13 @@ export function AuthLayout({ title, subtitle, children, switchPrompt }: AuthLayo
         />
 
         <div className="relative">
-          <Brand variant="onGradient" />
+          <Link
+            to="/"
+            aria-label="FootballMatch home"
+            className="inline-flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-700"
+          >
+            <Brand variant="onGradient" />
+          </Link>
         </div>
 
         <div className="relative max-w-md">
@@ -86,29 +94,44 @@ export function AuthLayout({ title, subtitle, children, switchPrompt }: AuthLayo
       </aside>
 
       {/* Form panel */}
-      <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-4 py-12 sm:px-8">
+      <div className="relative flex min-h-dvh flex-col overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-24 right-0 h-64 w-64 rounded-full bg-primary/10 blur-3xl"
         />
 
-        <div className="relative w-full max-w-md">
-          <div className="mb-8 flex justify-center lg:hidden">
+        <div className="relative flex items-center px-4 py-5 sm:px-8 lg:px-10">
+          <Link
+            to="/"
+            aria-label="FootballMatch home"
+            className="inline-flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
+          >
             <Brand />
-          </div>
+          </Link>
+          <Link
+            to="/"
+            className="hidden items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:inline-flex"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to home
+          </Link>
+        </div>
 
-          <div className="space-y-2 text-center lg:text-left">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
-          </div>
-
-          <div className="mt-8">{children}</div>
-
-          {switchPrompt && (
-            <div className="mt-8 border-t border-border pt-6 text-center text-sm text-muted-foreground">
-              {switchPrompt}
+        <div className="relative flex flex-1 items-center justify-center px-4 pb-12 pt-4 sm:px-8">
+          <div className="w-full max-w-md">
+            <div className="space-y-2 text-center lg:text-left">
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
-          )}
+
+            <div className="mt-8">{children}</div>
+
+            {switchPrompt && (
+              <div className="mt-8 border-t border-border pt-6 text-center text-sm text-muted-foreground">
+                {switchPrompt}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
