@@ -23,8 +23,10 @@ import {
   ChevronDown,
   ClipboardList,
   Home,
+  Info,
   LayoutDashboard,
   LogOut,
+  Mail,
   MapPin,
   Menu,
   PlusCircle,
@@ -100,12 +102,14 @@ export function Navbar() {
           </Link>
 
           {/* Desktop navigation */}
-          <nav className="hidden items-center gap-1 lg:flex" aria-label={t("Main")}>
+          <nav className="hidden min-w-0 flex-wrap items-center justify-center gap-1 lg:flex" aria-label={t("Main")}>
             {!isAdmin && (
               <>
                 <NavLink to="/" end className={navLinkClass}> {t("Home")} </NavLink>
                 <NavLink to="/courts" className={navLinkClass}> {t("Courts")} </NavLink>
                 <NavLink to="/events" className={navLinkClass}> {t("Events")} </NavLink>
+                <NavLink to="/about" className={navLinkClass}> {t("About")} </NavLink>
+                <NavLink to="/contact" className={navLinkClass}> {t("Contact")} </NavLink>
               </>
             )}
 
@@ -132,7 +136,7 @@ export function Navbar() {
           </nav>
 
           {/* Account / actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LanguageSwitcher />
             <ThemeToggle />
 
@@ -286,6 +290,10 @@ export function Navbar() {
                       <MapPin className="h-4 w-4" /> {t("Courts")} </NavLink>
                     <NavLink to="/events" className={mobileLinkClass} onClick={closeMenu}>
                       <CalendarCheck className="h-4 w-4" /> {t("Events")} </NavLink>
+                    <NavLink to="/about" className={mobileLinkClass} onClick={closeMenu}>
+                      <Info className="h-4 w-4" /> {t("About")} </NavLink>
+                    <NavLink to="/contact" className={mobileLinkClass} onClick={closeMenu}>
+                      <Mail className="h-4 w-4" /> {t("Contact")} </NavLink>
                   </div>
                 </div>
               )}

@@ -18,3 +18,23 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+export interface SuggestItem {
+  id: string;
+  [key: string]: unknown;
+}
+
+export async function suggestCourts(q: string) {
+  const res = await api.get('/courts/suggest', { params: { q } });
+  return res.data;
+}
+
+export async function suggestEvents(q: string) {
+  const res = await api.get('/events/suggest', { params: { q } });
+  return res.data;
+}
+
+export async function suggestPlayers(q: string) {
+  const res = await api.get('/players/suggest', { params: { q } });
+  return res.data;
+}

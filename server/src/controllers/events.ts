@@ -239,3 +239,40 @@ export const deleteEvent = async (
     next(err);
   }
 };
+
+// Public - typeahead suggestions for city/title filter inputs.
+export const suggestEvents = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      res.json({ success: true, items: [] });
+      return;
+    }
+
+    const events = await prisma.event.findMany({
+      where: {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { court: { city: { contains: q, mode: "insensitive" } } },
+        ],
+      },
+      select: { id: true, title: true, court: { select: { city: true } } },
+      take: 8,
+      orderBy: { startDate: "asc" },
+    });
+
+    const items = events.map((e) => ({
+      id: e.id,
+      title: e.title,
+      city: e.court.city,
+    }));
+
+    res.json({ success: true, items });
+  } catch (err) {
+    next(err);
+  }
+};

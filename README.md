@@ -53,4 +53,5 @@ cd client
 ## Docs
 - [API reference](docs/API.md) — all `/api` routes: methods, auth/roles, payloads, errors
 - [Data model overview](docs/DATA_MODEL.md) — enums, models, relations, constraints
+- [Migration plan](docs/MIGRATION_PLAN.md) — planned move to Supabase PostgreSQL and Clerk authentication; not yet implemented
 - Docs index: [docs/](docs/README.md)

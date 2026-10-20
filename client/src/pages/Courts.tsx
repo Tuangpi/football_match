@@ -1,13 +1,14 @@
 import { message } from '../lib/language';
 import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import api from "@/lib/api";
+import api, { suggestCourts } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Autocomplete } from "@/components/Autocomplete";
 import { CourtCard, type CourtSummary } from "@/components/CourtCard";
 import { EmptyState } from "@/components/EmptyState";
 import { MapPin, Search, X } from "lucide-react";
@@ -27,6 +28,9 @@ export function Courts() {
 
   const [courts, setCourts] = useState<CourtSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [citySuggestions, setCitySuggestions] = useState<any[]>([]);
+  const [citySuggestionsLoading, setCitySuggestionsLoading] = useState(false);
+  const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function setFilter(key: "city" | "sportType", value: string) {
     const next = new URLSearchParams(searchParams);
@@ -59,6 +63,31 @@ export function Courts() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCourts();
   }, [city, sport]);
+
+  // Debounced typeahead suggestions for the city filter.
+  useEffect(() => {
+    if (suggestDebounce.current) clearTimeout(suggestDebounce.current);
+    const hasQuery = city.trim().length > 0;
+    suggestDebounce.current = setTimeout(async () => {
+      if (!hasQuery) {
+        setCitySuggestions([]);
+        setCitySuggestionsLoading(false);
+        return;
+      }
+      setCitySuggestionsLoading(true);
+      try {
+        const data = await suggestCourts(city);
+        setCitySuggestions(data.items ?? []);
+      } catch {
+        setCitySuggestions([]);
+      } finally {
+        setCitySuggestionsLoading(false);
+      }
+    }, hasQuery ? 150 : 0);
+    return () => {
+      if (suggestDebounce.current) clearTimeout(suggestDebounce.current);
+    };
+  }, [city]);
 
   const filtersActive = city !== "" || sport !== "";
 
@@ -93,13 +122,17 @@ export function Courts() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-background px-4 py-2">
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={t("City or area")}
+              <Autocomplete
                 value={city}
-                onChange={(e) => setFilter("city", e.target.value)}
-                aria-label={t("Filter courts by city")}
-                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                onChange={(v) => setFilter("city", v)}
+                items={citySuggestions}
+                itemToLabel={(item: any) => `${item.name} (${item.city})`}
+                itemToValue={(item: any) => item.city}
+                onSelect={(item: any) => setFilter("city", item.city)}
+                loading={citySuggestionsLoading}
+                ariaLabel={t("Filter courts by city")}
+                placeholder={t("City or area")}
+                inputClassName="h-auto border-0 bg-transparent px-0 py-0 text-sm text-foreground shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               {city && (
                 <button

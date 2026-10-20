@@ -13,10 +13,16 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - Client language preference supports English (`en`, default) and Myanmar (`my`), saved locally. Translation dictionaries cover application-owned UI text; court names, descriptions, reviews and other user content remain unchanged. Dates retain Asia/Yangon booking rules and prices retain MMK.
 - Event browsing (`/events`) is public across owners; event management (`/owner/events`) is scoped server-side to the owner's courts, without ADMIN access. Anonymous browsing remains available, but signed-in admins are limited to the dashboard.
 
-## Tech Stack
+## Tech Stack (current)
 - **client/**: React 18 + Vite + Tailwind CSS, react-router v6, axios, react-hook-form + zod, sonner (toasts), lucide-react icons
 - **server/**: Express + TypeScript, Zod validation, Prisma ORM + PostgreSQL
 - **Auth**: JWT stored in httpOnly cookie; bcrypt password hashing
+
+## Planned stack (not yet implemented)
+- **Database host**: Supabase PostgreSQL, accessed via Prisma ORM (migrations and Prisma Client remain)
+- **Authentication**: Clerk (sign-in, sessions, user identity); PLAYER/OWNER/ADMIN roles and authorization stay in the Express backend
+- **Frontend hosting**: Vercel
+- **Backend hosting**: Open — Render recommended for the existing Express server model; Vercel also supports Express
 
 ## Architecture
 - server/src: routes -> middleware (authenticate/authorize, validate) -> controllers -> Prisma
@@ -35,6 +41,6 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - Owner booking management supports Day, Monday–Sunday Week, Month, and List/history. Week uses daily agenda columns, Month shows compact summaries with date/overflow drill-down to Day; mobile uses vertical agendas. Court/status filters persist across views and dates remain in Asia/Yangon.
 
 ## Constraints & Assumptions
-- PostgreSQL required; configure via server/.env (see server/.env.example)
+- PostgreSQL required; configure via server/.env (see server/.env.example). Planned production host: Supabase via Prisma; connection pooling/config to be confirmed during the database migration.
 - Verification evidence is recorded per task in TASKS.md and PROGRESS.md; older baseline features may still need verification.
 - Git repo had zero commits when tracking was initialized (2026-10-17)

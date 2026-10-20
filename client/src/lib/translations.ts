@@ -655,6 +655,8 @@ export const myanmar: Record<string, string> = {
     "ဤတောင်းဆိုမှုကို ပြင်ဆင်၍မရပါ။ ပြန်ကြိုးစားပါ။",
   "Search failed. Please try again.": "ရှာဖွေ၍မရပါ။ ပြန်ကြိုးစားပါ။",
   "Loading...": "ရယူနေသည်…",
+  "Loading…": "ရယူနေသည်…",
+  "No results": "ရလဒ် မရှိပါ",
   About: "အကြောင်း",
   "About FootballMatch": "FootballMatch အကြောင်း",
   "About FootballMatch →": "FootballMatch အကြောင်း →",

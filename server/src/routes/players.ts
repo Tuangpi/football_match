@@ -8,6 +8,7 @@ import {
   getMyFriends,
   getPendingRequests,
   respondToFriendRequest,
+  suggestPlayers,
 } from '../controllers/players';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -29,6 +30,7 @@ router.put('/me', validate(z.object({
 
 // User search + friend routes MUST come before /:id,
 // otherwise GET /friends is captured by /:id and 404s
+router.get('/suggest', authorize('PLAYER'), suggestPlayers);
 router.get('/search', authorize('PLAYER'), searchUsers);
 router.post('/friends/request', authorize('PLAYER'), validate(z.object({ receiverId: z.string() })), sendFriendRequest);
 router.get('/friends', authorize('PLAYER'), getMyFriends);

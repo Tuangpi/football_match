@@ -1,6 +1,7 @@
 import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useIsPresent } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { defaultRouteForRole } from '@/lib/utils';
 
@@ -12,15 +13,18 @@ export function ProtectedRoute({
   roles?: string[];
 }) {
   useLanguage();
-  const { user, loading, hasLoggedOut } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
+  const isPresent = useIsPresent();
 
   if (loading) return <div className="p-8 text-center">{t("Loading...")}</div>;
+  // Exiting pages must not override navigation, especially the logout trip home.
+  if (!isPresent) return null;
   if (!user)
     return (
       <Navigate
-        to={hasLoggedOut ? '/' : '/login'}
-        state={hasLoggedOut ? undefined : { from: location }}
+        to="/login"
+        state={{ from: location }}
         replace
       />
     );

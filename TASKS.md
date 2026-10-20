@@ -208,3 +208,19 @@ TODO
 - Check: Safe migration/backfill reviewed; API coverage for hours, pricing, overlap/concurrency, blocked time, cancellation, and permissions; server/client builds and client lint pass; UI smoke checks where available.
 - Dependencies: Existing court and booking management.
 - Result: Direct whole-hour bookings, weekly opening hours, private blocked periods, daily calendar/mobile agenda/list, cancellation and archived-history migration implemented. Local backup and transaction dry run completed before migration; all 6 legacy bookings preserved. Server tests 59/59, Prisma validation and build passed; client typecheck/build passed; lint 0 errors (38 existing client warnings, 8 warnings on changed server files); mocked-API Chrome checks passed with no runtime exceptions.
+
+## Planned (future work)
+
+### T029 - Migrate database to Supabase
+- Status: TODO (prep complete 2026-10-19; live provisioning/migration deferred to user)
+- Expected: Provision Supabase PostgreSQL, point `DATABASE_URL` at it, run Prisma migrations, back up and migrate existing application data, preserve Prisma ORM, transactions, row locks, and MMK/Yangon booking behavior; verify against existing server tests.
+- Check: Prisma migration applies cleanly; existing data intact; server test suite passes; booking concurrency and row-lock behavior verified.
+- Dependencies: Existing Prisma schema and server test suite.
+- Result: Code-side prep complete; live migration not run (deferred to user). Created `docs/SUPABASE_MIGRATION.md` runbook (create project, direct-vs-pooled connection guidance, `prisma migrate deploy`, `pg_dump`/`pg_restore` data migration, verification, rollback, troubleshooting). Updated `server/.env.example` with Supabase connection-string guidance and linked the runbook from `docs/MIGRATION_PLAN.md` and `docs/README.md`. No schema, code, or dependency changes — Prisma ORM, migrations, and booking logic untouched. User to run the migration using the runbook when the Supabase project exists.
+
+### T030 - Migrate authentication to Clerk
+- Status: TODO
+- Expected: Integrate Clerk for sign-in/sessions/user identity; keep PLAYER/OWNER/ADMIN roles and authorization in the Express backend; link existing users to Clerk identities; replace JWT cookie issuance with Clerk session verification.
+- Check: Clerk sign-up/sign-in/logout works; role-based redirects and page guards preserved; existing accounts can sign in; server and client builds/typecheck/lint pass.
+- Dependencies: T029 (database must be on Supabase first), Clerk account and SDK selection.
+- Result: None — not started.

@@ -3,12 +3,13 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
-import api from "@/lib/api";
+import api, { suggestPlayers } from "@/lib/api";
 import { Check, CheckCheck, Clock, Loader2, Search, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Autocomplete } from "@/components/Autocomplete";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,7 +77,10 @@ export function Friends() {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const busyRef = useRef(new Set<string>());
   const searchVersion = useRef(0);
-  const discoverInput = useRef<HTMLInputElement>(null);
+  const discoverInput = useRef<HTMLInputElement | null>(null);
+  const [playerSuggestions, setPlayerSuggestions] = useState<any[]>([]);
+  const [playerSuggestionsLoading, setPlayerSuggestionsLoading] = useState(false);
+  const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -119,9 +123,7 @@ export function Friends() {
     setSearchError("");
     setSearching(false);
   }
-  async function search(event: FormEvent) {
-    event.preventDefault();
-    const q = query.trim();
+  async function runSearch(q: string) {
     if (!q || searching) return;
     const version = ++searchVersion.current;
     setSearching(true);
@@ -139,6 +141,39 @@ export function Friends() {
       if (version === searchVersion.current) setSearching(false);
     }
   }
+  async function search(event: FormEvent) {
+    event.preventDefault();
+    await runSearch(query.trim());
+  }
+  function selectPlayerSuggestion(item: any) {
+    setQuery(item.email);
+    void runSearch(item.email);
+  }
+
+  // Debounced typeahead suggestions for the player email input.
+  useEffect(() => {
+    if (suggestDebounce.current) clearTimeout(suggestDebounce.current);
+    const hasQuery = query.trim().length > 0;
+    suggestDebounce.current = setTimeout(async () => {
+      if (!hasQuery) {
+        setPlayerSuggestions([]);
+        setPlayerSuggestionsLoading(false);
+        return;
+      }
+      setPlayerSuggestionsLoading(true);
+      try {
+        const data = await suggestPlayers(query);
+        setPlayerSuggestions(data.items ?? []);
+      } catch {
+        setPlayerSuggestions([]);
+      } finally {
+        setPlayerSuggestionsLoading(false);
+      }
+    }, hasQuery ? 150 : 0);
+    return () => {
+      if (suggestDebounce.current) clearTimeout(suggestDebounce.current);
+    };
+  }, [query]);
   async function perform(key: string, work: () => Promise<void>) {
     if (busyRef.current.has(key)) return;
     busyRef.current.add(key);
@@ -403,14 +438,22 @@ export function Friends() {
                     <form onSubmit={search} className="flex flex-col gap-3 sm:flex-row">
                       <div className="relative flex-1">
                         <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          ref={discoverInput}
-                          aria-label={t("Search players by email")}
-                          aria-describedby="player-search-hint"
+                        <Autocomplete
+                          inputRef={discoverInput}
+                          ariaLabel={t("Search players by email")}
                           placeholder={t("Enter an email address")}
                           value={query}
-                          onChange={(e) => changeQuery(e.target.value)}
-                          className="pl-9"
+                          onChange={changeQuery}
+                          items={playerSuggestions}
+                          itemToLabel={(item: any) =>
+                            item.playerProfile?.fullName
+                              ? `${item.playerProfile.fullName} (${item.email})`
+                              : item.email
+                          }
+                          itemToValue={(item: any) => item.email}
+                          onSelect={selectPlayerSuggestion}
+                          loading={playerSuggestionsLoading}
+                          inputClassName="pl-9"
                           maxLength={254}
                         />
                       </div>

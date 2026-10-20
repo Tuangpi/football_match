@@ -307,3 +307,35 @@ export const getCourtSlots = async (
     next(err);
   }
 };
+
+// Public - typeahead suggestions for city/name filter inputs.
+export const suggestCourts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      res.json({ success: true, items: [] });
+      return;
+    }
+
+    const courts = await prisma.court.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { city: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true, name: true, city: true },
+      take: 8,
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ success: true, items: courts });
+  } catch (err) {
+    next(err);
+  }
+};

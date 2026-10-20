@@ -180,6 +180,46 @@ export const getPendingRequests = async (
   }
 };
 
+// Typeahead suggestions for discovering players by email (PLAYER only).
+export const suggestPlayers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      res.json({ success: true, items: [] });
+      return;
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        email: { contains: q, mode: "insensitive" },
+        id: { not: req.user.id },
+        role: "PLAYER",
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+        playerProfile: { select: { fullName: true } },
+      },
+      take: 8,
+    });
+
+    res.json({ success: true, items: users });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Minimal user search - lets players find others by email to send friend requests
 export const searchUsers = async (
   req: Request,

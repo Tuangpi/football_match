@@ -9,6 +9,7 @@ import {
   createCourtSlot,
   getCourtSlots,
   deleteCourtSlot,
+  suggestCourts,
 } from "../controllers/courts";
 import { authenticate, authorize } from "../middleware/auth";
 import { validate } from "../middleware/validate";
@@ -56,6 +57,7 @@ const createCourtSlotSchema = z.object({
 
 // Public
 router.get("/", getCourts);
+router.get("/suggest", suggestCourts);
 router.get("/:id", getCourt);
 router.get("/:id/slots", getCourtSlots);
 router.get("/:id/availability", getAvailability);

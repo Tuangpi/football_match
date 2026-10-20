@@ -66,6 +66,11 @@ Upsert own profile. Body: `{ fullName?, phone?, position?, skillLevel?, bio?, av
 Find active PLAYER accounts by email (case-insensitive, excludes self, max 10). Empty `q` → `{ success:true, users:[] }`.
 Success: `200 { success:true, users:[{id,email,role,playerProfile:{fullName}}] }`.
 
+### `GET /api/players/suggest?q=` 🔒
+
+Typeahead suggestions for active PLAYER accounts by email (case-insensitive contains, excludes self, max 8). Requires role `PLAYER`; OWNER/ADMIN receive `403`. Empty `q` → `{ success:true, items:[] }`.
+Success: `200 { success:true, items:[{id,email,role,isActive,playerProfile:{fullName}}] }`.
+
 ### `POST /api/players/friends/request` 🔒
 
 Body: `{ receiverId: string }`.
@@ -133,6 +138,11 @@ Success: `200 { success:true, message:"Team deleted" }`.
 
 Lists **active courts only** (`isActive:true`), newest first. Filters: `city` (case-insensitive contains), `sportType`, `minPrice`/`maxPrice` on `basePricePerHour`.
 Success: `200 { success:true, courts }` (each with `owner{id,email}`, `reviews[{rating}]`, `_count.reviews`).
+
+### `GET /api/courts/suggest?q=` 🔓
+
+Typeahead suggestions for active courts by name or city (case-insensitive contains, max 8). Empty `q` → `{ success:true, items:[] }`.
+Success: `200 { success:true, items:[{id,name,city}] }`.
 
 ### `GET /api/courts/:id` 🔓
 
@@ -235,6 +245,11 @@ Optional filters:
 - `when` — `upcoming` (`endDate >= now`, `startDate` asc) or `past` (`endDate < now`, `startDate` desc).
 
 Without `when`, all events are returned ordered by `startDate` asc. Includes court id/name/city. → `200 { success:true, events }`.
+
+### `GET /api/events/suggest?q=` 🔓
+
+Typeahead suggestions for events by title or court city (case-insensitive contains, max 8). Empty `q` → `{ success:true, items:[] }`.
+Success: `200 { success:true, items:[{id,title,city}] }`.
 
 ### `GET /api/events/:id` 🔓
 

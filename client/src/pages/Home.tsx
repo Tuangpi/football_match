@@ -1,6 +1,6 @@
 import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -16,9 +16,11 @@ import {
   Trophy,
 } from "lucide-react";
 import { courtImage } from "@/lib/images";
+import { suggestCourts } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Autocomplete } from "@/components/Autocomplete";
 import { CourtCard, type CourtSummary } from "@/components/CourtCard";
 import { EventCard, type EventSummary } from "@/components/EventCard";
 
@@ -35,6 +37,9 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState("");
   const [sport, setSport] = useState("");
+  const [courtSuggestions, setCourtSuggestions] = useState<any[]>([]);
+  const [courtSuggestionsLoading, setCourtSuggestionsLoading] = useState(false);
+  const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Home only previews courts; the full, filterable list lives on /courts.
   async function fetchCourts() {
@@ -53,11 +58,52 @@ export function Home() {
     fetchCourts();
   }, []);
 
+  // Debounced typeahead suggestions for the city input.
+  useEffect(() => {
+    if (suggestDebounce.current) {
+      clearTimeout(suggestDebounce.current);
+    }
+    const hasQuery = city.trim().length > 0;
+    suggestDebounce.current = setTimeout(async () => {
+      if (!hasQuery) {
+        setCourtSuggestions([]);
+        setCourtSuggestionsLoading(false);
+        return;
+      }
+      setCourtSuggestionsLoading(true);
+      try {
+        const data = await suggestCourts(city);
+        setCourtSuggestions(data.items ?? []);
+      } catch {
+        setCourtSuggestions([]);
+      } finally {
+        setCourtSuggestionsLoading(false);
+      }
+    }, hasQuery ? 150 : 0);
+    return () => {
+      if (suggestDebounce.current) clearTimeout(suggestDebounce.current);
+    };
+  }, [city]);
+
   /** Hero search hands off to the courts page so the URL carries the filters. */
-  function searchCourts(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function goToCourts() {
     const params = new URLSearchParams();
     if (city.trim()) params.set("city", city.trim());
+    if (sport) params.set("sportType", sport);
+    const qs = params.toString();
+    navigate(qs ? `/courts?${qs}` : "/courts");
+  }
+
+  function searchCourts(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    goToCourts();
+  }
+
+  function selectCourtSuggestion(item: any) {
+    const nextCity = item.city as string;
+    setCity(nextCity);
+    const params = new URLSearchParams();
+    if (nextCity.trim()) params.set("city", nextCity.trim());
     if (sport) params.set("sportType", sport);
     const qs = params.toString();
     navigate(qs ? `/courts?${qs}` : "/courts");
@@ -106,13 +152,17 @@ export function Home() {
                   <label htmlFor="home-city" className="mb-2 block px-2 text-xs font-semibold"> {t("Where to play")} </label>
                   <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3">
                     <MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                    <input
+                    <Autocomplete
                       id="home-city"
-                      type="text"
-                      placeholder={t("City or area")}
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="h-11 w-full min-w-0 rounded bg-transparent text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      onChange={setCity}
+                      items={courtSuggestions}
+                      itemToLabel={(item: any) => `${item.name} (${item.city})`}
+                      itemToValue={(item: any) => item.city}
+                      onSelect={selectCourtSuggestion}
+                      loading={courtSuggestionsLoading}
+                      ariaLabel={t("Search courts by city and sport")}
+                      placeholder={t("City or area")}
                     />
                   </div>
                 </div>

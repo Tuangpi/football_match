@@ -7,6 +7,7 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  suggestEvents,
 } from '../controllers/events';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -46,6 +47,7 @@ const updateEventSchema = z
 
 // Public
 router.get('/', getEvents);
+router.get('/suggest', suggestEvents);
 router.get('/:id', getEvent);
 
 // Owner
