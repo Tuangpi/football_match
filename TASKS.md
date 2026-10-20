@@ -209,6 +209,13 @@ TODO
 - Dependencies: Existing court and booking management.
 - Result: Direct whole-hour bookings, weekly opening hours, private blocked periods, daily calendar/mobile agenda/list, cancellation and archived-history migration implemented. Local backup and transaction dry run completed before migration; all 6 legacy bookings preserved. Server tests 59/59, Prisma validation and build passed; client typecheck/build passed; lint 0 errors (38 existing client warnings, 8 warnings on changed server files); mocked-API Chrome checks passed with no runtime exceptions.
 
+### T031 - Owner bookings calendar redesign (Day/Week/Month/List)
+- Status: DONE (2026-10-20)
+- Expected: `/owner/bookings` becomes calendar-first: time-grid day view, week/month density views, search + filters, pending review strip, inline confirm/cancel.
+- Check: client `npx tsc --noEmit`, `npx eslint src/pages/OwnerBookings.tsx`, `npm run build` pass; owner account can confirm/cancel via `PATCH /bookings/owner/:id/status`.
+- Dependencies: T024
+- Result: `OwnerBookings.tsx` rebuilt as a custom calendar (no new dependency) with an 08:00–23:00 time grid (`HOUR_PX=56`), side-by-side overlap columns from `layoutDay`, Yangon now-line refreshed every 60s, per-court colour dots, sticky toolbar (search by player email/team, court + status filters, Day/Week/Month/List switcher), KPI strip (Pending / Confirmed today / Occupancy), 7-column week overview with per-day grids on mobile, month cells with pending dots and 3-item preview + overflow, pending review bar, and keyboard navigation (`←`/`→`, `T`, `Esc`). Cancelled bookings stay in List only so they cannot cover a replacement slot. Fixed a regression where status updates called `PATCH /bookings/:id` instead of `PATCH /bookings/owner/:id/status`. Checks: tsc exit 0, eslint 0 problems on the file, vite build exit 0 (pre-existing chunk-size warning). Not done: details are still a `Dialog` (not a right-side drawer) and there is no mini-month picker or drag-to-book.
+
 ## Planned (future work)
 
 ### T029 - Migrate database to Supabase

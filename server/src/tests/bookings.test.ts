@@ -116,12 +116,20 @@ test("owner confirms; foreign owner and player denied; owner lists isolated", as
     0,
   );
 });
-test("cancel releases time and cancelled booking cannot reopen", async () => {
+test("players cannot cancel confirmed bookings; owner cancel releases time", async () => {
   assert.equal(
     (await api("PATCH", `/api/bookings/${bookingId}/cancel`, { cookie: other.cookie })).status,
     403,
   );
-  const res = await api("PATCH", `/api/bookings/${bookingId}/cancel`, { cookie: player.cookie });
+  assert.equal(
+    (await api("PATCH", `/api/bookings/${bookingId}/cancel`, { cookie: player.cookie })).status,
+    400,
+  );
+  assert.equal((await book(10, 12, other)).status, 409);
+  const res = await api("PATCH", `/api/bookings/owner/${bookingId}/status`, {
+    cookie: owner.cookie,
+    body: { status: "CANCELLED" },
+  });
   assert.equal(res.status, 200);
   assert.ok(res.body.booking.cancelledAt);
   assert.equal((await book(10, 12, other)).status, 201);
@@ -132,6 +140,19 @@ test("cancel releases time and cancelled booking cannot reopen", async () => {
         body: { status: "CONFIRMED" },
       })
     ).status,
+    400,
+  );
+});
+test("players can cancel pending bookings and release their time", async () => {
+  const pending = await book(13, 14);
+  assert.equal(pending.status, 201);
+  const id = pending.body.booking.id;
+  const res = await api("PATCH", `/api/bookings/${id}/cancel`, { cookie: player.cookie });
+  assert.equal(res.status, 200);
+  assert.ok(res.body.booking.cancelledAt);
+  assert.equal((await book(13, 14, other)).status, 201);
+  assert.equal(
+    (await api("PATCH", `/api/bookings/${id}/cancel`, { cookie: player.cookie })).status,
     400,
   );
 });

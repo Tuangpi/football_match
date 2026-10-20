@@ -1,8 +1,8 @@
-import * as React from 'react';
-import { t } from '@/lib/language';
-import { useLanguage } from '@/context/LanguageContext';
-import { cn } from '@/lib/utils';
-import { highlightSegments, nextHighlightedIndex } from '@/lib/autocomplete';
+import * as React from "react";
+import { t } from "@/lib/language";
+import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils";
+import { highlightSegments, nextHighlightedIndex } from "@/lib/autocomplete";
 
 export interface AutocompleteProps<T> {
   id?: string;
@@ -55,7 +55,7 @@ export function Autocomplete({
   inputClassName,
   inputRef: inputRefProp,
   maxLength,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: AutocompleteProps<any>) {
   useLanguage();
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -63,14 +63,10 @@ export function Autocomplete({
   const inputRef = inputRefProp ?? fallbackInputRef;
   const [open, setOpen] = React.useState(false);
   const [highlighted, setHighlighted] = React.useState(-1);
-  const visibleItems = React.useMemo(() => items.slice(0, limit), [
-    items,
-    limit,
-  ]);
+  const visibleItems = React.useMemo(() => items.slice(0, limit), [items, limit]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getItemValue = (item: any): string =>
-    itemToValue ? itemToValue(item) : itemToLabel(item);
+  const getItemValue = (item: any): string => (itemToValue ? itemToValue(item) : itemToLabel(item));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectItem = (item: any) => {
@@ -85,29 +81,25 @@ export function Autocomplete({
   // Close dropdown when clicking outside the container.
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false);
         setHighlighted(-1);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () =>
-      document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Close on Escape.
   React.useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setOpen(false);
         setHighlighted(-1);
       }
     }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,7 +111,7 @@ export function Autocomplete({
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!visibleItems.length) {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setOpen(false);
         setHighlighted(-1);
       }
@@ -127,15 +119,13 @@ export function Autocomplete({
     }
 
     switch (e.key) {
-      case 'ArrowDown':
-      case 'ArrowUp':
+      case "ArrowDown":
+      case "ArrowUp":
         e.preventDefault();
         setOpen(true);
-        setHighlighted((prev) =>
-          nextHighlightedIndex(e.key, prev, visibleItems.length)
-        );
+        setHighlighted((prev) => nextHighlightedIndex(e.key, prev, visibleItems.length));
         break;
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         if (highlighted >= 0 && highlighted < visibleItems.length) {
           selectItem(visibleItems[highlighted]);
@@ -143,11 +133,11 @@ export function Autocomplete({
         setOpen(false);
         setHighlighted(-1);
         break;
-      case 'Escape':
+      case "Escape":
         setOpen(false);
         setHighlighted(-1);
         break;
-      case 'Tab':
+      case "Tab":
         setOpen(false);
         setHighlighted(-1);
         break;
@@ -172,11 +162,9 @@ export function Autocomplete({
         type="text"
         role="combobox"
         aria-expanded={open}
-        aria-controls={open ? 'autocomplete-listbox' : undefined}
+        aria-controls={open ? "autocomplete-listbox" : undefined}
         aria-activedescendant={
-          open && highlighted >= 0
-            ? `autocomplete-option-${highlighted}`
-            : undefined
+          open && highlighted >= 0 ? `autocomplete-option-${highlighted}` : undefined
         }
         aria-autocomplete="list"
         aria-label={ariaLabel}
@@ -194,9 +182,9 @@ export function Autocomplete({
         placeholder={placeholder}
         maxLength={maxLength}
         className={cn(
-          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          disabled && 'opacity-50 cursor-not-allowed',
-          inputClassName
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          disabled && "opacity-50 cursor-not-allowed",
+          inputClassName,
         )}
       />
 
@@ -207,8 +195,8 @@ export function Autocomplete({
           id="autocomplete-listbox"
           role="listbox"
           className={cn(
-            'absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-input bg-card shadow-lg',
-            visibleItems.length === 0 && 'hidden'
+            "absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-input bg-card shadow-lg",
+            visibleItems.length === 0 && "hidden",
           )}
         >
           {loading && (
@@ -237,10 +225,10 @@ export function Autocomplete({
                   onMouseDown={handleItemMouseDown(item)}
                   onMouseEnter={handleItemMouseEnter(index)}
                   className={cn(
-                    'px-3 py-2 text-sm cursor-pointer select-none',
+                    "px-3 py-2 text-sm cursor-pointer select-none",
                     isHighlighted
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-accent'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-accent",
                   )}
                 >
                   {highlightMatch(label, value)}

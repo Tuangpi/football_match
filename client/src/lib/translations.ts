@@ -400,6 +400,9 @@ export const myanmar: Record<string, string> = {
   "Cancel failed": "ပယ်ဖျက်၍ မရပါ",
   "Cancel this booking?": "ဤဘွတ်ကင်ကို ပယ်ဖျက်မည်လား။",
   "Cancel this booking and release its time?": "ဤဘွတ်ကင်ကို ပယ်ဖျက်ပြီး အချိန်ကို ပြန်လွှတ်မည်လား။",
+  "Confirmed bookings can only be cancelled by the court owner":
+    "အတည်ပြုပြီးသော ဘွတ်ကင်ကို ကွင်းပိုင်ရှင်ကသာ ပယ်ဖျက်နိုင်ပါသည်",
+  "Booking can no longer be cancelled": "ဘွတ်ကင်ကို ပယ်ဖျက်၍ မရတော့ပါ",
   "Find a court and choose your booking time.": "ကွင်းရှာပြီး ကစားမည့်အချိန်ကို ရွေးပါ။",
   "Opening hours:": "ဖွင့်ချိန်များ -",
   "Opening hours · Myanmar time": "ဖွင့်ချိန်များ · မြန်မာစံတော်ချိန်",

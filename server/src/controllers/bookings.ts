@@ -114,12 +114,23 @@ export const cancelBooking = async (
       return next(new AppError("Booking already cancelled", 400));
     }
 
-    const updated = await prisma.booking.update({
-      where: { id },
+    // Players may only withdraw requests the owner has not confirmed yet.
+    if (booking.status !== "PENDING") {
+      return next(
+        new AppError("Confirmed bookings can only be cancelled by the court owner", 400),
+      );
+    }
+
+    const updated = await prisma.booking.updateMany({
+      where: { id, playerId: req.user.id, status: "PENDING" },
       data: { status: "CANCELLED", cancelledAt: new Date() },
     });
+    if (!updated.count) {
+      return next(new AppError("Booking can no longer be cancelled", 409));
+    }
+    const result = await prisma.booking.findUnique({ where: { id } });
 
-    res.json({ success: true, booking: updated });
+    res.json({ success: true, booking: result });
   } catch (err) {
     next(err);
   }

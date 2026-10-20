@@ -107,7 +107,7 @@ export function MyBookings() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {b.status !== "CANCELLED" && (
+                    {b.status === "PENDING" && (
                       <Button onClick={() => cancelBooking(b.id)} variant="destructive" size="sm"> {t("Cancel")} </Button>
                     )}
                   </div>

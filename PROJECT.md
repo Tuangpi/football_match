@@ -33,7 +33,7 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 ## Key Decisions
 - JWT in httpOnly cookie instead of localStorage (XSS safety)
 - Zod schemas validate inputs both in routes and controllers
-- Bookings start PENDING; owner confirms; cancelling a booking releases its time range; cancelled bookings cannot be reopened
+- Bookings start PENDING; owner confirms; cancelling a booking releases its time range; cancelled bookings cannot be reopened. Players can cancel only pending requests; confirmed bookings are cancelled by the court owner.
 - One review per user per court (DB unique constraint on courtId+userId)
 
 - Booking times use Asia/Yangon; new requests start/end on whole hours, minimum 1 hour, within a single operating day (midnight closing supported). Default hours are 08:00–23:00 daily, configurable per weekday. Pending and confirmed bookings block availability. Price is hourly rate × duration.

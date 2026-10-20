@@ -204,7 +204,7 @@ Own bookings, newest first, with direct start/end timestamps, court id/name/city
 
 ### `PATCH /api/bookings/:id/cancel` 🔒
 
-Cancels caller's own booking and sets `cancelledAt`; releases its time. Errors: `404` missing, `403` not caller's booking, `400` already cancelled. → `200 { success:true, booking }`.
+Cancels caller's own **PENDING** booking and sets `cancelledAt`; releases its time. Errors: `404` missing, `403` not caller's booking, `400` already cancelled or already confirmed (confirmed bookings are cancelled by the court owner), `409` if the booking stopped being pending during the request. → `200 { success:true, booking }`.
 
 ### `GET /api/bookings/owner` 👑
 
