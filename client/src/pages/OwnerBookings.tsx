@@ -1,12 +1,14 @@
 import { getLocale, t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
-import { atHour, courtDate, formatBooking, hourLabel, type TimeRange } from "@/lib/bookingTime";
+import { atHour, courtDate, formatBooking, hourLabel, type OpeningDay, type TimeRange } from "@/lib/bookingTime";
 import { formatPrice } from "@/lib/currency";
 import { calendarDays, calendarLabel, onCalendarDay, shiftPeriod, type CalendarView } from "@/lib/bookingCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Autocomplete } from "@/components/Autocomplete";
+import { occupancyPercent } from "@/lib/occupancy";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -18,7 +20,7 @@ type Booking = TimeRange & {
   player: { id: string; email: string };
   team: { id: string; name: string } | null;
 };
-type Court = { id: string; name: string };
+type Court = { id: string; name: string; openingHours?: OpeningDay[] };
 type Block = TimeRange & { courtId: string; reason: string };
 
 const START_HOUR = 8;
@@ -187,6 +189,20 @@ export function OwnerBookings() {
   const daily = scheduled.filter((b) => onCalendarDay(b, date));
   const dayBlocks = blocked.filter((b) => onCalendarDay(b, date) && (!courtId || b.courtId === courtId));
 
+  const searchSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of bookings) {
+      set.add(b.player.email);
+      if (b.team?.name) set.add(b.team.name);
+    }
+    return [...set];
+  }, [bookings]);
+  const filteredSuggestions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return searchSuggestions.filter((s) => s.toLowerCase().includes(q));
+  }, [searchSuggestions, query]);
+
   const agenda = days.map((day) => ({
     day,
     bookings: scheduled.filter((b) => onCalendarDay(b, day)),
@@ -201,7 +217,7 @@ export function OwnerBookings() {
   const pendingList = bookings.filter((b) => b.status === "PENDING").sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   const todayStr = courtDate();
   const todayCount = bookings.filter((b) => b.status === "CONFIRMED" && onCalendarDay(b, todayStr)).length;
-  const occupancy = Math.min(100, Math.round((todayCount / Math.max(1, courts.length * 5)) * 100));
+  const occupancy = occupancyPercent(bookings, courts, todayStr);
   const periodLabel = view === "month"
     ? calendarLabel(date, { month: "long", year: "numeric" })
     : view === "week"
@@ -251,7 +267,18 @@ export function OwnerBookings() {
           </div>
         </div>
         <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 bg-background/95 py-2">
-          <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Search player email or team")} className="min-w-[180px] flex-1 sm:max-w-xs" />
+          <div className="min-w-[180px] flex-1 sm:max-w-xs">
+            <Autocomplete
+              value={query}
+              onChange={setQuery}
+              items={filteredSuggestions}
+              itemToLabel={(s: string) => s}
+              itemToValue={(s: string) => s}
+              onSelect={(s: string) => setQuery(s)}
+              ariaLabel={t("Search player email or team")}
+              placeholder={t("Search player email or team")}
+            />
+          </div>
           <select value={courtId} onChange={(e) => setCourtId(e.target.value)} className="rounded-md border bg-background p-2">
             <option value="">{t("Courts: All")}</option>
             {courts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

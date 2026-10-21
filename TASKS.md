@@ -216,6 +216,13 @@ TODO
 - Dependencies: T024
 - Result: `OwnerBookings.tsx` rebuilt as a custom calendar (no new dependency) with an 08:00–23:00 time grid (`HOUR_PX=56`), side-by-side overlap columns from `layoutDay`, Yangon now-line refreshed every 60s, per-court colour dots, sticky toolbar (search by player email/team, court + status filters, Day/Week/Month/List switcher), KPI strip (Pending / Confirmed today / Occupancy), 7-column week overview with per-day grids on mobile, month cells with pending dots and 3-item preview + overflow, pending review bar, and keyboard navigation (`←`/`→`, `T`, `Esc`). Cancelled bookings stay in List only so they cannot cover a replacement slot. Fixed a regression where status updates called `PATCH /bookings/:id` instead of `PATCH /bookings/owner/:id/status`. Checks: tsc exit 0, eslint 0 problems on the file, vite build exit 0 (pre-existing chunk-size warning). Not done: details are still a `Dialog` (not a right-side drawer) and there is no mini-month picker or drag-to-book.
 
+### T032 - Owner bookings localization, occupancy, and player autocomplete
+- Status: DONE (2026-10-21)
+- Expected: `/owner/bookings` fully i18n-ready (22 missing keys), occupancy KPI computed from real booked vs open hours, and the player/team search becomes an autocomplete dropdown.
+- Check: client language test 5/5 pass; new occupancy test 8/8 pass; `tsc --noEmit`, `npm run lint` (0 errors), `npm run build` pass.
+- Dependencies: T031
+- Result: Added 22 Myanmar translation keys to `client/src/lib/translations.ts`. Created `client/src/lib/occupancy.ts` (yangonWeekday, availableHoursForDay, bookedHoursForDay, occupancyPercent) reusing `atHour`/`TimeRange`/`onCalendarDay`; replaced the `courts.length * 5` placeholder. Extended `Court` type with `openingHours`. Converted the search `<Input>` to the shared `Autocomplete`, sourcing suggestions from distinct player emails + team names in loaded owner bookings (memoized). Added `client/tests/occupancy.test.ts`. No server/API changes (`/players/suggest` stays PLAYER-only). Checks: language 5/5, occupancy 8/8, autocomplete 3/3, tsc 0, lint 0 errors, build ok.
+
 ## Planned (future work)
 
 ### T029 - Migrate database to Supabase
