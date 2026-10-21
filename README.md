@@ -28,6 +28,7 @@ cp .env.example .env   # configure DATABASE_URL, JWT_SECRET, PORT
 npm install
 npx prisma generate
 npx prisma migrate deploy
+npm run db:seed          # optional: demo data + admin account (dev only)
 npm run dev
 ```
 
@@ -49,6 +50,10 @@ With both application dependencies installed, run the focused frontend date test
 cd client
 ../server/node_modules/.bin/tsx --test tests/bookingCalendar.test.ts
 ```
+
+## Seed data
+
+For local development, `npm run db:seed` (in `server/`) creates an admin account (`admin@mail.com` / `admin12345`) plus demo owners, courts, players, bookings, events and reviews. It is idempotent and safe to re-run. It runs automatically with `prisma migrate dev` but not with `prisma migrate deploy`, so production databases are not seeded. Set `ALLOW_SEED=true` to permit seeding in production.
 
 ## Docs
 - [API reference](docs/API.md) — all `/api` routes: methods, auth/roles, payloads, errors

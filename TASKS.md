@@ -226,11 +226,11 @@ TODO
 ## Planned (future work)
 
 ### T029 - Migrate database to Supabase
-- Status: TODO (prep complete 2026-10-19; live provisioning/migration deferred to user)
+- Status: DONE (2026-10-21)
 - Expected: Provision Supabase PostgreSQL, point `DATABASE_URL` at it, run Prisma migrations, back up and migrate existing application data, preserve Prisma ORM, transactions, row locks, and MMK/Yangon booking behavior; verify against existing server tests.
 - Check: Prisma migration applies cleanly; existing data intact; server test suite passes; booking concurrency and row-lock behavior verified.
 - Dependencies: Existing Prisma schema and server test suite.
-- Result: Code-side prep complete; live migration not run (deferred to user). Created `docs/SUPABASE_MIGRATION.md` runbook (create project, direct-vs-pooled connection guidance, `prisma migrate deploy`, `pg_dump`/`pg_restore` data migration, verification, rollback, troubleshooting). Updated `server/.env.example` with Supabase connection-string guidance and linked the runbook from `docs/MIGRATION_PLAN.md` and `docs/README.md`. No schema, code, or dependency changes — Prisma ORM, migrations, and booking logic untouched. User to run the migration using the runbook when the Supabase project exists.
+- Result: Live migration completed. Supabase project (region ap-northeast-1) provisioned; schema created via `prisma migrate deploy` (all 3 migrations applied). Because this machine is IPv4-only and Supabase's direct host is IPv6-only, migrations ran against the Session pooler (port 5432) and the app runs against the Transaction pooler (port 6543, `pgbouncer=true`). `DATABASE_URL` in `server/.env` now points at the pooled connection; `prisma generate` and `tsc` build pass; `/health` returns ok. Server test suite: 78/78 pass against Supabase (including concurrency/row-lock booking tests). User chose start-fresh, so no data migration; local DB backed up to `/tmp/football_match_backup.dump` and original `.env` to `/tmp/.env.local.backup` for rollback. `.env` remains gitignored. T030 (Clerk auth) is now unblocked.
 
 ### T030 - Migrate authentication to Clerk
 - Status: TODO

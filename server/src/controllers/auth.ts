@@ -24,7 +24,8 @@ export const register = async (
   try {
     const { email, password, role } = registerSchema.parse(req.body);
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase().trim();
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return next(new AppError('Email already registered', 400));
     }
@@ -33,7 +34,7 @@ export const register = async (
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         role,
       },
@@ -66,7 +67,9 @@ export const login = async (
   try {
     const { email, password } = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
     if (!user) {
       return next(new AppError('Invalid credentials', 401));
     }

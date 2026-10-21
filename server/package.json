@@ -8,11 +8,15 @@
     "build": "tsc",
     "start": "node dist/src/index.js",
     "test": "tsx --test src/tests/*.test.ts",
+    "db:seed": "prisma db seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

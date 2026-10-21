@@ -15,11 +15,11 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 
 ## Tech Stack (current)
 - **client/**: React 18 + Vite + Tailwind CSS, react-router v6, axios, react-hook-form + zod, sonner (toasts), lucide-react icons
-- **server/**: Express + TypeScript, Zod validation, Prisma ORM + PostgreSQL
+- **server/**: Express + TypeScript, Zod validation, Prisma ORM + PostgreSQL (hosted on Supabase)
 - **Auth**: JWT stored in httpOnly cookie; bcrypt password hashing
 
 ## Planned stack (not yet implemented)
-- **Database host**: Supabase PostgreSQL, accessed via Prisma ORM (migrations and Prisma Client remain)
+- **Database host**: Supabase PostgreSQL (IMPLEMENTED 2026-10-21 — T029), accessed via Prisma ORM (migrations and Prisma Client remain)
 - **Authentication**: Clerk (sign-in, sessions, user identity); PLAYER/OWNER/ADMIN roles and authorization stay in the Express backend
 - **Frontend hosting**: Vercel
 - **Backend hosting**: Open — Render recommended for the existing Express server model; Vercel also supports Express

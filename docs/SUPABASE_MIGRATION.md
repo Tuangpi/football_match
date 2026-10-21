@@ -100,6 +100,7 @@ Then confirm the behaviors that matter most:
 ## Troubleshooting
 
 - **Migration fails on the pooled string:** migrations need the direct connection (port `5432`). Use the direct string for `migrate deploy`.
+- **IPv4-only machine / direct host unreachable:** Supabase's direct host (`db.<ref>.supabase.co`) is IPv6-only. On networks without IPv6, use the **Session pooler** (port `5432` on `aws-0-<region>.pooler.supabase.com`, user `postgres.<ref>`) for `migrate deploy` and the **Transaction pooler** (port `6543`, `?pgbouncer=true`) for the running app. Both resolve to IPv4.
 - **Connection errors / too many connections at runtime:** make sure the app uses the pooled string (port `6543`), not the direct one.
 - **SSL required:** Supabase requires SSL; the provided connection strings already include it. If your client rejects it, append `?sslmode=require`.
 - **Exact query parameters evolve:** Supabase occasionally updates recommended Prisma query parameters (for example pooler-related flags). Check their current Prisma guide if a connection behaves unexpectedly.
