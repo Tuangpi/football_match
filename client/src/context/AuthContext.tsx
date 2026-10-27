@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
+import { useAuth as useClerkAuth, useUser, useClerk } from '@clerk/react';
+import api from '@/lib/api';
+import { setClerkTokenGetter } from '@/lib/api';
 
 type User = {
   id: string;
@@ -23,37 +25,55 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const { isLoaded: clerkLoaded, isSignedIn, getToken } = useClerkAuth();
+  const { user: clerkUser } = useUser();
+  const clerk = useClerk();
+
   const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    setClerkTokenGetter(getToken);
+    return () => setClerkTokenGetter(null);
+  }, [getToken]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!clerkLoaded) return;
+    if (!isSignedIn) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
     api
       .get('/auth/me')
       .then((res: any) => {
-        setUser(res.data.user);
+        if (!cancelled) setUser(res.data.user);
       })
       .catch(() => {
-        setUser(null);
+        if (!cancelled) setUser(null);
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clerkLoaded, isSignedIn, clerkUser?.id]);
 
-  const login = async (email: string, password: string): Promise<AuthResult> => {
-    const res = await api.post('/auth/login', { email, password });
-    setUser(res.data.user);
-    return { success: true, user: res.data.user };
+  const login = async (): Promise<AuthResult> => {
+    throw new Error('Use Clerk sign-in');
   };
 
-  const register = async (email: string, password: string, role: string): Promise<AuthResult> => {
-    const res = await api.post('/auth/register', { email, password, role });
-    setUser(res.data.user);
-    return { success: true, user: res.data.user };
+  const register = async (): Promise<AuthResult> => {
+    throw new Error('Use Clerk sign-up');
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
-    navigate('/', { replace: true });
+    await clerk.signOut();
     setUser(null);
+    navigate('/', { replace: true });
   };
 
   return (

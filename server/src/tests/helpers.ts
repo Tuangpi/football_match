@@ -3,8 +3,6 @@ import type { Server } from 'http';
 import app from '../app';
 import { prisma } from '../utils/prisma';
 
-// Unique per test-run so parallel runs / reruns never collide, and cleanup
-// can find everything this run created.
 export const RUN_ID = `t${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
 export const PASSWORD = 'password123';
 
@@ -42,14 +40,17 @@ type ApiResponse = { status: number; body: any };
 export async function api(
   method: string,
   path: string,
-  opts: { cookie?: string | null; body?: unknown } = {}
+  opts: { cookie?: string | null; userId?: string | null; body?: unknown; headers?: Record<string, string> } = {}
 ): Promise<ApiResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(opts.userId ? { 'x-test-user-id': opts.userId } : {}),
+    ...(opts.headers ?? {}),
+  };
+  if (opts.cookie) headers.Cookie = opts.cookie;
   const res = await fetch(`${await startServer()}${path}`, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(opts.cookie ? { Cookie: opts.cookie } : {}),
-    },
+    headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
   let body: any = null;
@@ -61,31 +62,21 @@ export async function api(
   return { status: res.status, body };
 }
 
-function extractCookie(res: Response): string | null {
-  const setCookies = res.headers.getSetCookie();
-  const token = setCookies.find((c) => c.startsWith('token='));
-  return token ? token.split(';')[0] : null;
-}
-
-export async function registerUser(role: 'PLAYER' | 'OWNER', name: string) {
+export async function registerUser(role: 'PLAYER' | 'OWNER' | 'ADMIN', name: string) {
   const email = uniqueEmail(name);
-  const res = await fetch(`${await startServer()}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: PASSWORD, role }),
+  const user = await prisma.user.create({
+    data: { email, role: role as any },
   });
-  const data: any = await res.json();
   return {
     email,
     password: PASSWORD,
-    cookie: extractCookie(res),
-    userId: data.user.id as string,
+    userId: user.id,
+    role,
   };
 }
 
 export type TestUser = Awaited<ReturnType<typeof registerUser>>;
 
-// Removes every record created by this test run, in FK-safe order.
 export async function cleanupTestData(): Promise<void> {
   const users = await prisma.user.findMany({
     where: { email: { contains: `-${RUN_ID}@` } },

@@ -39,8 +39,8 @@ enum EventType {
 
 model User {
   id        String   @id @default(cuid())
+  clerkId   String?  @unique
   email     String   @unique
-  password  String
   role      UserRole @default(PLAYER)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

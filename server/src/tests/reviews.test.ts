@@ -19,7 +19,7 @@ before(async () => {
   player = await registerUser('PLAYER', 'rv-player');
 
   const court = await api('POST', '/api/courts', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: {
       name: 'Review Court',
       address: '9 Review Rd',
@@ -45,7 +45,7 @@ test('unauthenticated review returns 401', async () => {
 
 test('player creates a review -> 201 with rating and comment', async () => {
   const res = await api('POST', '/api/reviews', {
-    cookie: player.cookie,
+    userId: player.userId,
     body: { courtId, rating: 4, comment: 'Great turf, T009 test' },
   });
   assert.equal(res.status, 201);
@@ -68,7 +68,7 @@ test('review appears in the court detail and the reviews list', async () => {
 
 test('duplicate review returns 400 with friendly message', async () => {
   const res = await api('POST', '/api/reviews', {
-    cookie: player.cookie,
+    userId: player.userId,
     body: { courtId, rating: 5 },
   });
   assert.equal(res.status, 400);
@@ -77,7 +77,7 @@ test('duplicate review returns 400 with friendly message', async () => {
 
 test('rating out of range returns 400 validation error', async () => {
   const res = await api('POST', '/api/reviews', {
-    cookie: owner.cookie, // a different user, so duplicate-check isn't the failure
+    userId: owner.userId, // a different user, so duplicate-check isn't the failure
     body: { courtId, rating: 6 },
   });
   assert.equal(res.status, 400);
@@ -86,7 +86,7 @@ test('rating out of range returns 400 validation error', async () => {
 
 test('review on a non-existent court returns 404', async () => {
   const res = await api('POST', '/api/reviews', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: { courtId: 'no-such-court', rating: 3 },
   });
   assert.equal(res.status, 404);

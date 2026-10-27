@@ -25,7 +25,7 @@ async function register(role: 'PLAYER' | 'OWNER', name: string) {
 
 async function cookieOf(role: 'PLAYER' | 'OWNER', name: string) {
   const user = await register(role, name);
-  return { cookie: user.cookie, userId: user.userId, email: user.email };
+  return { userId: user.userId, email: user.email };
 }
 
 test('courts/suggest: empty q returns empty items', async () => {
@@ -38,7 +38,7 @@ test('courts/suggest: empty q returns empty items', async () => {
 test('courts/suggest: matches by city (case-insensitive)', async () => {
   const owner = await register('OWNER', 'suggest-court-owner');
   await api('POST', '/api/courts', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: {
       name: 'Yangon United Court',
       address: '123 Aung San St',
@@ -59,7 +59,7 @@ test('courts/suggest: matches by city (case-insensitive)', async () => {
 test('courts/suggest: matches by name (case-insensitive)', async () => {
   const owner = await register('OWNER', 'suggest-court-owner-2');
   await api('POST', '/api/courts', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: {
       name: 'Mandalay Strikers Arena',
       address: '456 78th St',
@@ -85,7 +85,7 @@ test('events/suggest: empty q returns empty items', async () => {
 test('events/suggest: matches by title and city', async () => {
   const owner = await register('OWNER', 'suggest-event-owner');
   const court = await api('POST', '/api/courts', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: {
       name: 'Suggest Event Court',
       address: '1 Event St',
@@ -98,7 +98,7 @@ test('events/suggest: matches by title and city', async () => {
   const courtId: string = court.body.court.id;
 
   const eventRes = await api('POST', '/api/events', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: {
       courtId,
       title: 'Summer Futsal Tournament',
@@ -124,7 +124,7 @@ test('players/suggest: requires authentication (no cookie => 401)', async () => 
 test('players/suggest: requires PLAYER role (OWNER => 403)', async () => {
   const owner = await register('OWNER', 'suggest-player-owner');
   const res = await api('GET', '/api/players/suggest?q=test', {
-    cookie: owner.cookie,
+    userId: owner.userId,
   });
   assert.equal(res.status, 403);
 });
@@ -141,7 +141,7 @@ test('players/suggest: matches by email, excludes self, limit 8', async () => {
   await register('PLAYER', 'suggest-player-extra8');
 
   const res = await api('GET', '/api/players/suggest?q=extra', {
-    cookie: me.cookie,
+    userId: me.userId,
   });
   assert.equal(res.status, 200);
   assert.equal(res.body.success, true);
@@ -160,7 +160,7 @@ test('players/suggest: matches by email, excludes self, limit 8', async () => {
 test('players/suggest: empty q returns empty items', async () => {
   const me = await register('PLAYER', 'suggest-player-empty');
   const res = await api('GET', '/api/players/suggest?q=', {
-    cookie: me.cookie,
+    userId: me.userId,
   });
   assert.equal(res.status, 200);
   assert.equal(res.body.success, true);

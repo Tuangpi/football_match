@@ -15,4 +15,24 @@ export default defineConfig({
       '/api': 'http://localhost:3000',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'motion': ['framer-motion'],
+          'clerk': ['@clerk/react'],
+          'radix': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-label',
+            '@radix-ui/react-select',
+            '@radix-ui/react-slot',
+          ],
+          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'ui-utils': ['axios', 'clsx', 'tailwind-merge', 'class-variance-authority', 'lucide-react', 'sonner'],
+        },
+      },
+    },
+  },
 });

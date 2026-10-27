@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { t } from './lib/language';
 import { useLanguage } from './context/LanguageContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -7,25 +8,25 @@ import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Home } from '@/pages/Home';
-import { About } from '@/pages/About';
-import { Contact } from '@/pages/Contact';
-import { Login } from '@/pages/Login';
-import { Register } from '@/pages/Register';
-import { Courts } from '@/pages/Courts';
-import { CourtDetail } from '@/pages/CourtDetail';
-import { MyBookings } from '@/pages/MyBookings';
-import { MyProfile } from '@/pages/MyProfile';
-import { CreateCourt } from '@/pages/CreateCourt';
-import { OwnerCourts } from '@/pages/OwnerCourts';
-import { OwnerBookings } from '@/pages/OwnerBookings';
-import { Events } from '@/pages/Events';
-import { EventDetail } from '@/pages/EventDetail';
-import { CreateEvent } from '@/pages/CreateEvent';
-import { OwnerEvents } from '@/pages/OwnerEvents';
-import { Friends } from '@/pages/Friends';
-import { Teams } from '@/pages/Teams';
-import { AdminDashboard } from '@/pages/AdminDashboard';
+const Home = lazy(() => import('@/pages/Home').then(m => ({ default: m.Home })))
+const About = lazy(() => import('@/pages/About').then(m => ({ default: m.About })))
+const Contact = lazy(() => import('@/pages/Contact').then(m => ({ default: m.Contact })))
+const Login = lazy(() => import('@/pages/Login').then(m => ({ default: m.Login })))
+const Register = lazy(() => import('@/pages/Register').then(m => ({ default: m.Register })))
+const Courts = lazy(() => import('@/pages/Courts').then(m => ({ default: m.Courts })))
+const CourtDetail = lazy(() => import('@/pages/CourtDetail').then(m => ({ default: m.CourtDetail })))
+const MyBookings = lazy(() => import('@/pages/MyBookings').then(m => ({ default: m.MyBookings })))
+const MyProfile = lazy(() => import('@/pages/MyProfile').then(m => ({ default: m.MyProfile })))
+const CreateCourt = lazy(() => import('@/pages/CreateCourt').then(m => ({ default: m.CreateCourt })))
+const OwnerCourts = lazy(() => import('@/pages/OwnerCourts').then(m => ({ default: m.OwnerCourts })))
+const OwnerBookings = lazy(() => import('@/pages/OwnerBookings').then(m => ({ default: m.OwnerBookings })))
+const Events = lazy(() => import('@/pages/Events').then(m => ({ default: m.Events })))
+const EventDetail = lazy(() => import('@/pages/EventDetail').then(m => ({ default: m.EventDetail })))
+const CreateEvent = lazy(() => import('@/pages/CreateEvent').then(m => ({ default: m.CreateEvent })))
+const OwnerEvents = lazy(() => import('@/pages/OwnerEvents').then(m => ({ default: m.OwnerEvents })))
+const Friends = lazy(() => import('@/pages/Friends').then(m => ({ default: m.Friends })))
+const Teams = lazy(() => import('@/pages/Teams').then(m => ({ default: m.Teams })))
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
 import { Footer } from '@/components/ui/footer';
 
 // Public pages that show the footer. Signed-in app pages (bookings, profile, teams,
@@ -60,6 +61,7 @@ export function App() {
         offset={isAuthRoute ? 16 : 80}
       />
       <AnimatePresence mode="wait">
+        <Suspense fallback={<div className="p-8 text-center">{t("Loading...")}</div>}>
         <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -160,6 +162,7 @@ export function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </AnimatePresence>
       {showFooter && <Footer />}
     </div>

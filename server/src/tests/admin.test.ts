@@ -1,6 +1,5 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import bcrypt from 'bcryptjs';
 import {
   api,
   registerUser,
@@ -12,7 +11,6 @@ import {
   type TestUser,
 } from './helpers';
 import { prisma } from '../utils/prisma';
-import { generateToken } from '../utils/auth';
 
 let adminCookie: string;
 let adminId: string;
@@ -26,20 +24,18 @@ before(async () => {
   // registerUser only supports PLAYER/OWNER, so mint the ADMIN directly:
   // unique email keeps cleanupTestData able to remove it.
   const adminEmail = uniqueEmail('admin-dash');
-  const hashed = await bcrypt.hash(PASSWORD, 12);
   const admin = await prisma.user.create({
-    data: { email: adminEmail, password: hashed, role: 'ADMIN' },
+    data: { email: adminEmail, role: 'ADMIN' },
     select: { id: true, email: true, role: true },
   });
   adminId = admin.id;
-  const token = generateToken({ id: admin.id, email: admin.email, role: admin.role });
-  adminCookie = `token=${token}`;
+  adminCookie = admin.id;
 
   owner = await registerUser('OWNER', 'admin-owner');
   player = await registerUser('PLAYER', 'admin-player');
 
   const court = await api('POST', '/api/courts', {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: {
       name: 'Admin Court',
       address: '1 Admin Way',
@@ -61,10 +57,10 @@ test('admin lists: 401 unauthenticated, 403 non-admin', async () => {
     const anon = await api('GET', path);
     assert.equal(anon.status, 401);
 
-    const playerRes = await api('GET', path, { cookie: player.cookie });
+    const playerRes = await api('GET', path, { userId: player.userId });
     assert.equal(playerRes.status, 403);
 
-    const ownerRes = await api('GET', path, { cookie: owner.cookie });
+    const ownerRes = await api('GET', path, { userId: owner.userId });
     assert.equal(ownerRes.status, 403);
   }
 });
@@ -74,18 +70,18 @@ test('admin toggles: 401 unauthenticated, 403 non-admin, 404 missing', async () 
   assert.equal(anon.status, 401);
 
   const forbidden = await api('PATCH', `/api/admin/courts/${courtId}/toggle`, {
-    cookie: player.cookie,
+    userId: player.userId,
   });
   assert.equal(forbidden.status, 403);
 
   const missing = await api('PATCH', '/api/admin/courts/does-not-exist/toggle', {
-    cookie: adminCookie,
+    userId: adminCookie,
   });
   assert.equal(missing.status, 404);
 });
 
 test('admin users/courts/stats lists return expected shapes', async () => {
-  const users = await api('GET', '/api/admin/users', { cookie: adminCookie });
+  const users = await api('GET', '/api/admin/users', { userId: adminCookie });
   assert.equal(users.status, 200);
   assert.ok(Array.isArray(users.body.users));
   const me = users.body.users.find((u: any) => u.id === adminId);
@@ -93,7 +89,7 @@ test('admin users/courts/stats lists return expected shapes', async () => {
   assert.equal(me.role, 'ADMIN');
   assert.equal(me.isActive, true);
 
-  const courts = await api('GET', '/api/admin/courts', { cookie: adminCookie });
+  const courts = await api('GET', '/api/admin/courts', { userId: adminCookie });
   assert.equal(courts.status, 200);
   assert.ok(Array.isArray(courts.body.courts));
   const mine = courts.body.courts.find((c: any) => c.id === courtId);
@@ -101,7 +97,7 @@ test('admin users/courts/stats lists return expected shapes', async () => {
   assert.equal(mine.isActive, true);
   assert.equal(mine.owner.email, owner.email);
 
-  const stats = await api('GET', '/api/admin/stats', { cookie: adminCookie });
+  const stats = await api('GET', '/api/admin/stats', { userId: adminCookie });
   assert.equal(stats.status, 200);
   assert.ok(typeof stats.body.stats.users === 'number');
   assert.ok(typeof stats.body.stats.courts === 'number');
@@ -111,7 +107,7 @@ test('admin users/courts/stats lists return expected shapes', async () => {
 
 test('court toggle flips isActive and hides court from public list', async () => {
   const off = await api('PATCH', `/api/admin/courts/${courtId}/toggle`, {
-    cookie: adminCookie,
+    userId: adminCookie,
   });
   assert.equal(off.status, 200);
   assert.equal(off.body.court.isActive, false);
@@ -124,7 +120,7 @@ test('court toggle flips isActive and hides court from public list', async () =>
   );
 
   const on = await api('PATCH', `/api/admin/courts/${courtId}/toggle`, {
-    cookie: adminCookie,
+    userId: adminCookie,
   });
   assert.equal(on.status, 200);
   assert.equal(on.body.court.isActive, true);
@@ -132,36 +128,30 @@ test('court toggle flips isActive and hides court from public list', async () =>
 
 test('user toggle deactivates: login 403 + existing JWT 403, reactivation restores', async () => {
   const off = await api('PATCH', `/api/admin/users/${player.userId}/toggle`, {
-    cookie: adminCookie,
+    userId: adminCookie,
   });
   assert.equal(off.status, 200);
   assert.equal(off.body.user.isActive, false);
 
-  // Login as deactivated user -> 403
-  const login = await api('POST', '/api/auth/login', {
-    body: { email: player.email, password: PASSWORD },
-  });
-  assert.equal(login.status, 403);
-
-  // Existing JWT -> 403 on next authenticated request
-  const me = await api('GET', '/api/auth/me', { cookie: player.cookie });
+  // Deactivated user -> 403 on authenticated request
+  const me = await api('GET', '/api/auth/me', { userId: player.userId });
   assert.equal(me.status, 403);
 
   // Reactivate and confirm access is restored
   const on = await api('PATCH', `/api/admin/users/${player.userId}/toggle`, {
-    cookie: adminCookie,
+    userId: adminCookie,
   });
   assert.equal(on.status, 200);
   assert.equal(on.body.user.isActive, true);
 
-  const meAgain = await api('GET', '/api/auth/me', { cookie: player.cookie });
+  const meAgain = await api('GET', '/api/auth/me', { userId: player.userId });
   assert.equal(meAgain.status, 200);
 });
 
 test('admin cannot deactivate themselves (400), but can reactivate', async () => {
   // Admin is currently active -> self-toggle would deactivate -> 400
   const self = await api('PATCH', `/api/admin/users/${adminId}/toggle`, {
-    cookie: adminCookie,
+    userId: adminCookie,
   });
   assert.equal(self.status, 400);
 
@@ -169,19 +159,19 @@ test('admin cannot deactivate themselves (400), but can reactivate', async () =>
   // Note: the admin's own JWT is now rejected while inactive (lockout works),
   // so recovery goes through prisma — mirroring another admin reactivating.
   await prisma.user.update({ where: { id: adminId }, data: { isActive: false } });
-  const lockedOut = await api('GET', '/api/admin/stats', { cookie: adminCookie });
+  const lockedOut = await api('GET', '/api/admin/stats', { userId: adminCookie });
   assert.equal(lockedOut.status, 403);
   await prisma.user.update({ where: { id: adminId }, data: { isActive: true } });
-  const recovered = await api('GET', '/api/admin/stats', { cookie: adminCookie });
+  const recovered = await api('GET', '/api/admin/stats', { userId: adminCookie });
   assert.equal(recovered.status, 200);
 });
 
 
 test('admin session and logout remain available', async () => {
-  const session = await api('GET', '/api/auth/me', { cookie: adminCookie });
+  const session = await api('GET', '/api/auth/me', { userId: adminCookie });
   assert.equal(session.status, 200);
   assert.equal(session.body.user.role, 'ADMIN');
-  assert.equal((await api('POST', '/api/auth/logout', { cookie: adminCookie })).status, 200);
+  assert.equal((await api('POST', '/api/auth/logout', { userId: adminCookie })).status, 200);
 });
 
 test('admin is denied every non-dashboard API area before validation or mutation', async () => {
@@ -205,7 +195,7 @@ test('admin is denied every non-dashboard API area before validation or mutation
     ['PATCH', '/api/reviews/missing'], ['DELETE', '/api/reviews/missing'],
   ];
   for (const [method, path] of requests) {
-    const result = await api(method, path, { cookie: adminCookie });
+    const result = await api(method, path, { userId: adminCookie });
     assert.equal(result.status, 403, `${method} ${path}`);
   }
   // An admin session must not disable anonymous public browsing.

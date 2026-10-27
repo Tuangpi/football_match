@@ -18,7 +18,7 @@ const range = (start: number, end: number) => ({
   endsAt: `${date}T${String(end).padStart(2, "0")}:00:00+06:30`,
 });
 const book = (start: number, end: number, user = player) =>
-  api("POST", "/api/bookings", { cookie: user.cookie, body: range(start, end) });
+  api("POST", "/api/bookings", { userId: user.userId, body: range(start, end) });
 before(async () => {
   await startServer();
   owner = await registerUser("OWNER", "bk-owner");
@@ -26,7 +26,7 @@ before(async () => {
   other = await registerUser("PLAYER", "bk-other");
   foreign = await registerUser("OWNER", "bk-foreign");
   const res = await api("POST", "/api/courts", {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: { name: "Flexible Court", address: "Test", city: "Yangon", basePricePerHour: 40_000 },
   });
   assert.equal(res.status, 201);
@@ -39,7 +39,7 @@ after(async () => {
 test("authentication and obsolete slot-only validation", async () => {
   assert.equal((await api("POST", "/api/bookings", { body: range(10, 12) })).status, 401);
   assert.equal(
-    (await api("POST", "/api/bookings", { cookie: player.cookie, body: { courtSlotId: "old" } }))
+    (await api("POST", "/api/bookings", { userId: player.userId, body: { courtSlotId: "old" } }))
       .status,
     400,
   );
@@ -71,7 +71,7 @@ test("whole-hour rules use Myanmar wall time and reject seconds", async () => {
     assert.equal(
       (
         await api("POST", "/api/bookings", {
-          cookie: player.cookie,
+          userId: player.userId,
           body: { ...range(14, 15), ...change },
         })
       ).status,
@@ -93,7 +93,7 @@ test("reversed, empty, past, malformed and outside-opening ranges fail", async (
     assert.equal(
       (
         await api("POST", "/api/bookings", {
-          cookie: player.cookie,
+          userId: player.userId,
           body: { ...range(14, 15), ...change },
         })
       ).status,
@@ -104,30 +104,30 @@ test("owner confirms; foreign owner and player denied; owner lists isolated", as
   const path = `/api/bookings/owner/${bookingId}/status`;
   for (const user of [foreign, other])
     assert.equal(
-      (await api("PATCH", path, { cookie: user.cookie, body: { status: "CONFIRMED" } })).status,
+      (await api("PATCH", path, { userId: user.userId, body: { status: "CONFIRMED" } })).status,
       403,
     );
   assert.equal(
-    (await api("PATCH", path, { cookie: owner.cookie, body: { status: "CONFIRMED" } })).status,
+    (await api("PATCH", path, { userId: owner.userId, body: { status: "CONFIRMED" } })).status,
     200,
   );
   assert.equal(
-    (await api("GET", "/api/bookings/owner", { cookie: foreign.cookie })).body.bookings.length,
+    (await api("GET", "/api/bookings/owner", { userId: foreign.userId })).body.bookings.length,
     0,
   );
 });
 test("players cannot cancel confirmed bookings; owner cancel releases time", async () => {
   assert.equal(
-    (await api("PATCH", `/api/bookings/${bookingId}/cancel`, { cookie: other.cookie })).status,
+    (await api("PATCH", `/api/bookings/${bookingId}/cancel`, { userId: other.userId })).status,
     403,
   );
   assert.equal(
-    (await api("PATCH", `/api/bookings/${bookingId}/cancel`, { cookie: player.cookie })).status,
+    (await api("PATCH", `/api/bookings/${bookingId}/cancel`, { userId: player.userId })).status,
     400,
   );
   assert.equal((await book(10, 12, other)).status, 409);
   const res = await api("PATCH", `/api/bookings/owner/${bookingId}/status`, {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: { status: "CANCELLED" },
   });
   assert.equal(res.status, 200);
@@ -136,7 +136,7 @@ test("players cannot cancel confirmed bookings; owner cancel releases time", asy
   assert.equal(
     (
       await api("PATCH", `/api/bookings/owner/${bookingId}/status`, {
-        cookie: owner.cookie,
+        userId: owner.userId,
         body: { status: "CONFIRMED" },
       })
     ).status,
@@ -147,12 +147,12 @@ test("players can cancel pending bookings and release their time", async () => {
   const pending = await book(13, 14);
   assert.equal(pending.status, 201);
   const id = pending.body.booking.id;
-  const res = await api("PATCH", `/api/bookings/${id}/cancel`, { cookie: player.cookie });
+  const res = await api("PATCH", `/api/bookings/${id}/cancel`, { userId: player.userId });
   assert.equal(res.status, 200);
   assert.ok(res.body.booking.cancelledAt);
   assert.equal((await book(13, 14, other)).status, 201);
   assert.equal(
-    (await api("PATCH", `/api/bookings/${id}/cancel`, { cookie: player.cookie })).status,
+    (await api("PATCH", `/api/bookings/${id}/cancel`, { userId: player.userId })).status,
     400,
   );
 });
@@ -164,8 +164,8 @@ test("blocked time ownership, overlap, privacy and removal", async () => {
   const path = `/api/courts/${courtId}/blocks`,
     body = { ...range(18, 20), reason: "Private maintenance" };
   for (const user of [foreign, player])
-    assert.equal((await api("POST", path, { cookie: user.cookie, body })).status, 403);
-  const block = await api("POST", path, { cookie: owner.cookie, body });
+    assert.equal((await api("POST", path, { userId: user.userId, body })).status, 403);
+  const block = await api("POST", path, { userId: owner.userId, body });
   assert.equal(block.status, 201);
   assert.equal((await book(17, 21)).status, 409);
   const availability = await api("GET", `/api/courts/${courtId}/availability?date=${date}`);
@@ -174,21 +174,21 @@ test("blocked time ownership, overlap, privacy and removal", async () => {
   assert.equal(JSON.stringify(availability.body).includes("Private maintenance"), false);
   assert.equal(JSON.stringify(availability.body).includes(player.email), false);
   assert.equal(
-    (await api("DELETE", `${path}/${block.body.block.id}`, { cookie: foreign.cookie })).status,
+    (await api("DELETE", `${path}/${block.body.block.id}`, { userId: foreign.userId })).status,
     403,
   );
   assert.equal(
-    (await api("DELETE", `${path}/${block.body.block.id}`, { cookie: owner.cookie })).status,
+    (await api("DELETE", `${path}/${block.body.block.id}`, { userId: owner.userId })).status,
     200,
   );
   assert.equal((await book(18, 20)).status, 201);
-  assert.equal((await api("POST", path, { cookie: owner.cookie, body })).status, 409);
+  assert.equal((await api("POST", path, { userId: owner.userId, body })).status, 409);
 });
 test("simultaneous booking and block creation produce one winner", async () => {
   const results = await Promise.all([
     book(21, 22),
     api("POST", `/api/courts/${courtId}/blocks`, {
-      cookie: owner.cookie,
+      userId: owner.userId,
       body: { ...range(21, 22), reason: "Maintenance" },
     }),
   ]);
@@ -199,7 +199,7 @@ test("weekly closures, invalid schedule, inactive court and historical pricing",
   assert.equal(
     (
       await api("PUT", path, {
-        cookie: owner.cookie,
+        userId: owner.userId,
         body: { openingHours: [...hours.slice(1), hours[1]] },
       })
     ).status,
@@ -208,7 +208,7 @@ test("weekly closures, invalid schedule, inactive court and historical pricing",
   assert.equal(
     (
       await api("PUT", path, {
-        cookie: owner.cookie,
+        userId: owner.userId,
         body: {
           openingHours: hours.map((h) => ({ ...h, closed: true })),
           basePricePerHour: 50_000,
@@ -218,28 +218,28 @@ test("weekly closures, invalid schedule, inactive court and historical pricing",
     200,
   );
   assert.equal((await book(8, 9)).status, 400);
-  const mine = await api("GET", "/api/bookings/me", { cookie: player.cookie });
+  const mine = await api("GET", "/api/bookings/me", { userId: player.userId });
   assert.equal(
     mine.body.bookings.find((b: { id: string }) => b.id === bookingId).totalPrice,
     80_000,
   );
-  await api("PUT", path, { cookie: owner.cookie, body: { openingHours: hours, isActive: false } });
+  await api("PUT", path, { userId: owner.userId, body: { openingHours: hours, isActive: false } });
   assert.equal((await book(8, 9)).status, 400);
-  await api("PUT", path, { cookie: owner.cookie, body: { isActive: true } });
+  await api("PUT", path, { userId: owner.userId, body: { isActive: true } });
 });
 test("team membership enforced and valid team retained", async () => {
   const team = await api("POST", "/api/teams", {
-    cookie: player.cookie,
+    userId: player.userId,
     body: { name: "Flexible FC" },
   });
   const teamId = team.body.team.id;
   assert.equal(
-    (await api("POST", "/api/bookings", { cookie: other.cookie, body: { ...range(8, 9), teamId } }))
+    (await api("POST", "/api/bookings", { userId: other.userId, body: { ...range(8, 9), teamId } }))
       .status,
     403,
   );
   const res = await api("POST", "/api/bookings", {
-    cookie: player.cookie,
+    userId: player.userId,
     body: { ...range(8, 9), teamId },
   });
   assert.equal(res.status, 201);
@@ -249,7 +249,7 @@ test("missing court and invalid availability dates", async () => {
   assert.equal(
     (
       await api("POST", "/api/bookings", {
-        cookie: player.cookie,
+        userId: player.userId,
         body: { ...range(8, 9), courtId: "missing" },
       })
     ).status,

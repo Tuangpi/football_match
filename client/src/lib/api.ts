@@ -2,9 +2,30 @@ import axios from 'axios';
 
 export const API_BASE_URL = '/api';
 
+let clerkTokenGetter: (() => Promise<string | null>) | null = null;
+
+export function setClerkTokenGetter(getter: (() => Promise<string | null>) | null) {
+  clerkTokenGetter = getter;
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+});
+
+api.interceptors.request.use(async (config) => {
+  if (clerkTokenGetter) {
+    try {
+      const token = await clerkTokenGetter();
+      if (token) {
+        config.headers = config.headers ?? {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch {
+      // ignore token fetch errors
+    }
+  }
+  return config;
 });
 
 api.interceptors.response.use(
@@ -14,7 +35,7 @@ api.interceptors.response.use(
       // Optionally redirect to login
     }
     return Promise.reject(err);
-  }
+  },
 );
 
 export default api;

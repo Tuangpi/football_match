@@ -1,7 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { prisma } from '../utils/prisma';
-import { generateToken } from '../utils/auth';
 import {
   api,
   registerUser,
@@ -23,17 +22,17 @@ let adminCookie: string;
 const hoursFromNow = (hours: number) =>
   new Date(Date.now() + hours * 3_600_000).toISOString();
 
-async function createCourt(cookie: string | null, name: string, city: string) {
+async function createCourt(userId: string | null, name: string, city: string) {
   const res = await api('POST', '/api/courts', {
-    cookie,
+    userId,
     body: { name, address: `1 ${name} St`, city, basePricePerHour: 40 },
   });
   assert.equal(res.status, 201);
   return res.body.court.id as string;
 }
 
-async function createEvent(cookie: string | null, body: Record<string, unknown>) {
-  return api('POST', '/api/events', { cookie, body });
+async function createEvent(userId: string | null, body: Record<string, unknown>) {
+  return api('POST', '/api/events', { userId, body });
 }
 
 before(async () => {
@@ -43,12 +42,12 @@ before(async () => {
   player = await registerUser('PLAYER', 'ev-player');
   const admin = await registerUser('OWNER', 'ev-admin');
   await prisma.user.update({ where: { id: admin.userId }, data: { role: 'ADMIN' } });
-  adminCookie = `token=${generateToken({ id: admin.userId, email: admin.email, role: 'ADMIN' })}`;
+  adminCookie = admin.userId;
 
-  courtId = await createCourt(owner.cookie, 'Event Arena', 'Eventville');
-  otherCourtId = await createCourt(otherOwner.cookie, 'Other Arena', 'Elsewhere');
+  courtId = await createCourt(owner.userId, 'Event Arena', 'Eventville');
+  otherCourtId = await createCourt(otherOwner.userId, 'Other Arena', 'Elsewhere');
 
-  const upcoming = await createEvent(owner.cookie, {
+  const upcoming = await createEvent(owner.userId, {
     courtId,
     title: 'Weekend Cup',
     type: 'TOURNAMENT',
@@ -59,7 +58,7 @@ before(async () => {
   assert.equal(upcoming.status, 201);
   upcomingId = upcoming.body.event.id;
 
-  const past = await createEvent(owner.cookie, {
+  const past = await createEvent(owner.userId, {
     courtId,
     title: 'Past Promo',
     type: 'DISCOUNT',
@@ -69,7 +68,7 @@ before(async () => {
   assert.equal(past.status, 201);
   pastId = past.body.event.id;
 
-  const other = await createEvent(otherOwner.cookie, {
+  const other = await createEvent(otherOwner.userId, {
     courtId: otherCourtId,
     title: 'Elsewhere League',
     type: 'COMPETITION',
@@ -136,20 +135,20 @@ test('events list: type, city and when filters', async () => {
 test('owner events: authenticated, role-gated and scoped to court ownership', async () => {
   for (const path of ['/api/events/owner/me', `/api/events/owner/me/${upcomingId}`]) {
     assert.equal((await api('GET', path)).status, 401);
-    assert.equal((await api('GET', path, { cookie: player.cookie })).status, 403);
+    assert.equal((await api('GET', path, { userId: player.userId })).status, 403);
   }
-  const mine = await api('GET', '/api/events/owner/me', { cookie: owner.cookie });
+  const mine = await api('GET', '/api/events/owner/me', { userId: owner.userId });
   assert.equal(mine.status, 200);
   assert.deepEqual(new Set(mine.body.events.map((e: any) => e.id)), new Set([upcomingId, pastId]));
-  const other = await api('GET', `/api/events/owner/me?ownerId=${owner.userId}&courtId=${courtId}`, { cookie: otherOwner.cookie });
+  const other = await api('GET', `/api/events/owner/me?ownerId=${owner.userId}&courtId=${courtId}`, { userId: otherOwner.userId });
   assert.equal(other.status, 200);
   assert.equal(other.body.events.length, 1);
   assert.equal(other.body.events[0].court.id, otherCourtId);
-  const detail = await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: owner.cookie });
+  const detail = await api('GET', `/api/events/owner/me/${upcomingId}`, { userId: owner.userId });
   assert.equal(detail.status, 200);
   assert.equal(detail.body.event.court.id, courtId);
-  assert.equal((await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: otherOwner.cookie })).status, 404);
-  assert.equal((await api('GET', '/api/events/owner/me/missing', { cookie: owner.cookie })).status, 404);
+  assert.equal((await api('GET', `/api/events/owner/me/${upcomingId}`, { userId: otherOwner.userId })).status, 404);
+  assert.equal((await api('GET', '/api/events/owner/me/missing', { userId: owner.userId })).status, 404);
 });
 
 test('admin cannot browse or manage events outside the dashboard', async () => {
@@ -163,7 +162,7 @@ test('admin cannot browse or manage events outside the dashboard', async () => {
     ['DELETE', `/api/events/${upcomingId}`],
   ];
   for (const [method, path] of requests) {
-    assert.equal((await api(method, path, { cookie: adminCookie })).status, 403, `${method} ${path}`);
+    assert.equal((await api(method, path, { userId: adminCookie })).status, 403, `${method} ${path}`);
   }
 });
 
@@ -181,7 +180,7 @@ test('event detail: 200 with court info, 404 when missing', async () => {
 });
 
 test('create event: rejects endDate before startDate', async () => {
-  const res = await createEvent(owner.cookie, {
+  const res = await createEvent(owner.userId, {
     courtId,
     title: 'Bad range',
     type: 'TOURNAMENT',
@@ -195,35 +194,35 @@ test('create event: rejects endDate before startDate', async () => {
 
 test('update event: owner can edit, player and other owner are forbidden', async () => {
   const asPlayer = await api('PUT', `/api/events/${upcomingId}`, {
-    cookie: player.cookie,
+    userId: player.userId,
     body: { title: 'Hijacked' },
   });
   assert.equal(asPlayer.status, 403);
 
   const asOtherOwner = await api('PUT', `/api/events/${upcomingId}`, {
-    cookie: otherOwner.cookie,
+    userId: otherOwner.userId,
     body: { title: 'Hijacked' },
   });
   assert.equal(asOtherOwner.status, 403);
 
   const badRange = await api('PUT', `/api/events/${upcomingId}`, {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: { startDate: hoursFromNow(10), endDate: hoursFromNow(5) },
   });
   assert.equal(badRange.status, 400);
 
   for (const body of [{ startDate: hoursFromNow(60) }, { endDate: hoursFromNow(40) }]) {
-    const invalid = await api('PUT', `/api/events/${upcomingId}`, { cookie: owner.cookie, body });
+    const invalid = await api('PUT', `/api/events/${upcomingId}`, { userId: owner.userId, body });
     assert.equal(invalid.status, 400, 'partial updates must validate against the stored other date');
   }
 
   const ok = await api('PUT', `/api/events/${upcomingId}`, {
-    cookie: owner.cookie,
+    userId: owner.userId,
     body: { title: 'Weekend Cup (updated)' },
   });
   assert.equal(ok.status, 200);
   assert.equal(ok.body.event.title, 'Weekend Cup (updated)');
-  const saved = await api('GET', `/api/events/owner/me/${upcomingId}`, { cookie: owner.cookie });
+  const saved = await api('GET', `/api/events/owner/me/${upcomingId}`, { userId: owner.userId });
   assert.equal(saved.body.event.title, 'Weekend Cup (updated)');
 });
 
@@ -231,19 +230,19 @@ test('delete event: 401 anonymous, 403 others, owner deletes', async () => {
   const anon = await api('DELETE', `/api/events/${pastId}`);
   assert.equal(anon.status, 401);
 
-  const asPlayer = await api('DELETE', `/api/events/${pastId}`, { cookie: player.cookie });
+  const asPlayer = await api('DELETE', `/api/events/${pastId}`, { userId: player.userId });
   assert.equal(asPlayer.status, 403);
 
   const asOtherOwner = await api('DELETE', `/api/events/${pastId}`, {
-    cookie: otherOwner.cookie,
+    userId: otherOwner.userId,
   });
   assert.equal(asOtherOwner.status, 403);
 
-  const ok = await api('DELETE', `/api/events/${pastId}`, { cookie: owner.cookie });
+  const ok = await api('DELETE', `/api/events/${pastId}`, { userId: owner.userId });
   assert.equal(ok.status, 200);
 
   const gone = await api('GET', `/api/events/${pastId}`);
   assert.equal(gone.status, 404);
-  const mine = await api('GET', '/api/events/owner/me', { cookie: owner.cookie });
+  const mine = await api('GET', '/api/events/owner/me', { userId: owner.userId });
   assert.ok(!mine.body.events.some((e: any) => e.id === pastId));
 });
