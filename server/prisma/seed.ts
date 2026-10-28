@@ -1,12 +1,9 @@
 import 'dotenv/config';
-import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const PASSWORD_DEFAULT = 'password123';
 const ADMIN_EMAIL = 'admin@gmail.com';
-const ADMIN_PASSWORD = 'admin12345';
 
 function yangonDate(daysFromToday: number, yangonHour: number, yangonMinute = 0): Date {
   const d = new Date();
@@ -19,16 +16,11 @@ function yangonDate(daysFromToday: number, yangonHour: number, yangonMinute = 0)
   return d;
 }
 
-async function hash(pw: string) {
-  return bcrypt.hash(pw, 12);
-}
-
-async function upsertUser(email: string, role: 'PLAYER' | 'OWNER' | 'ADMIN', password: string, profile?: { fullName: string; phone?: string; position?: string; skillLevel?: string }) {
-  const hashed = await hash(password);
+async function upsertUser(email: string, role: 'PLAYER' | 'OWNER' | 'ADMIN', profile?: { fullName: string; phone?: string; position?: string; skillLevel?: string }) {
   const user = await prisma.user.upsert({
     where: { email },
-    update: { role, password: hashed, isActive: true },
-    create: { email, password: hashed, role, isActive: true },
+    update: { role, isActive: true },
+    create: { email, role, isActive: true },
   });
   if (profile && role === 'PLAYER') {
     await prisma.playerProfile.upsert({
@@ -47,18 +39,18 @@ async function main() {
 
   console.log('Seeding database...');
 
-  const admin = await upsertUser(ADMIN_EMAIL, 'ADMIN', ADMIN_PASSWORD);
+  const admin = await upsertUser(ADMIN_EMAIL, 'ADMIN');
 
-  const owner1 = await upsertUser('owner1@seed.local', 'OWNER', PASSWORD_DEFAULT);
-  const owner2 = await upsertUser('owner2@seed.local', 'OWNER', PASSWORD_DEFAULT);
+  const owner1 = await upsertUser('owner1@seed.local', 'OWNER');
+  const owner2 = await upsertUser('owner2@seed.local', 'OWNER');
 
-  const player1 = await upsertUser('player1@seed.local', 'PLAYER', PASSWORD_DEFAULT, {
+  const player1 = await upsertUser('player1@seed.local', 'PLAYER', {
     fullName: 'Aung Aung', phone: '0911111111', position: 'Forward', skillLevel: 'Intermediate',
   });
-  const player2 = await upsertUser('player2@seed.local', 'PLAYER', PASSWORD_DEFAULT, {
+  const player2 = await upsertUser('player2@seed.local', 'PLAYER', {
     fullName: 'Kyaw Kyaw', phone: '0922222222', position: 'Midfielder', skillLevel: 'Beginner',
   });
-  const player3 = await upsertUser('player3@seed.local', 'PLAYER', PASSWORD_DEFAULT, {
+  const player3 = await upsertUser('player3@seed.local', 'PLAYER', {
     fullName: 'Zaw Zaw', phone: '0933333333', position: 'Goalkeeper', skillLevel: 'Advanced',
   });
 
@@ -178,8 +170,9 @@ async function main() {
   });
 
   console.log('Seed complete.');
-  console.log(`Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log(`Owners/players password: ${PASSWORD_DEFAULT}`);
+  console.log(`Admin application record: ${ADMIN_EMAIL}`);
+  console.log('This seed creates application data only, not Clerk accounts or passwords.');
+  console.log('Create the admin account in Clerk with the same email; the backend links it on the first authenticated request.');
 }
 
 main()
