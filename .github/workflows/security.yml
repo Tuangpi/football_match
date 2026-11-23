@@ -1,0 +1,53 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/package.json"
+      - "client/package-lock.json"
+      - "server/package.json"
+      - "server/package-lock.json"
+      - ".github/workflows/security.yml"
+  pull_request:
+    paths:
+      - "client/package.json"
+      - "client/package-lock.json"
+      - "server/package.json"
+      - "server/package-lock.json"
+      - ".github/workflows/security.yml"
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    name: Audit ${{ matrix.package }} dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: client
+            working-directory: client
+          - package: server
+            working-directory: server
+    defaults:
+      run:
+        working-directory: ${{ matrix.working-directory }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.working-directory }}/package-lock.json
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high --package-lock-only
