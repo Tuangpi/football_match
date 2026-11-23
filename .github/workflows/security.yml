@@ -2,7 +2,7 @@ name: Security
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "client/package.json"
       - "client/package-lock.json"
