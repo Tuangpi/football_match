@@ -20,6 +20,17 @@ after(async () => {
   await stopServer();
 });
 
+test('health and readiness endpoints report service and database availability', async () => {
+  const health = await api('GET', '/health');
+  assert.equal(health.status, 200);
+  assert.equal(health.body.status, 'ok');
+
+  const ready = await api('GET', '/ready');
+  assert.equal(ready.status, 200);
+  assert.equal(ready.body.status, 'ok');
+  assert.equal(ready.body.database, 'ok');
+});
+
 test('me: with x-test-user-id returns the user', async () => {
   const res = await api('GET', '/api/auth/me', { userId: user.userId });
   assert.equal(res.status, 200);

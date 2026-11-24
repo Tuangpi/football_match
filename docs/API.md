@@ -3,49 +3,36 @@
 Base URL: `http://localhost:3000`. All API routes are prefixed with `/api`.
 Frontend calls `/api/*` (Vite dev server proxies `/api` → `http://localhost:3000`).
 
-Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last verified 2026-10-19 (admin list/stats endpoints + immediate `isActive` lockout — see entries marked “Added 2026-10-19”).
+Source of truth: `server/src/routes/*` + `server/src/controllers/*`. Last updated 2026-11-24.
 
 ## Conventions
 
 - Currency: all price fields (`basePricePerHour`, `pricePerHour`, `totalPrice`) are numeric amounts in Myanmar kyat (MMK).
 - Success envelope: `{ "success": true, ... }` plus the resource (`user`, `court`, `courts`, `booking`, …).
+- Readiness check (no auth): `GET /ready` returns `200` only when the API can query PostgreSQL; otherwise it returns `503`.
 - Error envelope: `{ "success": false, "message": "<reason>" }`.
-- Validation errors (Zod): `400 { success:false, message:"Validation error", errors:[{field,message}] }`. Only the request **body** is validated; query/path params are used as-is.
-- Unknown route: `404 { success:false, message:"Route not found" }`.
-- Health check (no auth): `GET /health` → `{ status:"ok", service:"football-match-server" }`.
+## Auth — Clerk bearer sessions
 
-## Auth — JWT in httpOnly cookie
+- Clerk owns sign-up, sign-in, verification, session lifecycle, and credential recovery.
+- The client adds the current Clerk session token as `Authorization: Bearer <token>` for API calls.
+- The API verifies the Clerk session and maps it to the application `User` record.
+- New public accounts are provisioned as `PLAYER`. A newly created account may select `OWNER` through the restricted sync flow; `ADMIN` is assigned outside public signup.
+- `CLIENT_URL` is the sole credentialed CORS origin. Configure it to the exact production frontend origin.
+- `POST /api/auth/logout` acknowledges application logout; the browser session is ended by Clerk on the client.
 
-- Cookie name: `token`. Set on `POST /api/auth/register` and `POST /api/auth/login`.
-- Cookie flags: `httpOnly`, `path=/`, `maxAge=7 days`, `sameSite=lax`, `secure` only in production (`NODE_ENV=production`).
-- Token payload: `{ id, email, role }`, expiry `JWT_EXPIRES_IN` (default `7d`).
-- Client must send cookies: shared axios instance uses `baseURL:/api` + `withCredentials:true`.
-- Server CORS: `origin = CLIENT_URL || http://localhost:5173`, `credentials:true`.
-- `authenticate` reads `req.cookies.token`; missing → `401 Authentication required`, bad/expired → `401 Invalid or expired token`.
-- `authorize(...roles)` → `403 Forbidden: insufficient role` when the role does not match.
-- `JWT_SECRET` is required — the server throws at boot when it is missing.
+Auth shorthand below: `🔓 public`, `🔒 signed-in Clerk user`, `👑 OWNER`, `🛡 ADMIN`.
 
-Auth shorthand below: `🔓 public`, `🔒 logged in`, `👑 OWNER or ADMIN`, `🛡 ADMIN`.
+### `POST /api/auth/logout` 🔒
 
-### `POST /api/auth/register` 🔓
-
-Body: `{ email: string(email), password: string(min 6), role?: "PLAYER" | "OWNER" }` (defaults to `PLAYER`; `ADMIN` cannot self-register).
-Errors: `400 Email already registered`, `400 Validation error`.
-Success: `201 { success:true, message:"Registration successful", user:{id,email,role,createdAt} }` + sets `token` cookie.
-
-### `POST /api/auth/login` 🔓
-
-Body: `{ email: string(email), password: string(min 1) }`.
-Errors: `401 Invalid credentials` (unknown email or wrong password).
-Success: `200 { success:true, message:"Login successful", user:{id,email,role} }` + sets `token` cookie.
-
-### `POST /api/auth/logout` 🔓
-
-No body. Clears the `token` cookie. Success: `200 { success:true, message:"Logged out" }`.
+No body. Success: `200 { success:true, message:"Logged out" }`.
 
 ### `GET /api/auth/me` 🔒
 
 Returns the session user with profile + owned-court summary.
+
+### `POST /api/auth/sync` 🔒
+
+Body: `{ role?: "PLAYER" | "OWNER" }`. A newly provisioned public account may select `OWNER`; an existing account cannot escalate privileges. `ADMIN` cannot be selected through this endpoint.
 Success: `200 { success:true, user:{ id,email,role,createdAt, playerProfile, ownedCourts:[{id,name,city}] } }`.
 Errors: `401` (no/invalid token), `404 User not found`.
 
@@ -334,7 +321,7 @@ Success: `200 { success:true, court, message:"Court activated|deactivated" }`.
 ### `PATCH /api/admin/users/:id/toggle` 🛡
 
 Flips `User.isActive`. Errors: `401`, `403` (non-admin), `404 User not found`, `400 Cannot deactivate yourself` (self-deactivation only blocked when it would deactivate — an already-inactive admin re-toggling self back on is allowed, which is also the recovery path).
-**Updated 2026-10-19:** deactivation now locks the account out immediately. `POST /api/auth/login` returns `403 Account deactivated. Contact support.` and `authenticate` does a per-request DB check, so an existing JWT stops working on the next call. Reactivating restores access.
+Deactivation locks the account out immediately: `authenticate` checks account activity on every request, so an existing Clerk session receives `403 Account deactivated. Contact support.` until reactivation.
 Success: `200 { success:true, user:{id,email,role,isActive}, message:"User activated|deactivated" }`.
 
 ## Roles on the wire

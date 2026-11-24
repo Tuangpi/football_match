@@ -7,7 +7,6 @@ import {
   startServer,
   stopServer,
   uniqueEmail,
-  PASSWORD,
   type TestUser,
 } from './helpers';
 import { prisma } from '../utils/prisma';

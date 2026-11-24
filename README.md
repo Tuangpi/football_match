@@ -2,61 +2,71 @@
 
 Futsal (extensible to 11-a-side) court booking web application.
 
-## Tech Stack
-- **Frontend:** React + Vite + Tailwind CSS
-- **Backend:** Express.js + TypeScript
-- **Database:** PostgreSQL + Prisma ORM
-- **Auth:** JWT (HttpOnly cookies), email/password
+## Tech stack
+
+- **Frontend:** React, Vite, Tailwind CSS, Clerk
+- **Backend:** Express.js, TypeScript, Clerk session verification
+- **Database:** Supabase PostgreSQL with Prisma ORM
 
 ## Structure
-```
+
+```text
 client/   # React frontend
 server/   # Express backend + Prisma schema
-docs/     # Developer docs: [API reference](docs/API.md) · [Data model](docs/DATA_MODEL.md)
+docs/     # Developer and operational documentation
 ```
 
-## Getting Started
+## Local setup
 
-### 1. Prerequisites
-- Node.js (v18+)
-- PostgreSQL
+### Backend
 
-### 2. Backend
 ```bash
 cd server
-cp .env.example .env   # configure DATABASE_URL, JWT_SECRET, PORT
+cp .env.example .env # configure DATABASE_URL, CLERK_SECRET_KEY, CLIENT_URL, and PORT
 npm install
 npx prisma generate
 npx prisma migrate deploy
-npm run db:seed          # optional: demo data + admin account (dev only)
 npm run dev
 ```
 
-### 3. Frontend
+### Frontend
+
 ```bash
 cd client
+cp .env.example .env.local # configure VITE_CLERK_PUBLISHABLE_KEY and VITE_API_URL
 npm install
 npm run dev
 ```
 
-## Roles
-- **PLAYER** — find friends, join/create teams, book courts
-- **OWNER** — manage courts, opening hours, calendar bookings, events
-- **ADMIN** — platform moderation (future)
+## Verification
 
-## Calendar tests
-With both application dependencies installed, run the focused frontend date tests using the existing server TypeScript runner (no additional dependency):
 ```bash
+# server
+cd server
+npm run lint && npm run build && npm test
+
+# client
 cd client
-../server/node_modules/.bin/tsx --test tests/bookingCalendar.test.ts
+npm run lint && npx tsc --noEmit && npm run build
+../server/node_modules/.bin/tsx --test tests/*.test.ts
 ```
 
-## Seed data
+## Roles
 
-For local development, `npm run db:seed` (in `server/`) creates an admin account (`admin@mail.com` / `admin12345`) plus demo owners, courts, players, bookings, events and reviews. It is idempotent and safe to re-run. It runs automatically with `prisma migrate dev` but not with `prisma migrate deploy`, so production databases are not seeded. Set `ALLOW_SEED=true` to permit seeding in production.
+- **PLAYER** — find friends, join/create teams, and book courts
+- **OWNER** — manage courts, opening hours, bookings, and events
+- **ADMIN** — platform moderation via the admin dashboard; assigned outside public signup
+
+## Production notes
+
+- Use the pooled Supabase PostgreSQL connection for the running API.
+- Set `NODE_ENV=production`, `DATABASE_URL`, `CLIENT_URL`, `CLERK_SECRET_KEY`, and the client Clerk publishable key in the production platform.
+- Apply Prisma migrations with `npx prisma migrate deploy` before releasing the API.
+- `GET /health` is a liveness endpoint. `GET /ready` verifies database availability and should be used by deployment readiness checks.
+- API routing and hosting must be configured for your chosen frontend and backend deployment architecture.
 
 ## Docs
-- [API reference](docs/API.md) — all `/api` routes: methods, auth/roles, payloads, errors
-- [Data model overview](docs/DATA_MODEL.md) — enums, models, relations, constraints
-- [Migration plan](docs/MIGRATION_PLAN.md) — planned move to Supabase PostgreSQL and Clerk authentication; not yet implemented
-- Docs index: [docs/](docs/README.md)
+
+- [API reference](docs/API.md)
+- [Data model](docs/DATA_MODEL.md)
+- [Supabase operations](docs/SUPABASE_MIGRATION.md)

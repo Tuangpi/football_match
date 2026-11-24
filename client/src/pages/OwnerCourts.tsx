@@ -43,14 +43,15 @@ const editSchema = z.object({
   basePricePerHour: z.coerce.number().positive("Price must be positive"),
 });
 
-type EditFormData = z.infer<typeof editSchema>;
+type EditFormInput = z.input<typeof editSchema>;
+type EditFormData = z.output<typeof editSchema>;
 
 function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }) {
   useLanguage();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const editForm = useForm<EditFormData>({
+  const editForm = useForm<EditFormInput, unknown, EditFormData>({
     resolver: zodResolver(editSchema),
     defaultValues: {
       name: court.name,

@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: football_match_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d football_match_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/football_match_test?schema=public
+      CLIENT_URL: http://localhost:5173
+      CLERK_SECRET_KEY: sk_test_placeholder
+      CLERK_PUBLISHABLE_KEY: pk_test_placeholder
+      VITE_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+      - name: Generate Prisma client and apply migrations
+        working-directory: server
+        run: npx prisma generate && npx prisma migrate deploy
+      - name: Validate server
+        working-directory: server
+        run: npm run lint && npm run build && npm test
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+      - name: Validate client
+        working-directory: client
+        run: npm run lint && npx tsc --noEmit && npm run build && ../server/node_modules/.bin/tsx --test tests/*.test.ts

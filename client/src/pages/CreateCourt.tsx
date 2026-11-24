@@ -24,7 +24,8 @@ const schema = z.object({
   basePricePerHour: z.coerce.number().positive('Price must be positive'),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormInput = z.input<typeof schema>;
+type FormData = z.output<typeof schema>;
 
 export function CreateCourt() {
   useLanguage();
@@ -36,7 +37,7 @@ export function CreateCourt() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  } = useForm<FormInput, unknown, FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);

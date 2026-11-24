@@ -14,15 +14,14 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - Event browsing (`/events`) is public across owners; event management (`/owner/events`) is scoped server-side to the owner's courts, without ADMIN access. Anonymous browsing remains available, but signed-in admins are limited to the dashboard.
 
 ## Tech Stack (current)
-- **client/**: React 18 + Vite + Tailwind CSS, react-router v6, axios, react-hook-form + zod, sonner (toasts), lucide-react icons
+- **client/**: React 18 + Vite + Tailwind CSS, React Router v7, axios, react-hook-form + zod, sonner (toasts), lucide-react icons
 - **server/**: Express + TypeScript, Zod validation, Prisma ORM + PostgreSQL (hosted on Supabase)
-- **Auth**: JWT stored in httpOnly cookie; bcrypt password hashing
+- **Auth**: Clerk browser sessions verified by the Express API; application roles remain in PostgreSQL
 
-## Planned stack (not yet implemented)
-- **Database host**: Supabase PostgreSQL (IMPLEMENTED 2026-10-21 — T029), accessed via Prisma ORM (migrations and Prisma Client remain)
-- **Authentication**: Clerk (sign-in, sessions, user identity); PLAYER/OWNER/ADMIN roles and authorization stay in the Express backend
-- **Frontend hosting**: Vercel
-- **Backend hosting**: Open — Render recommended for the existing Express server model; Vercel also supports Express
+## Deployment
+- **Database host**: Supabase PostgreSQL through Prisma ORM
+- **Authentication**: Clerk; the server provisions new accounts as PLAYER and permits controlled first-time OWNER selection. ADMIN is out-of-band only.
+- **Frontend hosting / backend hosting**: configure for the selected provider; API routing is deployment-specific.
 
 ## Architecture
 - server/src: routes -> middleware (authenticate/authorize, validate) -> controllers -> Prisma
@@ -31,7 +30,7 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - Vite dev server proxies /api to localhost:3000
 
 ## Key Decisions
-- JWT in httpOnly cookie instead of localStorage (XSS safety)
+- Clerk manages identity and browser session lifecycle; the API validates Clerk bearer tokens and owns application authorization
 - Zod schemas validate inputs both in routes and controllers
 - Bookings start PENDING; owner confirms; cancelling a booking releases its time range; cancelled bookings cannot be reopened. Players can cancel only pending requests; confirmed bookings are cancelled by the court owner.
 - One review per user per court (DB unique constraint on courtId+userId)
@@ -41,6 +40,6 @@ Web application for booking futsal courts (designed to extend to 11-a-side). Pla
 - Owner booking management supports Day, Monday–Sunday Week, Month, and List/history. Week uses daily agenda columns, Month shows compact summaries with date/overflow drill-down to Day; mobile uses vertical agendas. Court/status filters persist across views and dates remain in Asia/Yangon.
 
 ## Constraints & Assumptions
-- PostgreSQL required; configure via server/.env (see server/.env.example). Planned production host: Supabase via Prisma; connection pooling/config to be confirmed during the database migration.
+- PostgreSQL is hosted on Supabase. Use a pooled `DATABASE_URL` at runtime and apply Prisma migrations before releases.
 - Verification evidence is recorded per task in TASKS.md and PROGRESS.md; older baseline features may still need verification.
 - Git repo had zero commits when tracking was initialized (2026-10-17)

@@ -1,10 +1,10 @@
 # Data model overview
 
-Source of truth: `server/prisma/schema.prisma` (PostgreSQL via Prisma). Last verified 2026-10-17.
+Source of truth: `server/prisma/schema.prisma` (PostgreSQL via Prisma). Last updated 2026-11-24.
 
 ## Enums
 
-- `UserRole`: `PLAYER` (default) · `OWNER` · `ADMIN`. Only PLAYER/OWNER can self-register; ADMIN must be set directly in the DB.
+- `UserRole`: `PLAYER` (default) · `OWNER` · `ADMIN`. Public Clerk signup can select PLAYER or OWNER; every account is first provisioned as PLAYER, and ADMIN is assigned outside public signup.
 - `BookingStatus`: `PENDING` (default) · `CONFIRMED` · `CANCELLED`.
 - `SportType`: `FUTSAL` (default) · `ELEVEN_A_SIDE`.
 - `FriendStatus`: `PENDING` (default) · `ACCEPTED` · `BLOCKED` (decline path — see Friend below).
@@ -14,9 +14,9 @@ Source of truth: `server/prisma/schema.prisma` (PostgreSQL via Prisma). Last ver
 
 ### User
 
-`id (cuid PK) · email (unique) · password (bcrypt hash) · role (UserRole, default PLAYER) · isActive (default true, T008) · createdAt · updatedAt`
+`id (cuid PK) · clerkId? (unique) · email (unique) · role (UserRole, default PLAYER) · isActive (default true) · createdAt · updatedAt`
 Relations: `playerProfile?`, `ownedCourts[]`, `events[]` (created), `teams[]` (captained), `teamMemberships[]`, `bookings[]` (as player), `reviews[]`, `sentFriendRequests[]` / `receivedFriendRequests[]`.
-Notes: `isActive` is only flipped by admin toggles; nothing in auth currently blocks a deactivated user's JWT (see docs/API.md).
+Notes: `clerkId` links the application record to Clerk identity. Authentication checks `isActive` on every API request, so a deactivated user is denied immediately.
 
 ### PlayerProfile
 
@@ -70,13 +70,13 @@ Index: `(courtId, startsAt, endsAt)`. Database check: end > start. Owner-only re
 
 `id · courtId (FK → Court, onDelete: Cascade) · userId (FK → User creator, onDelete: Cascade) · title · type (EventType) · description? · startDate · endDate · createdAt · updatedAt`
 Relations: `court → Court`, `user → User`.
-Notes: creation requires owning the court (or admin). No `endDate > startDate` validation in the schema or API. Deleting the court or creator cascades the event away.
+Notes: creation requires owning the court (or admin). The API validates `endDate > startDate`. Deleting the court or creator cascades the event away.
 
 ### Review
 
 `id · courtId (FK → Court, onDelete: Cascade) · userId (FK → User, no cascade) · rating (Int, 1–5 enforced in API not schema) · comment? · createdAt`
 Constraint: `@@unique(courtId, userId)` — one review per user per court.
-Notes: surfaced on court detail + `GET /api/reviews/:courtId`. No update/delete endpoint. Deleting the court removes its reviews; deleting a user with reviews fails at the DB level.
+Notes: surfaced on court detail + `GET /api/reviews/:courtId`. Authors can update/delete reviews and admins can delete them. Deleting the court removes its reviews; deleting a user with reviews fails at the DB level.
 
 ## Relation map
 

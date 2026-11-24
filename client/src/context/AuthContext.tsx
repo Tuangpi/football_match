@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useClerkAuth, useUser, useClerk } from '@clerk/react';
-import api from '@/lib/api';
-import { setClerkTokenGetter } from '@/lib/api';
+import api, { setClerkTokenGetter } from '@/lib/api';
 
 type User = {
   id: string;
@@ -18,6 +17,7 @@ type AuthContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthResult>;
   register: (email: string, password: string, role: string) => Promise<AuthResult>;
+  refreshUser: () => Promise<User | null>;
   logout: () => Promise<void>;
 };
 
@@ -30,37 +30,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clerk = useClerk();
 
   const [user, setUser] = useState<User | null>(null);
-
+  const [resolvedClerkUserId, setResolvedClerkUserId] = useState<string | null>(null);
+  const userRequestId = useRef(0);
   useEffect(() => {
     setClerkTokenGetter(getToken);
     return () => setClerkTokenGetter(null);
   }, [getToken]);
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    if (!clerkLoaded) return;
-    if (!isSignedIn) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
+    if (!clerkLoaded || !isSignedIn || !clerkUser?.id) return;
+
     let cancelled = false;
-    setLoading(true);
+    const requestId = ++userRequestId.current;
     api
       .get('/auth/me')
-      .then((res: any) => {
-        if (!cancelled) setUser(res.data.user);
+      .then((res: { data: { user: User } }) => {
+        if (!cancelled && requestId === userRequestId.current) setUser(res.data.user);
       })
       .catch(() => {
-        if (!cancelled) setUser(null);
+        if (!cancelled && requestId === userRequestId.current) setUser(null);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && requestId === userRequestId.current) setResolvedClerkUserId(clerkUser.id);
       });
     return () => {
       cancelled = true;
     };
   }, [clerkLoaded, isSignedIn, clerkUser?.id]);
+
+  const loading = !clerkLoaded || (isSignedIn && resolvedClerkUserId !== clerkUser?.id);
+  const currentUser = isSignedIn ? user : null;
 
   const login = async (): Promise<AuthResult> => {
     throw new Error('Use Clerk sign-in');
@@ -70,6 +68,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     throw new Error('Use Clerk sign-up');
   };
 
+  const refreshUser = async (): Promise<User | null> => {
+    if (!clerkLoaded || !isSignedIn || !clerkUser?.id) return null;
+
+    const requestId = ++userRequestId.current;
+    try {
+      const res = await api.get<{ user: User }>('/auth/me');
+      if (requestId === userRequestId.current) setUser(res.data.user);
+      return res.data.user;
+    } catch {
+      if (requestId === userRequestId.current) setUser(null);
+      return null;
+    } finally {
+      if (requestId === userRequestId.current) setResolvedClerkUserId(clerkUser.id);
+    }
+  };
+
   const logout = async () => {
     await clerk.signOut();
     setUser(null);
@@ -77,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user: currentUser, loading, login, register, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

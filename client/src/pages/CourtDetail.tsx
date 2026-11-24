@@ -55,7 +55,8 @@ const reviewSchema = z.object({
   comment: z.string().optional(),
 });
 
-type ReviewFormData = z.infer<typeof reviewSchema>;
+type ReviewFormInput = z.input<typeof reviewSchema>;
+type ReviewFormData = z.output<typeof reviewSchema>;
 
 export function CourtDetail() {
   useLanguage();
@@ -78,7 +79,7 @@ export function CourtDetail() {
     handleSubmit: handleReviewSubmit,
     reset: resetReview,
     formState: { errors: reviewErrors },
-  } = useForm<ReviewFormData>({ resolver: zodResolver(reviewSchema) });
+  } = useForm<ReviewFormInput, unknown, ReviewFormData>({ resolver: zodResolver(reviewSchema) });
 
   async function fetchCourt() {
     try {

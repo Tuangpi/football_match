@@ -45,16 +45,14 @@ async function provisionUser(clerkUserId: string): Promise<{
     return user;
   }
 
-  const roleFromMetadata =
-    (clerkUser.unsafeMetadata as { role?: string } | undefined)?.role ||
-    (clerkUser.publicMetadata as { role?: string } | undefined)?.role;
-  const role = roleFromMetadata === 'OWNER' || roleFromMetadata === 'ADMIN' ? roleFromMetadata : 'PLAYER';
-
+  // Clerk public and unsafe metadata can be changed by the browser, so neither
+  // may grant application authorization. Public users start as PLAYER; the
+  // restricted sync endpoint may select OWNER for a newly provisioned account.
   user = await prisma.user.create({
     data: {
       clerkId: clerkUserId,
       email: normalizedEmail,
-      role: role as any,
+      role: 'PLAYER',
     },
   });
   return user;

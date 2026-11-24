@@ -6,8 +6,6 @@ import {
   cleanupTestData,
   startServer,
   stopServer,
-  PASSWORD,
-  uniqueEmail,
 } from './helpers';
 
 before(async () => {
@@ -21,11 +19,6 @@ after(async () => {
 
 async function register(role: 'PLAYER' | 'OWNER', name: string) {
   return registerUser(role, name);
-}
-
-async function cookieOf(role: 'PLAYER' | 'OWNER', name: string) {
-  const user = await register(role, name);
-  return { userId: user.userId, email: user.email };
 }
 
 test('courts/suggest: empty q returns empty items', async () => {
