@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/lib/api';
+import api, { getApiErrorMessage } from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -45,8 +45,8 @@ export function CreateCourt() {
       await api.post('/courts', data);
       toast.success(t("Court created!"));
       navigate('/owner/courts');
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to create court")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to create court")));
     } finally {
       setLoading(false);
     }

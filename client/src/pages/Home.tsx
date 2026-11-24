@@ -2,7 +2,8 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "@/lib/api";
+import api, { getApiErrorMessage, suggestCourts } from "@/lib/api";
+import type { CourtSuggestion } from "@/lib/api-types";
 import { useAuth } from "@/context/AuthContext";
 import { FadeIn } from "@/components/motion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,6 @@ import {
   Trophy,
 } from "lucide-react";
 import { courtImage } from "@/lib/images";
-import { suggestCourts } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +37,7 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState("");
   const [sport, setSport] = useState("");
-  const [courtSuggestions, setCourtSuggestions] = useState<any[]>([]);
+  const [courtSuggestions, setCourtSuggestions] = useState<CourtSuggestion[]>([]);
   const [courtSuggestionsLoading, setCourtSuggestionsLoading] = useState(false);
   const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,8 +46,8 @@ export function Home() {
     try {
       const res = await api.get("/courts");
       setCourts(res.data.courts);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load courts")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load courts")));
     } finally {
       setLoading(false);
     }
@@ -99,8 +99,8 @@ export function Home() {
     goToCourts();
   }
 
-  function selectCourtSuggestion(item: any) {
-    const nextCity = item.city as string;
+  function selectCourtSuggestion(item: CourtSuggestion) {
+    const nextCity = item.city;
     setCity(nextCity);
     const params = new URLSearchParams();
     if (nextCity.trim()) params.set("city", nextCity.trim());
@@ -157,8 +157,8 @@ export function Home() {
                       value={city}
                       onChange={setCity}
                       items={courtSuggestions}
-                      itemToLabel={(item: any) => `${item.name} (${item.city})`}
-                      itemToValue={(item: any) => item.city}
+                      itemToLabel={(item) => `${item.name} (${item.city})`}
+                      itemToValue={(item) => item.city}
                       onSelect={selectCourtSuggestion}
                       loading={courtSuggestionsLoading}
                       ariaLabel={t("Search courts by city and sport")}

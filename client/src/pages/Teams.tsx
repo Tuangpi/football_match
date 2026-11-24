@@ -3,7 +3,8 @@ import { t as translate } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/lib/api';
+import api, { getApiErrorMessage } from '@/lib/api';
+import type { Team } from '@/lib/api-types';
 import { Loader2, Trophy, UserPlus, LogOut, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
@@ -15,22 +16,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/EmptyState';
-
-type TeamMember = {
-  id: string;
-  role: string;
-  user: { id: string; email: string };
-};
-
-type Team = {
-  id: string;
-  name: string;
-  sportType: 'FUTSAL' | 'ELEVEN_A_SIDE';
-  captainId: string;
-  captain: { id: string; email: string };
-  members: TeamMember[];
-  _count?: { members: number };
-};
 
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Team name is required'),
@@ -60,10 +45,10 @@ export function Teams() {
   async function refresh() {
     try {
       const params = filter === 'ALL' ? {} : { sportType: filter };
-      const res = await api.get('/teams', { params });
+      const res = await api.get<{ teams: Team[] }>('/teams', { params });
       setTeams(res.data.teams);
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to load teams")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to load teams')));
     } finally {
       setLoading(false);
     }
@@ -81,8 +66,8 @@ export function Teams() {
       toast.success(translate("Team created!"));
       reset();
       refresh();
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to create team")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to create team')));
     }
   };
 
@@ -92,8 +77,8 @@ export function Teams() {
       await api.post(`/teams/${teamId}/join`);
       toast.success(translate("Joined the team"));
       refresh();
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to join team")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to join team')));
     } finally {
       setBusyId(null);
     }
@@ -105,8 +90,8 @@ export function Teams() {
       await api.delete(`/teams/${teamId}/leave`);
       toast.success(translate("Left the team"));
       refresh();
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to leave team")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to leave team')));
     } finally {
       setBusyId(null);
     }
@@ -120,8 +105,8 @@ export function Teams() {
       await api.delete(`/teams/${teamId}`);
       toast.success(translate("Team deleted"));
       refresh();
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to delete team")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to delete team')));
     } finally {
       setBusyId(null);
     }

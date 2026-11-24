@@ -165,6 +165,44 @@ export const getOwnerBookings = async (
   }
 };
 
+export const getOwnerSchedule = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      return next(new AppError("Authentication required", 401));
+    }
+
+    const courts = await prisma.court.findMany({
+      where: { ownerId: req.user.id },
+      select: { id: true, name: true, openingHours: true },
+      orderBy: { createdAt: "asc" },
+    });
+    const courtIds = courts.map((court) => court.id);
+    const [bookings, blocks] = await Promise.all([
+      prisma.booking.findMany({
+        where: { courtId: { in: courtIds } },
+        include: {
+          court: { select: { id: true, name: true } },
+          player: { select: { id: true, email: true } },
+          team: { select: { id: true, name: true } },
+        },
+        orderBy: { bookedAt: "desc" },
+      }),
+      prisma.courtBlock.findMany({
+        where: { courtId: { in: courtIds } },
+        orderBy: { startsAt: "asc" },
+      }),
+    ]);
+
+    res.json({ success: true, courts, bookings, blocks });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const updateBookingStatus = async (
   req: Request,
   res: Response,

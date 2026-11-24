@@ -1,135 +1,35 @@
-import { getLocale, t } from '../lib/language';
+import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useMemo, useState } from "react";
-import api from "@/lib/api";
-import { atHour, courtDate, formatBooking, hourLabel, type OpeningDay, type TimeRange } from "@/lib/bookingTime";
+import { courtDate, formatBooking } from "@/lib/bookingTime";
 import { formatPrice } from "@/lib/currency";
 import { calendarDays, calendarLabel, onCalendarDay, shiftPeriod, type CalendarView } from "@/lib/bookingCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Autocomplete } from "@/components/Autocomplete";
 import { occupancyPercent } from "@/lib/occupancy";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  courtColor,
+  filterBookings,
+  statusStyle,
+  timeChip,
+  type Block,
+  type Booking,
+} from "@/lib/ownerBookingSchedule";
+import { TimeGrid } from "@/components/owner-bookings/TimeGrid";
+import { BookingDetailsDialog } from "@/components/owner-bookings/BookingDetailsDialog";
+import { useOwnerBookingSchedule } from "@/components/owner-bookings/useOwnerBookingSchedule";
 import { toast } from "sonner";
-
-type Booking = TimeRange & {
-  id: string;
-  status: string;
-  totalPrice: number;
-  court: { id: string; name: string };
-  player: { id: string; email: string };
-  team: { id: string; name: string } | null;
-};
-type Court = { id: string; name: string; openingHours?: OpeningDay[] };
-type Block = TimeRange & { courtId: string; reason: string };
-
-const START_HOUR = 8;
-const END_HOUR = 23;
-const HOUR_PX = 56;
-const COURT_COLORS = ["bg-sky-500", "bg-violet-500", "bg-emerald-500", "bg-orange-500", "bg-pink-500", "bg-cyan-500"];
-
-function courtColor(courtId: string, courts: Court[]) {
-  const idx = Math.max(0, courts.findIndex((c) => c.id === courtId));
-  return COURT_COLORS[idx % COURT_COLORS.length];
-}
-function statusStyle(s: string) {
-  if (s === "CONFIRMED") return "border-green-500 bg-green-500/10 hover:bg-green-500/20";
-  if (s === "CANCELLED") return "border-muted text-muted-foreground line-through";
-  return "border-amber-500 bg-amber-500/10 hover:bg-amber-500/20";
-}
-function toMs(v: string) { return new Date(v).getTime(); }
-function yFor(ms: number, dayStartMs: number) {
-  return ((ms - dayStartMs) / 3600000 - START_HOUR) * HOUR_PX;
-}
-
-function layoutDay(items: Booking[]) {
-  const sorted = [...items].sort((a, b) => toMs(a.startsAt) - toMs(b.startsAt));
-  const cols: Booking[][] = [];
-  const placed = new Map<string, number>();
-  for (const b of sorted) {
-    let idx = cols.findIndex((col) => toMs(col[col.length - 1].endsAt) <= toMs(b.startsAt));
-    if (idx < 0) { idx = cols.length; cols.push([]); }
-    cols[idx].push(b);
-    placed.set(b.id, idx);
-  }
-  return { cols: Math.max(1, cols.length), placed };
-}
-function timeChip(b: Booking) {
-  const o = { timeZone: "Asia/Yangon", hour: "numeric", minute: "2-digit" } as const;
-  return `${new Date(b.startsAt).toLocaleTimeString(getLocale(), o)} - ${new Date(b.endsAt).toLocaleTimeString(getLocale(), o)}`;
-}
-function TimeGrid({ day, items, dayBlocks, courts, nowMs, onSelect }: {
-  day: string;
-  items: Booking[];
-  dayBlocks: Block[];
-  courts: Court[];
-  nowMs: number;
-  onSelect: (b: Booking) => void;
-}) {
-  const dayStartMs = toMs(atHour(day, 0));
-  const gridH = (END_HOUR - START_HOUR) * HOUR_PX;
-  const lay = layoutDay(items);
-  const nowY = yFor(nowMs, dayStartMs);
-  const showNow = day === courtDate() && nowY >= 0 && nowY <= gridH;
-  return (
-    <div className="overflow-x-auto rounded-xl border bg-background">
-      <div className="flex min-w-[320px]">
-        <div className="w-14 shrink-0">
-          <div className="h-9 border-b" />
-          {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
-            <div key={START_HOUR + i} className="border-b pr-1 text-right text-[11px] text-muted-foreground" style={{ height: HOUR_PX }}>
-              <span className="block -translate-y-2">{hourLabel(START_HOUR + i)}</span>
-            </div>
-          ))}
-        </div>
-        <div className="relative flex-1">
-          <div className="h-9 border-b border-l px-2 text-xs font-medium text-muted-foreground">
-            {calendarLabel(day, { weekday: "short", month: "short", day: "numeric" })}
-          </div>
-          <div className="relative border-l" style={{ height: gridH }}>
-            {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
-              <div key={START_HOUR + i} className="border-b" style={{ height: HOUR_PX }} />
-            ))}
-            {dayBlocks.map((b: Block, i: number) => {
-              const top = Math.max(0, yFor(toMs(b.startsAt), dayStartMs));
-              const bottom = Math.min(gridH, yFor(toMs(b.endsAt), dayStartMs));
-              if (bottom <= 0 || top >= gridH) return null;
-              return <div key={i} className="absolute inset-x-1 overflow-hidden rounded border border-dashed bg-muted/70 p-1 text-[11px]" style={{ top, height: Math.max(18, bottom - top - 2) }}>{t("Blocked")} - {b.reason}</div>;
-            })}
-            {items.map((b) => {
-              const top = Math.max(0, yFor(toMs(b.startsAt), dayStartMs));
-              const bottom = Math.min(gridH, yFor(toMs(b.endsAt), dayStartMs));
-              if (bottom <= 0 || top >= gridH) return null;
-              const col = lay.placed.get(b.id) ?? 0;
-              return (
-                <button key={b.id} onClick={() => onSelect(b)} className={`absolute overflow-hidden rounded-lg border-l-4 border-y border-r p-1.5 text-left text-[11px] leading-tight hover:shadow-md ${statusStyle(b.status)}`} style={{ top, height: Math.max(22, bottom - top - 3), left: `calc(${(col * 100) / lay.cols}% + 2px)`, width: `calc(${100 / lay.cols}% - 4px)` }}>
-                  <span className="flex items-center gap-1"><span className={`h-1.5 w-1.5 rounded-full ${courtColor(b.court.id, courts)}`} /><strong className="truncate">{timeChip(b)}</strong></span>
-                  <span className="block truncate font-medium">{b.court.name}</span>
-                  <span className="block truncate text-muted-foreground">{b.player.email}</span>
-                </button>
-              );
-            })}
-            {showNow && <div className="pointer-events-none absolute inset-x-0" style={{ top: nowY }}><div className="h-0.5 bg-red-500" /></div>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function OwnerBookings() {
   useLanguage();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [courts, setCourts] = useState<Court[]>([]);
-  const [blocked, setBlocked] = useState<Block[]>([]);
+  const { bookings, courts, blocked, error, load, loading, updateBookingStatus } = useOwnerBookingSchedule();
   const [date, setDate] = useState(courtDate());
   const [courtId, setCourtId] = useState("");
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<CalendarView | "list">("day");
   const [selected, setSelected] = useState<Booking | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
@@ -137,40 +37,18 @@ export function OwnerBookings() {
     return () => window.clearInterval(id);
   }, []);
 
-  async function load() {
-    setLoading(true);
-    try {
-      const [b, c] = await Promise.all([api.get("/bookings/owner"), api.get("/courts/owner/me")]);
-      const blocks = await Promise.all(
-        c.data.courts.map(async (court: Court) => {
-          const res = await api.get(`/courts/${court.id}/blocks`);
-          return res.data.blocks;
-        }),
-      );
-      setBookings(b.data.bookings);
-      setCourts(c.data.courts);
-      setBlocked(blocks.flat());
-      setError("");
-    } catch {
-      setError("Unable to load the schedule. Please retry.");
-    } finally {
-      setLoading(false);
-    }
-  }
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
+    void load();
+  }, [load]);
 
-  async function update(next: string) {
+  async function update(next: "CONFIRMED" | "CANCELLED") {
     if (!selected) return;
     const ok = next !== "CANCELLED" || window.confirm(t("Cancel this booking?"));
     if (!ok) return;
     setBusy(true);
     try {
-      const { data } = await api.patch(`/bookings/owner/${selected.id}/status`, { status: next });
-      setBookings((prev) => prev.map((b) => (b.id === selected.id ? data.booking : b)));
-      setSelected(data.booking);
+      const booking = await updateBookingStatus(selected.id, next);
+      setSelected(booking);
       toast.success(t(next === "CONFIRMED" ? "Booking confirmed." : "Booking cancelled."));
     } catch {
       toast.error(t("Unable to update the booking."));
@@ -180,10 +58,7 @@ export function OwnerBookings() {
   }
 
   const days = calendarDays(date, view === "list" ? "day" : view);
-  const q = query.trim().toLowerCase();
-  const filtered = bookings
-    .filter((b) => (!courtId || b.court.id === courtId) && (!status || b.status === status) && (!q || b.player.email.toLowerCase().includes(q) || (b.team?.name || "").toLowerCase().includes(q)))
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const filtered = filterBookings(bookings, courtId, status, query);
   // Cancelled bookings stay in List history; they must not cover a replacement slot on the calendar.
   const scheduled = status === "CANCELLED" ? filtered : filtered.filter((b) => b.status !== "CANCELLED");
   const daily = scheduled.filter((b) => onCalendarDay(b, date));
@@ -394,26 +269,14 @@ export function OwnerBookings() {
             </div>
           </>
         )}
-        <Dialog open={!!selected} onOpenChange={(open) => { if (!open && !busy) setSelected(null); }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t("Booking details")}</DialogTitle>
-              <DialogDescription>{selected ? `${selected.court.name} · ${formatBooking({ startsAt: selected.startsAt, endsAt: selected.endsAt })}` : ""}</DialogDescription>
-            </DialogHeader>
-            {selected && (
-              <div className="space-y-2 text-sm">
-                <p><strong>{t("Status")}:</strong> {t(selected.status)}</p>
-                <p><strong>{t("Player")}:</strong> {selected.player.email}</p>
-                {selected.team && <p><strong>{t("Team")}:</strong> {selected.team.name}</p>}
-                <p><strong>{t("Total")}:</strong> {formatPrice(selected.totalPrice)}</p>
-                <div className="flex gap-2 pt-2">
-                  {selected.status === "PENDING" && <Button disabled={busy} onClick={() => void update("CONFIRMED")}>{t("Confirm")}</Button>}
-                  {selected.status !== "CANCELLED" && <Button variant="destructive" disabled={busy} onClick={() => void update("CANCELLED")}>{t("Cancel booking")}</Button>}
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <BookingDetailsDialog
+          booking={selected}
+          busy={busy}
+          onOpenChange={(open) => {
+            if (!open && !busy) setSelected(null);
+          }}
+          onUpdateStatus={(next) => void update(next)}
+        />
         {pendingList.length > 0 && view !== "list" && (
           <div className="fixed bottom-4 left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-amber-500/40 bg-background/95 p-3 shadow-lg backdrop-blur">
             <p className="text-sm"><strong className="text-amber-600">{pendingList.length}</strong> {t("pending requests need review.")}</p>

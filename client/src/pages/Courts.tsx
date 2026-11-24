@@ -3,7 +3,8 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import api, { suggestCourts } from "@/lib/api";
+import api, { getApiErrorMessage, suggestCourts } from "@/lib/api";
+import type { CourtSuggestion } from "@/lib/api-types";
 import { FadeIn } from "@/components/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ export function Courts() {
 
   const [courts, setCourts] = useState<CourtSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [citySuggestions, setCitySuggestions] = useState<any[]>([]);
+  const [citySuggestions, setCitySuggestions] = useState<CourtSuggestion[]>([]);
   const [citySuggestionsLoading, setCitySuggestionsLoading] = useState(false);
   const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -52,8 +53,8 @@ export function Courts() {
       if (sport) params.set("sportType", sport);
       const res = await api.get(`/courts?${params.toString()}`);
       setCourts(res.data.courts);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load courts")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load courts")));
     } finally {
       setLoading(false);
     }
@@ -126,9 +127,9 @@ export function Courts() {
                 value={city}
                 onChange={(v) => setFilter("city", v)}
                 items={citySuggestions}
-                itemToLabel={(item: any) => `${item.name} (${item.city})`}
-                itemToValue={(item: any) => item.city}
-                onSelect={(item: any) => setFilter("city", item.city)}
+                itemToLabel={(item) => `${item.name} (${item.city})`}
+                itemToValue={(item) => item.city}
+                onSelect={(item) => setFilter("city", item.city)}
                 loading={citySuggestionsLoading}
                 ariaLabel={t("Filter courts by city")}
                 placeholder={t("City or area")}

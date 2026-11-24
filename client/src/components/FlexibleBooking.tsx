@@ -2,7 +2,7 @@ import { message } from '../lib/language';
 import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import {
   atHour,
   courtDate,
@@ -108,10 +108,7 @@ export function FlexibleBooking({
       });
       toast.success(t("Booking requested. Pending owner confirmation."));
     } catch (err: unknown) {
-      toast.error(t(
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          "Booking failed",
-      ));
+      toast.error(t(getApiErrorMessage(err, "Booking failed")));
     } finally {
       setBooking(false);
       setRefresh((v) => v + 1);

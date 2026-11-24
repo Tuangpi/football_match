@@ -2,7 +2,7 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import api from '@/lib/api';
+import api, { getApiErrorMessage, getApiErrorStatus } from '@/lib/api';
 import { formatPrice } from '@/lib/currency';
 import { FadeIn } from '@/components/motion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,11 +53,11 @@ export function EventDetail() {
     try {
       const res = await api.get(`/events/${id}`);
       setEvent(res.data.event);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (getApiErrorStatus(err) === 404) {
         setNotFound(true);
       } else {
-        toast.error(t(err.response?.data?.message || t("Failed to load event")));
+        toast.error(t(getApiErrorMessage(err, "Failed to load event")));
         setNotFound(true);
       }
     } finally {

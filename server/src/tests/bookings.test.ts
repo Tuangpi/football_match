@@ -115,6 +115,15 @@ test("owner confirms; foreign owner and player denied; owner lists isolated", as
     (await api("GET", "/api/bookings/owner", { userId: foreign.userId })).body.bookings.length,
     0,
   );
+  const schedule = await api("GET", "/api/bookings/owner/schedule", { userId: owner.userId });
+  assert.equal(schedule.status, 200);
+  assert.equal(schedule.body.courts.length, 1);
+  assert.equal(schedule.body.courts[0].id, courtId);
+  assert.ok(schedule.body.bookings.some((booking: { id: string }) => booking.id === bookingId));
+  assert.deepEqual(schedule.body.blocks, []);
+  const foreignSchedule = await api("GET", "/api/bookings/owner/schedule", { userId: foreign.userId });
+  assert.equal(foreignSchedule.status, 200);
+  assert.deepEqual(foreignSchedule.body, { success: true, courts: [], bookings: [], blocks: [] });
 });
 test("players cannot cancel confirmed bookings; owner cancel releases time", async () => {
   assert.equal(

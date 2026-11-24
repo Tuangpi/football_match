@@ -2,7 +2,7 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { formatPrice } from "@/lib/currency";
 import { useAuth } from "@/context/AuthContext";
 import { FadeIn } from "@/components/motion";
@@ -85,8 +85,8 @@ export function CourtDetail() {
     try {
       const res = await api.get(`/courts/${id}`);
       setCourt(res.data.court);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load court")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load court")));
     } finally {
       setLoading(false);
     }
@@ -124,9 +124,9 @@ export function CourtDetail() {
       toast.success(t("Review posted!"));
       resetReview();
       fetchCourt();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // e.g. friendly duplicate error: "You have already reviewed this court"
-      toast.error(t(err.response?.data?.message || t("Failed to post review")));
+      toast.error(t(getApiErrorMessage(err, "Failed to post review")));
     } finally {
       setSubmittingReview(false);
     }
@@ -150,10 +150,7 @@ export function CourtDetail() {
       setEditingReviewId(null);
       fetchCourt();
     } catch (err: unknown) {
-      toast.error(
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          t("Failed to update review"),
-      );
+      toast.error(t(getApiErrorMessage(err, "Failed to update review")));
     } finally {
       setReviewBusy(false);
     }
@@ -168,10 +165,7 @@ export function CourtDetail() {
       setEditingReviewId(null);
       fetchCourt();
     } catch (err: unknown) {
-      toast.error(
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          t("Failed to delete review"),
-      );
+      toast.error(t(getApiErrorMessage(err, "Failed to delete review")));
     } finally {
       setReviewBusy(false);
     }

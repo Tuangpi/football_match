@@ -6,7 +6,7 @@ import { type OpeningDay } from "@/lib/bookingTime";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { formatPrice } from "@/lib/currency";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,8 +71,8 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
       toast.success(t("Court updated"));
       setEditing(false);
       onChanged();
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to update court")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to update court")));
     } finally {
       setSaving(false);
     }
@@ -83,8 +83,8 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
       await api.put(`/courts/${court.id}`, { isActive: !court.isActive });
       toast.success(court.isActive ? t("Court deactivated") : t("Court activated"));
       onChanged();
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to update court")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to update court")));
     }
   }
 
@@ -94,8 +94,8 @@ function CourtCard({ court, onChanged }: { court: Court; onChanged: () => void }
       await api.delete(`/courts/${court.id}`);
       toast.success(t("Court deleted"));
       onChanged();
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to delete court")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to delete court")));
     }
   }
 
@@ -236,8 +236,8 @@ export function OwnerCourts() {
     try {
       const res = await api.get("/courts/owner/me");
       setCourts(res.data.courts);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load courts")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load courts")));
     } finally {
       setLoading(false);
     }

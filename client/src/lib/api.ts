@@ -8,6 +8,18 @@ export function setClerkTokenGetter(getter: (() => Promise<string | null>) | nul
   clerkTokenGetter = getter;
 }
 
+/** Return the API's user-safe error message, or the caller's localized fallback. */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (!axios.isAxiosError<{ message?: unknown }>(error)) return fallback;
+
+  const message = error.response?.data?.message;
+  return typeof message === 'string' && message.trim() ? message : fallback;
+}
+
+export function getApiErrorStatus(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined;
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,

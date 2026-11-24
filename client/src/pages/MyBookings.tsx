@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { formatBooking } from "@/lib/bookingTime";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { formatPrice } from "@/lib/currency";
 import { Clock, Calendar, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,8 +33,8 @@ export function MyBookings() {
     try {
       const res = await api.get("/bookings/me");
       setBookings(res.data.bookings);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load bookings")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load bookings")));
     } finally {
       setLoading(false);
     }
@@ -51,8 +51,8 @@ export function MyBookings() {
       await api.patch(`/bookings/${id}/cancel`);
       toast.success(t("Booking cancelled"));
       fetchBookings();
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Cancel failed")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Cancel failed")));
     }
   }
 

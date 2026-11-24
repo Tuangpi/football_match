@@ -1,7 +1,8 @@
 import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import api, { getApiErrorMessage } from '@/lib/api';
+import type { PlayerProfile } from '@/lib/api-types';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Loader2, Sun, Moon, Monitor, Camera } from 'lucide-react';
@@ -35,7 +36,7 @@ export function MyProfile() {
   useLanguage();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const {
@@ -47,11 +48,18 @@ export function MyProfile() {
 
   async function fetchProfile() {
     try {
-      const res = await api.get('/players/me');
+      const res = await api.get<{ profile: PlayerProfile }>('/players/me');
       setProfile(res.data.profile);
-      reset(res.data.profile);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load profile")));
+      reset({
+        fullName: res.data.profile.fullName ?? '',
+        phone: res.data.profile.phone ?? '',
+        position: res.data.profile.position ?? '',
+        skillLevel: res.data.profile.skillLevel ?? '',
+        bio: res.data.profile.bio ?? '',
+        avatarUrl: res.data.profile.avatarUrl ?? '',
+      });
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load profile")));
     } finally {
       setLoading(false);
     }
@@ -68,8 +76,8 @@ export function MyProfile() {
       await api.put('/players/me', { ...data, avatarUrl: data.avatarUrl || null });
       toast.success(t("Profile updated"));
       fetchProfile();
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Update failed")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Update failed")));
     }
   };
 

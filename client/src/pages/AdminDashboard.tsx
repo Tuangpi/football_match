@@ -2,7 +2,7 @@ import { message, getLocale } from '../lib/language';
 import { t as translate } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import api, { getApiErrorMessage } from '@/lib/api';
 import { formatPrice } from '@/lib/currency';
 import { FadeIn } from '@/components/motion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,8 +77,8 @@ export function AdminDashboard() {
       setStats(s.data.stats);
       setUsers(u.data.users);
       setCourts(c.data.courts);
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to load admin data")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to load admin data')));
     } finally {
       setLoading(false);
     }
@@ -100,8 +100,8 @@ export function AdminDashboard() {
       setUsers((prev) =>
         prev.map((x) => (x.id === u.id ? { ...x, isActive: res.data.user.isActive } : x))
       );
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to update user")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to update user')));
     } finally {
       setToggling(null);
     }
@@ -121,8 +121,8 @@ export function AdminDashboard() {
       setStats((prev) =>
         prev ? { ...prev, activeCourts: prev.activeCourts + (res.data.court.isActive ? 1 : -1) } : prev
       );
-    } catch (err: any) {
-      toast.error(translate(err.response?.data?.message || translate("Failed to update court")));
+    } catch (err: unknown) {
+      toast.error(translate(getApiErrorMessage(err, 'Failed to update court')));
     } finally {
       setToggling(null);
     }

@@ -3,7 +3,8 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import api, { suggestEvents } from '@/lib/api';
+import api, { getApiErrorMessage, suggestEvents } from '@/lib/api';
+import type { EventSuggestion } from '@/lib/api-types';
 import { useAuth } from '@/context/AuthContext';
 import { FadeIn } from '@/components/motion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -52,7 +53,7 @@ export function Events() {
   const [loading, setLoading] = useState(true);
   // Bumped by the Search button so re-submitting the same filters refetches.
   const [reloadKey, setReloadKey] = useState(0);
-  const [citySuggestions, setCitySuggestions] = useState<any[]>([]);
+  const [citySuggestions, setCitySuggestions] = useState<EventSuggestion[]>([]);
   const [citySuggestionsLoading, setCitySuggestionsLoading] = useState(false);
   const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,8 +79,8 @@ export function Events() {
       const qs = params.toString();
       const res = await api.get(`/events${qs ? `?${qs}` : ''}`);
       setEvents(res.data.events ?? []);
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to load events")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, "Failed to load events")));
     } finally {
       setLoading(false);
     }
@@ -164,9 +165,9 @@ export function Events() {
                 value={city}
                 onChange={(v) => setFilter('city', v)}
                 items={citySuggestions}
-                itemToLabel={(item: any) => `${item.title} (${item.city})`}
-                itemToValue={(item: any) => item.city}
-                onSelect={(item: any) => setFilter('city', item.city)}
+                itemToLabel={(item) => `${item.title} (${item.city})`}
+                itemToValue={(item) => item.city}
+                onSelect={(item) => setFilter('city', item.city)}
                 loading={citySuggestionsLoading}
                 ariaLabel={t("Filter events by city")}
                 placeholder={t("City or area")}

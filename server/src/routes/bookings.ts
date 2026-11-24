@@ -4,6 +4,7 @@ import {
   getMyBookings,
   cancelBooking,
   getOwnerBookings,
+  getOwnerSchedule,
   updateBookingStatus,
 } from "../controllers/bookings";
 import { authenticate, authorize } from "../middleware/auth";
@@ -26,6 +27,7 @@ router.patch("/:id/cancel", cancelBooking);
 
 // Owner booking management
 router.get("/owner", authorize("OWNER"), getOwnerBookings);
+router.get("/owner/schedule", authorize("OWNER"), getOwnerSchedule);
 router.patch(
   "/owner/:id/status",
   authorize("OWNER"),

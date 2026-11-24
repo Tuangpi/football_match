@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/lib/api';
+import api, { getApiErrorMessage } from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -115,8 +115,8 @@ export function CreateEvent() {
       else await api.post('/events', { ...payload, courtId: data.courtId });
       toast.success(editing ? t("Event updated!") : t("Event published!"));
       navigate('/owner/events');
-    } catch (err: any) {
-      toast.error(t(err.response?.data?.message || t("Failed to save event")));
+    } catch (err: unknown) {
+      toast.error(t(getApiErrorMessage(err, 'Failed to save event')));
     } finally {
       setLoading(false);
     }

@@ -3,7 +3,8 @@ import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
-import api, { suggestPlayers } from "@/lib/api";
+import api, { getApiErrorMessage, suggestPlayers } from "@/lib/api";
+import type { PlayerSuggestion } from "@/lib/api-types";
 import { Check, CheckCheck, Clock, Loader2, Search, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,6 @@ type Friend = { id: string; sender: Player; receiver: Player };
 type Request = { id: string; sender: Player };
 type Section = "friends" | "requests" | "discover";
 const nameOf = (player: Player) => player.playerProfile?.fullName || player.email.split("@")[0];
-const errorMessage = (error: unknown, fallback: string) =>
-  (error as { response?: { data?: { message?: string } } }).response?.data?.message || fallback;
 
 function PlayerDetails({ player }: { player: Player }) {
   useLanguage();
@@ -78,7 +77,7 @@ export function Friends() {
   const busyRef = useRef(new Set<string>());
   const searchVersion = useRef(0);
   const discoverInput = useRef<HTMLInputElement | null>(null);
-  const [playerSuggestions, setPlayerSuggestions] = useState<any[]>([]);
+  const [playerSuggestions, setPlayerSuggestions] = useState<PlayerSuggestion[]>([]);
   const [playerSuggestionsLoading, setPlayerSuggestionsLoading] = useState(false);
   const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -95,7 +94,7 @@ export function Friends() {
       setRequests(p.data.requests);
     } catch (error: unknown) {
       if (!signal?.aborted)
-        setLoadError(errorMessage(error, "Unable to load your friends. Please try again."));
+        setLoadError(getApiErrorMessage(error, "Unable to load your friends. Please try again."));
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
@@ -136,7 +135,7 @@ export function Friends() {
         setResults(res.data.users.filter((p: Player) => p.id !== user?.id));
     } catch (error: unknown) {
       if (version === searchVersion.current)
-        setSearchError(errorMessage(error, "Search failed. Please try again."));
+        setSearchError(getApiErrorMessage(error, "Search failed. Please try again."));
     } finally {
       if (version === searchVersion.current) setSearching(false);
     }
@@ -145,7 +144,7 @@ export function Friends() {
     event.preventDefault();
     await runSearch(query.trim());
   }
-  function selectPlayerSuggestion(item: any) {
+  function selectPlayerSuggestion(item: PlayerSuggestion) {
     setQuery(item.email);
     void runSearch(item.email);
   }
@@ -181,7 +180,7 @@ export function Friends() {
     try {
       await work();
     } catch (error: unknown) {
-      toast.error(t(errorMessage(error, "Unable to update this request. Please try again.")));
+      toast.error(t(getApiErrorMessage(error, "Unable to update this request. Please try again.")));
     } finally {
       busyRef.current.delete(key);
       setBusy(new Set(busyRef.current));
@@ -445,12 +444,12 @@ export function Friends() {
                           value={query}
                           onChange={changeQuery}
                           items={playerSuggestions}
-                          itemToLabel={(item: any) =>
+                          itemToLabel={(item) =>
                             item.playerProfile?.fullName
                               ? `${item.playerProfile.fullName} (${item.email})`
                               : item.email
                           }
-                          itemToValue={(item: any) => item.email}
+                          itemToValue={(item) => item.email}
                           onSelect={selectPlayerSuggestion}
                           loading={playerSuggestionsLoading}
                           inputClassName="pl-9"

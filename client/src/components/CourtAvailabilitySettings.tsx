@@ -2,7 +2,7 @@ import { message } from '../lib/language';
 import { t } from '../lib/language';
 import { useLanguage } from '../context/LanguageContext';
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import {
   atHour,
   courtDate,
@@ -56,10 +56,7 @@ export function CourtAvailabilitySettings({
       await loadBlocks();
       onChanged();
     } catch (err: unknown) {
-      toast.error(t(
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          "Update failed",
-      ));
+      toast.error(t(getApiErrorMessage(err, "Update failed")));
     } finally {
       setBusy(false);
     }
