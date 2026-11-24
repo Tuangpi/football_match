@@ -18,6 +18,8 @@ import reviewRoutes from './routes/reviews';
 import adminRoutes from './routes/admin';
 import { restrictAdminToDashboard } from './middleware/auth';
 import { prisma } from './utils/prisma';
+import * as Sentry from '@sentry/node';
+import { isSentryEnabled } from './observability';
 
 const app = express();
 const isTest = process.env.NODE_ENV === 'test';
@@ -75,6 +77,10 @@ app.use('/api/reviews', reviewRoutes);
 
 // 404
 app.use(notFound);
+
+if (isSentryEnabled) {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 // Global error handler
 app.use(errorHandler);

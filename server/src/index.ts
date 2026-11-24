@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/node';
+import { posthog } from './observability';
 import app from './app';
 import { prisma } from './utils/prisma';
 
@@ -27,6 +29,10 @@ async function shutdown(signal: string): Promise<void> {
   });
 
   await prisma.$disconnect();
+  await Promise.all([
+    posthog?.shutdown(),
+    Sentry.close(2_000),
+  ]);
   process.exit(0);
 }
 
