@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
+type ErrorWithCode = Error & { code?: string };
+
 export class AppError extends Error {
   statusCode: number;
   isOperational: boolean;
@@ -13,13 +15,14 @@ export class AppError extends Error {
 }
 
 export const errorHandler = (
-  err: Error | AppError,
+  err: ErrorWithCode,
   _req: Request,
   res: Response,
   _next: NextFunction
 ) => {
   let statusCode = 500;
   let message = 'Internal server error';
+  const isTest = process.env.NODE_ENV === 'test';
 
   if (err instanceof AppError) {
     statusCode = err.statusCode;
@@ -29,9 +32,21 @@ export const errorHandler = (
     message = err.message;
   }
 
+  if (isTest && statusCode >= 500) {
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
+
   res.status(statusCode).json({
     success: false,
     message,
+    ...(isTest && statusCode >= 500 && {
+      error: {
+        name: err.name,
+        message: err.message,
+        ...(err.code && { code: err.code }),
+      },
+    }),
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
