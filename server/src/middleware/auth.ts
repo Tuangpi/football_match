@@ -76,6 +76,7 @@ export const authenticate = async (
       req.user = { id: user.id, email: user.email, role: user.role, clerkId: user.clerkId };
       return next();
     }
+    return next(new AppError('Authentication required', 401));
   }
 
   const { userId } = getAuth(req);
@@ -112,29 +113,29 @@ export const restrictAdminToDashboard = async (
   _res: Response,
   next: NextFunction
 ): Promise<void> => {
-  let lookupId: string | null = null;
-  let byClerk = true;
-
   if (process.env.NODE_ENV === 'test') {
     const testUserId = req.headers['x-test-user-id'];
-    if (typeof testUserId === 'string' && testUserId) {
-      lookupId = testUserId;
-      byClerk = false;
-    }
+    if (typeof testUserId !== 'string' || !testUserId) return next();
+
+    const user = await prisma.user.findUnique({
+      where: { id: testUserId },
+      select: { role: true },
+    });
+    if (!user || user.role !== 'ADMIN') return next();
+
+    return next(new AppError('Forbidden: admins may only access the admin dashboard', 403));
   }
 
-  if (!lookupId) {
-    const { userId } = getAuth(req);
-    if (userId) {
-      lookupId = userId;
-      byClerk = true;
-    }
+  let lookupId: string | null = null;
+  const { userId } = getAuth(req);
+  if (userId) {
+    lookupId = userId;
   }
 
   if (!lookupId) return next();
 
   const user = await prisma.user.findUnique({
-    where: byClerk ? { clerkId: lookupId } : { id: lookupId },
+    where: { clerkId: lookupId },
     select: { role: true },
   });
   if (!user || user.role !== 'ADMIN') return next();

@@ -31,7 +31,11 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '100kb' }));
-app.use(clerkMiddleware());
+// Integration tests authenticate through x-test-user-id in middleware/auth.
+// Do not initialize Clerk there: CI deliberately uses placeholder Clerk keys.
+if (!isTest) {
+  app.use(clerkMiddleware());
+}
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
