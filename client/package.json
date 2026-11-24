@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "lint:fix": "eslint src --fix"
+    "lint:fix": "eslint src --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "../server/node_modules/.bin/tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.18.0",

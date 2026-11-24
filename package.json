@@ -1,0 +1,9 @@
+{
+  "name": "football-match",
+  "private": true,
+  "scripts": {
+    "check:server": "npm --prefix server run lint && npm --prefix server run build && npm --prefix server test",
+    "check:client": "npm --prefix client run lint && npm --prefix client run typecheck && npm --prefix client run build && npm --prefix client run test",
+    "check": "npm run check:server && npm run check:client"
+  }
+}

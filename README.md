@@ -41,15 +41,12 @@ npm run dev
 ## Verification
 
 ```bash
-# server
-cd server
-npm run lint && npm run build && npm test
-
-# client
-cd client
-npm run lint && npx tsc --noEmit && npm run build
-../server/node_modules/.bin/tsx --test tests/*.test.ts
+# After installing dependencies in both client/ and server/, and applying server migrations:
+npm run check
 ```
+
+`npm run check` runs server linting, build, and API tests, followed by client linting,
+type checking, build, and unit tests. The GitHub Actions CI workflow runs the same command.
 
 ## Roles
 

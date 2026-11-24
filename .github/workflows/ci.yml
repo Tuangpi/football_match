@@ -46,12 +46,8 @@ jobs:
       - name: Generate Prisma client and apply migrations
         working-directory: server
         run: npx prisma generate && npx prisma migrate deploy
-      - name: Validate server
-        working-directory: server
-        run: npm run lint && npm run build && npm test
       - name: Install client dependencies
         working-directory: client
         run: npm ci
-      - name: Validate client
-        working-directory: client
-        run: npm run lint && npx tsc --noEmit && npm run build && ../server/node_modules/.bin/tsx --test tests/*.test.ts
+      - name: Run repository checks
+        run: npm run check
