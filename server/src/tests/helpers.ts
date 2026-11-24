@@ -59,6 +59,9 @@ export async function api(
   } catch {
     // non-JSON response; leave body null
   }
+  if (res.status >= 500) {
+    throw new Error(`${method} ${path} returned ${res.status}: ${JSON.stringify(body)}`);
+  }
   return { status: res.status, body };
 }
 
