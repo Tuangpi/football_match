@@ -2,6 +2,12 @@ import { z } from "zod";
 import { AppError } from "../middleware/error";
 
 export const COURT_TIME_ZONE = "Asia/Yangon";
+export const defaultOpeningHours = Array.from({ length: 7 }, (_, day) => ({
+  day,
+  open: 8,
+  close: 23,
+  closed: false,
+}));
 export const openingHoursSchema = z
   .array(
     z

@@ -30,6 +30,7 @@ before(async () => {
     body: { name: "Flexible Court", address: "Test", city: "Yangon", basePricePerHour: 40_000 },
   });
   assert.equal(res.status, 201);
+  assert.deepEqual(res.body.court.openingHours, hours);
   courtId = res.body.court.id;
 });
 after(async () => {

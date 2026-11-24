@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { openingHoursSchema } from "../utils/bookingTime";
+import { defaultOpeningHours, openingHoursSchema } from "../utils/bookingTime";
 import { AppError } from "../middleware/error";
 import { prisma } from "../utils/prisma";
 
@@ -97,7 +97,11 @@ export const createCourt = async (
     const data = createCourtSchema.parse(req.body);
 
     const court = await prisma.court.create({
-      data: { ...data, ownerId: req.user.id },
+      data: {
+        ...data,
+        openingHours: data.openingHours ?? defaultOpeningHours,
+        ownerId: req.user.id,
+      },
     });
 
     res.status(201).json({ success: true, court });
