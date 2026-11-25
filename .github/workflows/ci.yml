@@ -27,6 +27,7 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/football_match_test?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/football_match_test?schema=public
       CLIENT_URL: http://localhost:5173
       CLERK_SECRET_KEY: sk_test_placeholder
       CLERK_PUBLISHABLE_KEY: pk_test_placeholder
