@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, type Rea
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useClerkAuth, useUser, useClerk } from '@clerk/react';
 import api, { setClerkTokenGetter } from '@/lib/api';
+import { posthog } from '@/observability';
 
 type User = {
   id: string;
@@ -36,6 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setClerkTokenGetter(getToken);
     return () => setClerkTokenGetter(null);
   }, [getToken]);
+  useEffect(() => {
+    if (!clerkLoaded) return;
+
+    if (isSignedIn && clerkUser?.id) {
+      posthog.identify(clerkUser.id, user?.role ? { role: user.role } : undefined);
+      return;
+    }
+
+    posthog.reset();
+  }, [clerkLoaded, isSignedIn, clerkUser?.id, user?.role]);
   useEffect(() => {
     if (!clerkLoaded || !isSignedIn || !clerkUser?.id) return;
 
@@ -86,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await clerk.signOut();
+    posthog.reset();
     setUser(null);
     navigate('/', { replace: true });
   };

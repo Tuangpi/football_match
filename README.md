@@ -61,6 +61,7 @@ type checking, build, and unit tests. The GitHub Actions CI workflow runs the sa
 - Apply Prisma migrations with `npx prisma migrate deploy` before releasing the API.
 - `GET /health` is a liveness endpoint. `GET /ready` verifies database availability and should be used by deployment readiness checks.
 - API routing and hosting must be configured for your chosen frontend and backend deployment architecture.
+- PostHog is the single observability platform for browser/API errors and server logs. Set `VITE_POSTHOG_PROJECT_TOKEN` for the client and `POSTHOG_PROJECT_TOKEN` for the API. Production frontend deployment should use `npm run build:posthog` with server-side CI values for `POSTHOG_CLI_API_KEY`, `POSTHOG_CLI_PROJECT_ID`, and `POSTHOG_RELEASE_VERSION` so source maps are uploaded privately and removed from the final build.
 
 ## Docs
 

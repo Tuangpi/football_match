@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { getRequestLogger } from '../logger';
+import { posthog } from '../observability';
 
 type ErrorWithCode = Error & { code?: string };
 
@@ -35,6 +37,19 @@ export const errorHandler = (
   if (isTest && statusCode >= 500) {
     // eslint-disable-next-line no-console
     console.error(err);
+  }
+
+  if (statusCode >= 500) {
+    const properties = {
+      method: _req.method,
+      path: _req.baseUrl + _req.path,
+      status_code: statusCode,
+      ...(err.code && { error_code: err.code }),
+    };
+    const distinctId = _req.user?.clerkId || undefined;
+
+    getRequestLogger(_req).error('Unhandled API error', { err, ...properties });
+    posthog?.captureException(err, { distinctId, properties });
   }
 
   res.status(statusCode).json({

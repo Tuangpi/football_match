@@ -16,6 +16,7 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: process.env.POSTHOG_UPLOAD_SOURCEMAPS === 'true' ? 'hidden' : false,
     rollupOptions: {
       output: {
         manualChunks: {
