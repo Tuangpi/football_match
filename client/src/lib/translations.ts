@@ -175,6 +175,11 @@ export const myanmar: Record<string, string> = {
   "My profile": "ကျွန်ုပ်၏ ကိုယ်ရေးအချက်အလက်",
   "No courts are listed yet. Check back soon.": "ကွင်းစာရင်း မရှိသေးပါ။ မကြာမီ ပြန်ကြည့်ပါ။",
   "No courts listed yet.": "ကွင်းစာရင်း မရှိသေးပါ။",
+  "Example court": "နမူနာကွင်း",
+  "Example listings are shown while we add real courts. They cannot be booked yet.":
+    "ကွင်းအစစ်များ ထည့်သွင်းနေစဉ် နမူနာစာရင်းများကို ပြသထားပါသည်။ ယခု ဘွတ်ကင်လုပ်၍ မရသေးပါ။",
+  "Something went wrong. Please refresh the page and try again.":
+    "တစ်ခုခု မှားယွင်းသွားပါသည်။ စာမျက်နှာကို ပြန်လည်ဖွင့်ပြီး ထပ်မံကြိုးစားပါ။",
   "No courts match your filter.": "စစ်ထုတ်မှုနှင့်ကိုက်ညီသော ကွင်းမရှိပါ။",
   "Own a court? Let’s get it in the game.": "ကွင်းပိုင်ပါသလား။ ကစားပွဲထဲ ပါဝင်လိုက်ပါ။",
   Play: "ကစားရန်",

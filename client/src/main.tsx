@@ -9,6 +9,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { BrowserRouter } from 'react-router-dom';
 import { PostHogErrorBoundary, PostHogProvider } from '@posthog/react';
 import { posthog } from './observability';
+import { t } from './lib/language';
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 
@@ -24,7 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                   additionalProperties={{ surface: 'react-render' }}
                   fallback={
                     <div className="p-8 text-center">
-                      Something went wrong. Please refresh the page and try again.
+                      {t("Something went wrong. Please refresh the page and try again.")}
                     </div>
                   }
                 >

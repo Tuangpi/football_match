@@ -14,6 +14,7 @@ import { CourtCard, type CourtSummary } from "@/components/CourtCard";
 import { EmptyState } from "@/components/EmptyState";
 import { MapPin, Search, X } from "lucide-react";
 import { toast } from "sonner";
+import { courtsForDisplay } from "@/lib/sampleCourts";
 
 const SPORTS = [
   { value: "", label: "All sports" },
@@ -29,6 +30,7 @@ export function Courts() {
 
   const [courts, setCourts] = useState<CourtSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [courtsLoadFailed, setCourtsLoadFailed] = useState(false);
   const [citySuggestions, setCitySuggestions] = useState<CourtSuggestion[]>([]);
   const [citySuggestionsLoading, setCitySuggestionsLoading] = useState(false);
   const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +49,7 @@ export function Courts() {
 
   async function fetchCourts() {
     setLoading(true);
+    setCourtsLoadFailed(false);
     try {
       const params = new URLSearchParams();
       if (city) params.set("city", city);
@@ -54,6 +57,7 @@ export function Courts() {
       const res = await api.get(`/courts?${params.toString()}`);
       setCourts(res.data.courts);
     } catch (err: unknown) {
+      setCourtsLoadFailed(true);
       toast.error(t(getApiErrorMessage(err, "Failed to load courts")));
     } finally {
       setLoading(false);
@@ -91,6 +95,8 @@ export function Courts() {
   }, [city]);
 
   const filtersActive = city !== "" || sport !== "";
+  const displayedCourts = courtsForDisplay(courts, { filtersActive, loadFailed: courtsLoadFailed });
+  const showingSamples = displayedCourts.some((court) => court.isSample);
 
   return (
     <div className="min-h-screen">
@@ -172,7 +178,7 @@ export function Courts() {
             <p className="text-sm text-muted-foreground">
               {loading
                 ? "Loading…"
-                : message(courts.length === 1 ? "{count} court found" : "{count} courts found", { count: courts.length })}
+                : message(displayedCourts.length === 1 ? "{count} court found" : "{count} courts found", { count: displayedCourts.length })}
               {!loading && city && <span> · {city}</span>}
               {!loading && sport && (
                 <span> · {sport === "ELEVEN_A_SIDE" ? t("11-a-side") : t("Futsal")}</span>
@@ -198,7 +204,7 @@ export function Courts() {
               </Card>
             ))}
           </div>
-        ) : courts.length === 0 ? (
+        ) : displayedCourts.length === 0 ? (
           <EmptyState
             icon={Search}
             title={t("No courts found")}
@@ -214,13 +220,20 @@ export function Courts() {
             }
           />
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {courts.map((court, i) => (
-              <FadeIn key={court.id} delay={Math.min(i, 6) * 0.05}>
-                <CourtCard court={court} />
-              </FadeIn>
-            ))}
-          </div>
+          <>
+            {showingSamples && (
+              <p className="mb-5 text-sm text-muted-foreground">
+                {t("Example listings are shown while we add real courts. They cannot be booked yet.")}
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {displayedCourts.map((court, i) => (
+                <FadeIn key={court.id} delay={Math.min(i, 6) * 0.05}>
+                  <CourtCard court={court} />
+                </FadeIn>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

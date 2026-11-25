@@ -23,6 +23,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Autocomplete } from "@/components/Autocomplete";
 import { CourtCard, type CourtSummary } from "@/components/CourtCard";
 import { EventCard, type EventSummary } from "@/components/EventCard";
+import { courtsForDisplay } from "@/lib/sampleCourts";
 
 const BOOKING_STEPS = ["Find a court", "Choose your hours", "Request booking"];
 
@@ -35,6 +36,7 @@ export function Home() {
   const [courts, setCourts] = useState<CourtSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [courtsLoadFailed, setCourtsLoadFailed] = useState(false);
   const [city, setCity] = useState("");
   const [sport, setSport] = useState("");
   const [courtSuggestions, setCourtSuggestions] = useState<CourtSuggestion[]>([]);
@@ -43,10 +45,12 @@ export function Home() {
 
   // Home only previews courts; the full, filterable list lives on /courts.
   async function fetchCourts() {
+    setCourtsLoadFailed(false);
     try {
       const res = await api.get("/courts");
       setCourts(res.data.courts);
     } catch (err: unknown) {
+      setCourtsLoadFailed(true);
       toast.error(t(getApiErrorMessage(err, "Failed to load courts")));
     } finally {
       setLoading(false);
@@ -57,6 +61,9 @@ export function Home() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCourts();
   }, []);
+
+  const displayedCourts = courtsForDisplay(courts, { loadFailed: courtsLoadFailed });
+  const showingSamples = displayedCourts.some((court) => court.isSample);
 
   // Debounced typeahead suggestions for the city input.
   useEffect(() => {
@@ -261,7 +268,7 @@ export function Home() {
               </Card>
             ))}
           </div>
-        ) : courts.length === 0 ? (
+        ) : displayedCourts.length === 0 ? (
           <div className="py-16 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent">
               <Search className="h-8 w-8 text-accent-foreground" />
@@ -273,13 +280,20 @@ export function Home() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {courts.slice(0, COURT_PREVIEW_COUNT).map((court, i) => (
-              <FadeIn key={court.id} delay={Math.min(i, COURT_PREVIEW_COUNT) * 0.05}>
-                <CourtCard court={court} />
-              </FadeIn>
-            ))}
-          </div>
+          <>
+            {showingSamples && (
+              <p className="mb-5 text-sm text-muted-foreground">
+                {t("Example listings are shown while we add real courts. They cannot be booked yet.")}
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {displayedCourts.slice(0, COURT_PREVIEW_COUNT).map((court, i) => (
+                <FadeIn key={court.id} delay={Math.min(i, COURT_PREVIEW_COUNT) * 0.05}>
+                  <CourtCard court={court} />
+                </FadeIn>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

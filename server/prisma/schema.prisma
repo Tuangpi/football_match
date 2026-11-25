@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -46,119 +47,119 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  playerProfile     PlayerProfile?
-  teams             Team[]
-  bookings          Booking[]
-  reviews           Review[]
-  sentFriendRequests   Friend[] @relation("FriendRequestSender")
-  receivedFriendRequests Friend[] @relation("FriendRequestReceiver")
-  ownedCourts       Court[]
-  events            Event[]
-  teamMemberships   TeamMember[]
+  playerProfile          PlayerProfile?
+  teams                  Team[]
+  bookings               Booking[]
+  reviews                Review[]
+  sentFriendRequests     Friend[]       @relation("FriendRequestSender")
+  receivedFriendRequests Friend[]       @relation("FriendRequestReceiver")
+  ownedCourts            Court[]
+  events                 Event[]
+  teamMemberships        TeamMember[]
 }
 
 model PlayerProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName  String?
-  phone     String?
-  position  String?
+  id         String  @id @default(cuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String?
+  phone      String?
+  position   String?
   skillLevel String?
-  bio       String?
-  avatarUrl String?
+  bio        String?
+  avatarUrl  String?
 }
 
 model Friend {
-  id           String      @id @default(cuid())
-  senderId     String
-  receiverId   String
-  status       FriendStatus @default(PENDING)
-  createdAt    DateTime    @default(now())
+  id         String       @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     FriendStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
 
-  sender    User @relation("FriendRequestSender", fields: [senderId], references: [id])
-  receiver  User @relation("FriendRequestReceiver", fields: [receiverId], references: [id])
+  sender   User @relation("FriendRequestSender", fields: [senderId], references: [id])
+  receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id])
 
   @@unique([senderId, receiverId])
 }
 
 model Team {
-  id        String      @id @default(cuid())
+  id        String       @id @default(cuid())
   name      String
-  sportType SportType   @default(FUTSAL)
+  sportType SportType    @default(FUTSAL)
   captainId String
-  captain   User        @relation(fields: [captainId], references: [id])
+  captain   User         @relation(fields: [captainId], references: [id])
   members   TeamMember[]
   bookings  Booking[]
-  createdAt DateTime    @default(now())
+  createdAt DateTime     @default(now())
 }
 
 model TeamMember {
-  id        String   @id @default(cuid())
-  teamId    String
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String   @default("MEMBER")
-  joinedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
 
   @@unique([teamId, userId])
 }
 
 model Court {
-  id             String      @id @default(cuid())
-  ownerId        String
-  owner          User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  name           String
-  address        String
-  city           String
-  sportType      SportType   @default(FUTSAL)
-  dimensions     String?
-  surfaceType    String?
+  id               String       @id @default(cuid())
+  ownerId          String
+  owner            User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name             String
+  address          String
+  city             String
+  sportType        SportType    @default(FUTSAL)
+  dimensions       String?
+  surfaceType      String?
   basePricePerHour Float
-  openingHours   Json        @default("[{\"day\":0,\"open\":8,\"close\":23,\"closed\":false},{\"day\":1,\"open\":8,\"close\":23,\"closed\":false},{\"day\":2,\"open\":8,\"close\":23,\"closed\":false},{\"day\":3,\"open\":8,\"close\":23,\"closed\":false},{\"day\":4,\"open\":8,\"close\":23,\"closed\":false},{\"day\":5,\"open\":8,\"close\":23,\"closed\":false},{\"day\":6,\"open\":8,\"close\":23,\"closed\":false}]")
-  blockedPeriods CourtBlock[]
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  openingHours     Json         @default("[{\"day\":0,\"open\":8,\"close\":23,\"closed\":false},{\"day\":1,\"open\":8,\"close\":23,\"closed\":false},{\"day\":2,\"open\":8,\"close\":23,\"closed\":false},{\"day\":3,\"open\":8,\"close\":23,\"closed\":false},{\"day\":4,\"open\":8,\"close\":23,\"closed\":false},{\"day\":5,\"open\":8,\"close\":23,\"closed\":false},{\"day\":6,\"open\":8,\"close\":23,\"closed\":false}]")
+  blockedPeriods   CourtBlock[]
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  slots          CourtSlot[]
-  bookings       Booking[]
-  events         Event[]
-  reviews        Review[]
+  slots    CourtSlot[]
+  bookings Booking[]
+  events   Event[]
+  reviews  Review[]
 }
 
 model CourtSlot {
-  id            String      @id @default(cuid())
-  courtId       String
-  court         Court       @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  date          DateTime
-  startTime     String
-  endTime       String
-  isAvailable   Boolean     @default(true)
-  pricePerHour  Float
-  createdAt     DateTime    @default(now())
+  id           String   @id @default(cuid())
+  courtId      String
+  court        Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  date         DateTime
+  startTime    String
+  endTime      String
+  isAvailable  Boolean  @default(true)
+  pricePerHour Float
+  createdAt    DateTime @default(now())
 
-  bookings      Booking[]
+  bookings Booking[]
 
   @@index([courtId, date, startTime])
 }
 
 model Booking {
-  id          String         @id @default(cuid())
+  id          String        @id @default(cuid())
   courtId     String
-  court       Court          @relation(fields: [courtId], references: [id])
+  court       Court         @relation(fields: [courtId], references: [id])
   courtSlotId String?
-  courtSlot   CourtSlot?     @relation(fields: [courtSlotId], references: [id])
+  courtSlot   CourtSlot?    @relation(fields: [courtSlotId], references: [id])
   startsAt    DateTime
   endsAt      DateTime
   playerId    String
-  player      User           @relation(fields: [playerId], references: [id])
+  player      User          @relation(fields: [playerId], references: [id])
   teamId      String?
-  team        Team?          @relation(fields: [teamId], references: [id])
-  status      BookingStatus  @default(PENDING)
+  team        Team?         @relation(fields: [teamId], references: [id])
+  status      BookingStatus @default(PENDING)
   totalPrice  Float
-  bookedAt    DateTime       @default(now())
+  bookedAt    DateTime      @default(now())
   cancelledAt DateTime?
 
   @@index([courtSlotId])
@@ -178,18 +179,18 @@ model CourtBlock {
 }
 
 model Event {
-  id          String      @id @default(cuid())
+  id          String    @id @default(cuid())
   courtId     String
   userId      String
-  court       Court       @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  court       Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   type        EventType
   description String?
   startDate   DateTime
   endDate     DateTime
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Review {
